@@ -1,0 +1,492 @@
+// main.ts - Main game engine and initialization
+
+import {
+GameState,
+IGameEngine,
+IRenderer,
+IStateManager,
+ISceneManager,
+IInputManager,
+ICamera,
+IStatusBar,
+IPlayerShip
+} from ‘./types’;
+import { gameConfig } from ‘./utils’;
+import { Renderer } from ‘./renderer’;
+import { Camera } from ‘./camera’;
+import { InputManager } from ‘./input’;
+import { PlayerShip } from ‘./player’;
+
+// State Management
+class StateManager implements IStateManager {
+public states: Map<GameState, any> = new Map();
+public currentState: GameState = GameState.LOADING;
+public transitionInProgress: boolean = false;
+
+constructor() {
+this.registerStates();
+}
+
+private registerStates(): void {
+this.states.set(GameState.LOADING, new LoadingState());
+this.states.set(GameState.MAIN_MENU, new MainMenuState());
+this.states.set(GameState.NEW_GAME_SETUP, new NewGameSetupState());
+this.states.set(GameState.PLAYING, new PlayingState());
+this.states.set(GameState.PAUSED, new PausedState());
+}
+
+public setState(newState: GameState): void {
+if (this.transitionInProgress) return;
+
+```
+this.transitionInProgress = true;
+
+const currentStateObj = this.states.get(this.currentState);
+if (currentStateObj?.exit) {
+  currentStateObj.exit();
+}
+
+this.currentState = newState;
+
+const newStateObj = this.states.get(this.currentState);
+if (newStateObj?.enter) {
+  newStateObj.enter();
+}
+
+this.transitionInProgress = false;
+```
+
+}
+
+public update(deltaTime: number): void {
+const state = this.states.get(this.currentState);
+if (state) {
+state.update(deltaTime);
+}
+}
+
+public render(renderer: IRenderer): void {
+const state = this.states.get(this.currentState);
+if (state) {
+state.render(renderer);
+}
+}
+
+public handleInput(input: IInputManager): void {
+const state = this.states.get(this.currentState);
+if (state) {
+state.handleInput(input);
+}
+}
+
+public getCurrentState(): GameState {
+return this.currentState;
+}
+}
+
+// Game States
+class LoadingState {
+private progress: number = 0;
+private loadingTexts: string[] = [
+‘INITIALIZING QUANTUM MATRIX…’,
+‘CALIBRATING NAVIGATION ARRAYS…’,
+‘LOADING STELLAR CARTOGRAPHY…’,
+‘SYNCHRONIZING WARP CORE…’,
+‘ACTIVATING LIFE SUPPORT SYSTEMS…’,
+‘ESTABLISHING COMM CHANNELS…’,
+‘RUNNING SYSTEM DIAGNOSTICS…’,
+‘QUANTUM DRIVE READY’
+];
+private currentTextIndex: number = 0;
+private lastUpdate: number = 0;
+
+public enter(): void {
+console.log(‘Loading state entered’);
+this.progress = 0;
+this.currentTextIndex = 0;
+this.lastUpdate = Date.now();
+
+```
+const loadingOverlay = document.getElementById('loadingOverlay');
+if (loadingOverlay) loadingOverlay.classList.remove('hidden');
+```
+
+}
+
+public update(deltaTime: number): void {
+const now = Date.now();
+if (now - this.lastUpdate > 150) {
+this.progress += Math.random() * 15 + 5;
+if (this.progress > 100) this.progress = 100;
+
+```
+  if (Math.random() < 0.4 && this.currentTextIndex < this.loadingTexts.length - 1) {
+    this.currentTextIndex++;
+  }
+  
+  const loadingFill = document.getElementById('loadingFill');
+  const loadingText = document.getElementById('loadingText');
+  
+  if (loadingFill) loadingFill.style.width = this.progress + '%';
+  if (loadingText) loadingText.textContent = this.loadingTexts[this.currentTextIndex];
+  
+  this.lastUpdate = now;
+  
+  if (this.progress >= 100) {
+    setTimeout(() => {
+      console.log('Loading complete, switching to playing state');
+      if ((window as any).game?.stateManager) {
+        (window as any).game.stateManager.setState(GameState.PLAYING);
+        
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) loadingOverlay.classList.add('hidden');
+      }
+    }, 800);
+  }
+}
+```
+
+}
+
+public render(renderer: IRenderer): void {
+// Loading is handled by HTML overlay
+}
+
+public handleInput(input: IInputManager): void {
+// No input handling during loading
+}
+}
+
+class MainMenuState {
+public enter(): void {
+console.log(‘Main menu entered’);
+}
+
+public update(deltaTime: number): void {
+// Menu update logic
+}
+
+public render(renderer: IRenderer): void {
+renderer.clear(’#1a1a2a’);
+
+```
+const width = renderer.getWidth();
+const height = renderer.getHeight();
+
+renderer.drawText('SPACE EXPLORER 16-BIT', width/2, height/2 - 150, '#00ffff', '32px monospace');
+renderer.drawText('MAIN MENU', width/2, height/2 - 100, '#dcd0c0', '16px monospace');
+
+renderer.drawText('Press ENTER to start', width/2, height/2, '#5f9e9e', '14px monospace');
+```
+
+}
+
+public handleInput(input: IInputManager): void {
+if (input.wasKeyJustPressed(‘enter’)) {
+if ((window as any).game?.stateManager) {
+(window as any).game.stateManager.setState(GameState.PLAYING);
+}
+}
+}
+}
+
+class NewGameSetupState {
+public enter(): void {
+console.log(‘New game setup entered’);
+}
+
+public update(deltaTime: number): void {
+// Setup update logic
+}
+
+public render(renderer: IRenderer): void {
+renderer.clear(’#1a1a2a’);
+renderer.drawText(‘NEW GAME SETUP’, renderer.getWidth()/2, renderer.getHeight()/2, ‘#00ffff’, ‘24px monospace’);
+}
+
+public handleInput(input: IInputManager): void {
+// Setup input handling
+}
+}
+
+class PlayingState {
+public enter(): void {
+console.log(‘Entering playing state’);
+}
+
+public update(deltaTime: number): void {
+// Game logic is handled by GameEngine
+}
+
+public render(renderer: IRenderer): void {
+// Game rendering is handled by GameEngine
+}
+
+public handleInput(input: IInputManager): void {
+// Game input is handled by GameEngine
+}
+}
+
+class PausedState {
+public enter(): void {
+console.log(‘Game paused’);
+}
+
+public update(deltaTime: number): void {
+// Pause update logic
+}
+
+public render(renderer: IRenderer): void {
+renderer.clear(’#1a1a2a’);
+renderer.drawText(‘GAME PAUSED’, renderer.getWidth()/2, renderer.getHeight()/2, ‘#ff8c00’, ‘24px monospace’);
+}
+
+public handleInput(input: IInputManager): void {
+// Pause input handling
+}
+}
+
+// Simple Scene Manager (simplified for now)
+class SceneManager implements ISceneManager {
+public scenes: Map<any, any> = new Map();
+public currentScene: any = ‘starSystem’;
+public transitionInProgress: boolean = false;
+
+public switchScene(newScene: any): void {
+if (this.transitionInProgress) return;
+
+```
+this.transitionInProgress = true;
+
+setTimeout(() => {
+  this.currentScene = newScene;
+  this.transitionInProgress = false;
+}, 500);
+```
+
+}
+
+public getCurrentScene(): any {
+return {
+update: (deltaTime: number, game: any) => {},
+render: (renderer: IRenderer, camera: ICamera) => {
+renderer.drawStarField(camera);
+},
+getCelestialBodies: () => []
+};
+}
+
+public getCurrentSceneType(): any {
+return this.currentScene;
+}
+
+public update(deltaTime: number, game: any): void {
+this.getCurrentScene().update(deltaTime, game);
+}
+
+public render(renderer: IRenderer, camera: ICamera): void {
+this.getCurrentScene().render(renderer, camera);
+}
+}
+
+// Simple Status Bar (simplified for now)
+class StatusBar implements IStatusBar {
+public height: number = 0;
+public panels: any[] = [];
+private renderer: IRenderer;
+
+constructor(renderer: IRenderer) {
+this.renderer = renderer;
+}
+
+public update(player: IPlayerShip): void {
+const screenHeight = this.renderer.getHeight();
+this.height = Math.floor(screenHeight * gameConfig.ui.statusBarHeight);
+}
+
+public render(player: IPlayerShip): void {
+const screenWidth = this.renderer.getWidth();
+const screenHeight = this.renderer.getHeight();
+const statusY = screenHeight - this.height;
+
+```
+// Draw simple status bar
+this.renderer.drawRect(0, statusY, screenWidth, this.height, '#1a1a2a');
+this.renderer.drawRect(0, screenHeight - 5, screenWidth, 5, '#333333');
+
+// Draw basic ship stats
+this.renderer.drawText(`HULL: ${Math.round(player.hull)}%`, 20, statusY + 20, '#00ff00', '10px monospace');
+this.renderer.drawText(`SHIELDS: ${Math.round(player.shields)}%`, 20, statusY + 35, '#00ffff', '10px monospace');
+this.renderer.drawText(`FUEL: ${Math.round(player.fuel)}%`, 20, statusY + 50, '#ffff00', '10px monospace');
+this.renderer.drawText(`ENERGY: ${Math.round(player.energy)}%`, 20, statusY + 65, '#ff00ff', '10px monospace');
+
+// Draw weapon info
+const weapon = player.getWeaponStatus(player.selectedWeapon);
+if (weapon) {
+  this.renderer.drawText(`WEAPON: ${weapon.type.toUpperCase()}`, screenWidth - 200, statusY + 20, '#dcd0c0', '10px monospace');
+  this.renderer.drawText(`HEAT: ${Math.round(weapon.heat)}%`, screenWidth - 200, statusY + 35, '#ff6600', '10px monospace');
+  if (weapon.ammo !== undefined) {
+    this.renderer.drawText(`AMMO: ${weapon.ammo}/${weapon.maxAmmo}`, screenWidth - 200, statusY + 50, '#dcd0c0', '10px monospace');
+  }
+}
+```
+
+}
+}
+
+// Main Game Engine
+export class GameEngine implements IGameEngine {
+public canvas: HTMLCanvasElement;
+public renderer: IRenderer;
+public stateManager: IStateManager;
+public sceneManager: ISceneManager;
+public inputManager: IInputManager;
+public camera: ICamera;
+public statusBar: IStatusBar;
+public player: IPlayerShip;
+public gameTime: number = 0;
+public lastFrameTime: number = 0;
+
+constructor(canvasId: string) {
+this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+if (!this.canvas) {
+throw new Error(`Canvas with id '${canvasId}' not found`);
+}
+
+```
+this.renderer = new Renderer(this.canvas);
+this.stateManager = new StateManager();
+this.sceneManager = new SceneManager();
+this.inputManager = new InputManager();
+this.camera = new Camera();
+this.statusBar = new StatusBar(this.renderer);
+
+this.player = new PlayerShip(200, 200);
+
+console.log('Game engine initialized');
+this.startGameLoop();
+```
+
+}
+
+public startGameLoop(): void {
+const gameLoop = (currentTime: number) => {
+const deltaTime = Math.min((currentTime - this.lastFrameTime) / 1000, 0.016);
+this.lastFrameTime = currentTime;
+this.gameTime = currentTime / 1000;
+
+```
+  this.update(deltaTime);
+  this.render();
+  
+  requestAnimationFrame(gameLoop);
+};
+
+console.log('Starting game loop');
+gameLoop(0);
+```
+
+}
+
+public update(deltaTime: number): void {
+this.inputManager.update();
+this.stateManager.update(deltaTime);
+this.stateManager.handleInput(this.inputManager);
+
+```
+if (this.stateManager.getCurrentState() === GameState.PLAYING) {
+  this.player.update(deltaTime, this);
+  this.sceneManager.update(deltaTime, this);
+  this.camera.followTarget(
+    this.player.position, 
+    deltaTime, 
+    this.renderer.getWidth(), 
+    this.renderer.getHeight()
+  );
+  this.statusBar.update(this.player);
+}
+```
+
+}
+
+public render(): void {
+this.renderer.clear(gameConfig.colors.bgPrimary);
+
+```
+if (this.stateManager.getCurrentState() === GameState.PLAYING) {
+  this.sceneManager.render(this.renderer, this.camera);
+  this.player.render(this.renderer, this.camera);
+  this.renderHUD();
+  this.statusBar.render(this.player);
+} else {
+  this.stateManager.render(this.renderer);
+}
+```
+
+}
+
+public renderHUD(): void {
+const width = this.renderer.getWidth();
+const height = this.renderer.getHeight();
+
+```
+// Crosshair
+this.renderer.drawLine(width/2 - 8, height/2, width/2 + 8, height/2, 'rgba(0, 255, 255, 0.6)', 1);
+this.renderer.drawLine(width/2, height/2 - 8, width/2, height/2 + 8, 'rgba(0, 255, 255, 0.6)', 1);
+
+// Coordinates and status
+this.renderer.drawText(`X: ${Math.round(this.player.position.x)} AU`, 10, 25, '#5f9e9e', '10px monospace');
+this.renderer.drawText(`Y: ${Math.round(this.player.position.y)} AU`, 10, 40, '#5f9e9e', '10px monospace');
+
+const speed = Math.sqrt(this.player.velocity.x ** 2 + this.player.velocity.y ** 2);
+this.renderer.drawText(`V: ${(speed * 100).toFixed(1)} m/s`, 10, 55, '#5f9e9e', '10px monospace');
+
+// Current scene info
+this.renderer.drawText(`SCENE: STAR SYSTEM`, 10, 70, '#5f9e9e', '10px monospace');
+
+// Instructions
+const statusBarHeight = this.renderer.getHeight() * gameConfig.ui.statusBarHeight;
+this.renderer.drawText('WASD: Move | SPACE: Fire | ESC: Menu', 10, 
+  this.renderer.getHeight() - statusBarHeight - 20, '#8c8c8c', '8px monospace');
+```
+
+}
+}
+
+// Initialization
+export function initializeGame(): void {
+try {
+console.log(‘🚀 Initializing Space Explorer 16-Bit TypeScript Edition…’);
+
+```
+// Create canvas if it doesn't exist
+let canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+if (!canvas) {
+  canvas = document.createElement('canvas');
+  canvas.id = 'gameCanvas';
+  canvas.style.display = 'block';
+  canvas.style.background = '#1a1a2a';
+  canvas.style.imageRendering = 'pixelated';
+  canvas.style.imageRendering = '-moz-crisp-edges';
+  canvas.style.imageRendering = 'crisp-edges';
+  document.body.appendChild(canvas);
+}
+
+const game = new GameEngine('gameCanvas');
+(window as any).game = game;
+
+console.log('✅ Game initialized successfully');
+console.log('🎮 Controls: WASD/Arrow keys for movement, SPACE for fire');
+console.log('🔧 Debug: Use window.game object in console');
+console.log('⚡ Features: Realistic physics, procedural generation, TypeScript architecture');
+```
+
+} catch (error) {
+console.error(‘❌ Error initializing game:’, error);
+}
+}
+
+// Auto-initialize when DOM is ready
+if (typeof window !== ‘undefined’) {
+window.addEventListener(‘DOMContentLoaded’, initializeGame);
+}
