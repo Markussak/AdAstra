@@ -1,11 +1,11 @@
-import { GameState, DifficultyLevel, ShipType } from './types';
+import { GameState, DifficultyLevel, ShipType, CharacterGender, CharacterRace, CharacterSkill, CharacterBackground, GalaxySize, GalaxyDensity, EconomyComplexity } from './types';
 import { gameConfig } from './utils';
 import { Renderer } from './renderer';
 import { Camera } from './camera';
 import { InputManager } from './input';
 import { PlayerShip } from './player';
 import { StarSystemScene } from './scenes';
-import { SHIP_TEMPLATES, DIFFICULTY_SETTINGS, LOADING_MESSAGES } from './gameData';
+import { SHIP_TEMPLATES, DIFFICULTY_SETTINGS, LOADING_MESSAGES, WEAPON_DATA, RACE_DATA, BACKGROUND_DATA, SKILL_DATA, GALAXY_SIZE_DATA, GALAXY_DENSITY_DATA, ECONOMY_COMPLEXITY_DATA } from './gameData';
 import { SaveSystem, AutoSaveManager } from './saveSystem';
 import { QuestSystem } from './questSystem';
 import { EffectSystem } from './effectSystem';
@@ -271,12 +271,48 @@ class MainMenuState {
 class NewGameSetupState {
     constructor() {
         this.currentStep = 0;
-        this.steps = ['OBTÍŽNOST', 'POSTAVA', 'LOĎ', 'SOUHRN'];
+        this.steps = ['OBTÍŽNOST', 'GALAXIE', 'EKONOMIKA', 'POSTAVA', 'DOVEDNOSTI', 'LOĎ', 'SOUHRN'];
         this.gameSetup = {};
         this.selectedDifficulty = DifficultyLevel.NORMAL;
+        this.galaxySettings = {
+            size: GalaxySize.MEDIUM,
+            density: GalaxyDensity.NORMAL,
+            factionCount: 5,
+            hostilityLevel: 5
+        };
+        this.economySettings = {
+            complexity: EconomyComplexity.MODERATE,
+            marketVolatility: 5,
+            tradeRouteFrequency: 5,
+            pirateActivity: 5
+        };
+        this.character = {
+            name: '',
+            age: 25,
+            gender: CharacterGender.MALE,
+            race: CharacterRace.HUMAN,
+            skills: new Map(),
+            background: CharacterBackground.EXPLORER
+        };
         this.selectedShip = ShipType.EXPLORER;
-        this.playerName = '';
         this.isEditingName = false;
+        this.remainingSkillPoints = 10;
+        this.tooltip = { visible: false, x: 0, y: 0, title: '', description: '', width: 300 };
+        this.animations = { stepTransition: 0, buttonPulse: 0, starField: 0 };
+        this.backButton = { x: 0, y: 0, width: 120, height: 40, hovered: false, pressed: false };
+        this.nextButton = { x: 0, y: 0, width: 120, height: 40, hovered: false, pressed: false };
+        this.difficultyButtons = [];
+        this.galaxySizeButtons = [];
+        this.galaxyDensityButtons = [];
+        this.economyButtons = [];
+        this.raceButtons = [];
+        this.genderButtons = [];
+        this.backgroundButtons = [];
+        this.skillButtons = [];
+        this.shipButtons = [];
+        this.nameInputButton = { x: 0, y: 0, width: 300, height: 40, hovered: false };
+        this.ageInputButton = { x: 0, y: 0, width: 100, height: 40, hovered: false };
+        this.startGameButton = { x: 0, y: 0, width: 200, height: 50, hovered: false, pressed: false };
     }
     enter() {
         console.log('New game setup entered');
@@ -284,85 +320,438 @@ class NewGameSetupState {
         this.gameSetup = {};
         this.selectedDifficulty = DifficultyLevel.NORMAL;
         this.selectedShip = ShipType.EXPLORER;
-        this.playerName = '';
+        this.character = {
+            name: '',
+            age: 25,
+            gender: CharacterGender.MALE,
+            race: CharacterRace.HUMAN,
+            skills: new Map(),
+            background: CharacterBackground.EXPLORER
+        };
+        this.remainingSkillPoints = 10;
+        Object.values(CharacterSkill).forEach(skill => {
+            this.character.skills.set(skill, 1);
+        });
     }
     update(deltaTime) {
+        this.animations.stepTransition += deltaTime * 3.0;
+        this.animations.buttonPulse += deltaTime * 4.0;
+        this.animations.starField += deltaTime * 0.5;
+        if (this.animations.stepTransition > Math.PI * 2)
+            this.animations.stepTransition = 0;
+        if (this.animations.buttonPulse > Math.PI * 2)
+            this.animations.buttonPulse = 0;
+        if (this.animations.starField > 1000)
+            this.animations.starField = 0;
     }
     render(renderer) {
         const width = renderer.getWidth();
         const height = renderer.getHeight();
-        renderer.clear('#0a0a15');
-        for (let i = 0; i < 150; i++) {
-            const x = (i * 87.456) % width;
-            const y = (i * 543.123) % height;
-            const alpha = Math.sin(Date.now() * 0.0008 + i) * 0.2 + 0.5;
-            renderer.getContext().globalAlpha = alpha * 0.3;
-            renderer.drawRect(x, y, 1, 1, '#505060');
+        const gradient = renderer.getContext().createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, '#0a0a20');
+        gradient.addColorStop(0.5, '#0a0a15');
+        gradient.addColorStop(1, '#050510');
+        renderer.getContext().fillStyle = gradient;
+        renderer.getContext().fillRect(0, 0, width, height);
+        for (let layer = 0; layer < 3; layer++) {
+            const starCount = [50, 75, 100][layer];
+            const speed = [0.2, 0.4, 0.6][layer];
+            const brightness = [0.8, 0.5, 0.3][layer];
+            for (let i = 0; i < starCount; i++) {
+                const baseX = (i * 87.456) % width;
+                const baseY = (i * 543.123) % height;
+                const x = (baseX + this.animations.starField * speed * 10) % width;
+                const y = baseY;
+                const alpha = Math.sin(this.animations.starField * 2 + i * 0.1) * 0.3 + 0.7;
+                const size = layer === 0 ? 2 : 1;
+                renderer.getContext().globalAlpha = alpha * brightness * 0.4;
+                renderer.drawRect(x, y, size, size, layer === 0 ? '#8080a0' : '#606080');
+            }
         }
         renderer.getContext().globalAlpha = 1.0;
-        renderer.getContext().fillStyle = 'rgba(16, 16, 32, 0.7)';
+        const overlayGradient = renderer.getContext().createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) / 2);
+        overlayGradient.addColorStop(0, 'rgba(16, 16, 32, 0.4)');
+        overlayGradient.addColorStop(1, 'rgba(8, 8, 16, 0.8)');
+        renderer.getContext().fillStyle = overlayGradient;
         renderer.getContext().fillRect(0, 0, width, height);
-        renderer.drawText('NASTAVENÍ NOVÉ HRY', width / 2, 100, '#606060', 'bold 36px "Big Apple 3PM", monospace');
+        const titleGlow = Math.sin(this.animations.buttonPulse) * 0.3 + 0.7;
+        renderer.getContext().shadowColor = '#4080ff';
+        renderer.getContext().shadowBlur = 10 * titleGlow;
+        renderer.drawText('NASTAVENÍ NOVÉ HRY', width / 2, 100, `rgba(96, 128, 255, ${titleGlow})`, 'bold 36px "Big Apple 3PM", monospace');
+        renderer.getContext().shadowBlur = 0;
         const stepY = 150;
+        const progressWidth = width * 0.8;
+        const progressX = width * 0.1;
+        const progressY = stepY + 30;
+        renderer.drawRect(progressX, progressY - 3, progressWidth, 6, 'rgba(64, 64, 64, 0.5)');
+        const progress = this.currentStep / (this.steps.length - 1);
+        const fillWidth = progressWidth * progress;
+        const progressGradient = renderer.getContext().createLinearGradient(progressX, 0, progressX + fillWidth, 0);
+        progressGradient.addColorStop(0, '#4080ff');
+        progressGradient.addColorStop(1, '#60a0ff');
+        renderer.getContext().fillStyle = progressGradient;
+        renderer.getContext().fillRect(progressX, progressY - 3, fillWidth, 6);
         this.steps.forEach((step, index) => {
             const x = (width / this.steps.length) * (index + 0.5);
             const isActive = index === this.currentStep;
             const isCompleted = index < this.currentStep;
             let color = '#404040';
-            if (isCompleted)
-                color = '#606060';
-            if (isActive)
-                color = '#505050';
+            let glowIntensity = 0;
+            if (isCompleted) {
+                color = '#60c060';
+                glowIntensity = 0.3;
+            }
+            if (isActive) {
+                color = '#80a0ff';
+                glowIntensity = Math.sin(this.animations.buttonPulse) * 0.4 + 0.6;
+            }
+            if (glowIntensity > 0) {
+                renderer.getContext().shadowColor = color;
+                renderer.getContext().shadowBlur = 8 * glowIntensity;
+            }
             renderer.drawText(`${index + 1}. ${step}`, x, stepY, color, isActive ? 'bold 18px "Big Apple 3PM", monospace' : '16px "Big Apple 3PM", monospace');
+            renderer.getContext().shadowBlur = 0;
         });
         switch (this.currentStep) {
             case 0:
                 this.renderDifficultySelection(renderer);
                 break;
             case 1:
-                this.renderCharacterCreation(renderer);
+                this.renderGalaxySettings(renderer);
                 break;
             case 2:
-                this.renderShipSelection(renderer);
+                this.renderEconomySettings(renderer);
                 break;
             case 3:
+                this.renderCharacterCreation(renderer);
+                break;
+            case 4:
+                this.renderSkillSelection(renderer);
+                break;
+            case 5:
+                this.renderShipSelection(renderer);
+                break;
+            case 6:
                 this.renderSummary(renderer);
                 break;
         }
-        renderer.drawText('←→ Navigace | ENTER Potvrdit | ESC Zpět', width / 2, height - 50, '#505050', '14px "Big Apple 3PM", monospace');
+        this.renderNavigationButtons(renderer, width, height);
+        this.renderTooltip(renderer);
+    }
+    renderNavigationButtons(renderer, width, height) {
+        this.backButton.x = 50;
+        this.backButton.y = height - 80;
+        this.nextButton.x = width - 170;
+        this.nextButton.y = height - 80;
+        if (this.currentStep > 0) {
+            const backColor = this.backButton.pressed ? 'rgba(96, 96, 96, 0.8)' :
+                this.backButton.hovered ? 'rgba(96, 96, 96, 0.4)' : 'rgba(64, 64, 64, 0.7)';
+            renderer.drawRect(this.backButton.x, this.backButton.y, this.backButton.width, this.backButton.height, backColor);
+            renderer.drawRect(this.backButton.x, this.backButton.y, this.backButton.width, this.backButton.height, '#505050');
+            renderer.drawText('← ZPĚT', this.backButton.x + this.backButton.width / 2, this.backButton.y + this.backButton.height / 2 + 5, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        }
+        const isLastStep = this.currentStep === this.steps.length - 1;
+        const canProceed = this.canProceedFromCurrentStep();
+        const nextText = isLastStep ? 'SPUSTIT' : 'POKRAČOVAT →';
+        if (canProceed) {
+            const nextColor = this.nextButton.pressed ? 'rgba(96, 96, 96, 0.8)' :
+                this.nextButton.hovered ? 'rgba(96, 96, 96, 0.4)' : 'rgba(64, 64, 64, 0.7)';
+            renderer.drawRect(this.nextButton.x, this.nextButton.y, this.nextButton.width, this.nextButton.height, nextColor);
+            renderer.drawRect(this.nextButton.x, this.nextButton.y, this.nextButton.width, this.nextButton.height, '#505050');
+            renderer.drawText(nextText, this.nextButton.x + this.nextButton.width / 2, this.nextButton.y + this.nextButton.height / 2 + 5, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        }
+        renderer.drawText('Klávesnice: ←→ ESC ENTER | Touch: Klepněte na tlačítka', width / 2, height - 30, '#505050', '12px "Big Apple 3PM", monospace');
+    }
+    canProceedFromCurrentStep() {
+        switch (this.currentStep) {
+            case 3:
+                return this.character.name.trim().length > 0;
+            case 4:
+                return this.remainingSkillPoints >= 0;
+            default:
+                return true;
+        }
     }
     renderDifficultySelection(renderer) {
         const width = renderer.getWidth();
         const startY = 250;
         renderer.drawText('VYBERTE OBTÍŽNOST', width / 2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
+        this.difficultyButtons = [];
         Object.values(DifficultyLevel).forEach((difficulty, index) => {
             const settings = DIFFICULTY_SETTINGS[difficulty];
             const y = startY + 80 + index * 80;
             const isSelected = difficulty === this.selectedDifficulty;
+            const buttonArea = {
+                x: width / 2 - 400,
+                y: y - 30,
+                width: 800,
+                height: 60,
+                difficulty: difficulty,
+                hovered: false
+            };
+            this.difficultyButtons.push(buttonArea);
+            let bgColor = 'rgba(64, 64, 64, 0.3)';
             if (isSelected) {
-                renderer.drawRect(width / 2 - 400, y - 30, 800, 60, 'rgba(96, 96, 96, 0.2)');
+                bgColor = 'rgba(96, 96, 96, 0.6)';
             }
-            const color = isSelected ? '#606060' : '#505050';
+            else if (buttonArea.hovered) {
+                bgColor = 'rgba(80, 80, 80, 0.4)';
+            }
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
+            const color = isSelected ? '#dcd0c0' : '#606060';
             renderer.drawText(settings.name, width / 2 - 200, y, color, isSelected ? 'bold 20px "Big Apple 3PM", monospace' : '18px "Big Apple 3PM", monospace');
             renderer.drawText(settings.description, width / 2 + 50, y, color, '14px "Big Apple 3PM", monospace');
         });
     }
-    renderCharacterCreation(renderer) {
+    renderGalaxySettings(renderer) {
+        const width = renderer.getWidth();
+        const startY = 220;
+        renderer.drawText('NASTAVENÍ GALAXIE', width / 2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
+        renderer.drawText('Velikost galaxie:', width / 4, startY + 60, '#606060', '18px "Big Apple 3PM", monospace');
+        this.galaxySizeButtons = [];
+        Object.values(GalaxySize).forEach((size, index) => {
+            const data = GALAXY_SIZE_DATA[size];
+            const y = startY + 90 + index * 50;
+            const isSelected = size === this.galaxySettings.size;
+            const buttonArea = {
+                x: width / 4 - 150,
+                y: y - 20,
+                width: 300,
+                height: 40,
+                size: size,
+                hovered: false
+            };
+            this.galaxySizeButtons.push(buttonArea);
+            let bgColor = 'rgba(64, 64, 64, 0.3)';
+            if (isSelected)
+                bgColor = 'rgba(96, 96, 96, 0.6)';
+            else if (buttonArea.hovered)
+                bgColor = 'rgba(80, 80, 80, 0.4)';
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
+            const color = isSelected ? '#dcd0c0' : '#808080';
+            renderer.drawText(data.name, width / 4, y, color, isSelected ? 'bold 16px "Big Apple 3PM", monospace' : '14px "Big Apple 3PM", monospace');
+        });
+        renderer.drawText('Hustota galaxie:', 3 * width / 4, startY + 60, '#606060', '18px "Big Apple 3PM", monospace');
+        this.galaxyDensityButtons = [];
+        Object.values(GalaxyDensity).forEach((density, index) => {
+            const data = GALAXY_DENSITY_DATA[density];
+            const y = startY + 90 + index * 50;
+            const isSelected = density === this.galaxySettings.density;
+            const buttonArea = {
+                x: 3 * width / 4 - 150,
+                y: y - 20,
+                width: 300,
+                height: 40,
+                density: density,
+                hovered: false
+            };
+            this.galaxyDensityButtons.push(buttonArea);
+            let bgColor = 'rgba(64, 64, 64, 0.3)';
+            if (isSelected)
+                bgColor = 'rgba(96, 96, 96, 0.6)';
+            else if (buttonArea.hovered)
+                bgColor = 'rgba(80, 80, 80, 0.4)';
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
+            const color = isSelected ? '#dcd0c0' : '#808080';
+            renderer.drawText(data.name, 3 * width / 4, y, color, isSelected ? 'bold 16px "Big Apple 3PM", monospace' : '14px "Big Apple 3PM", monospace');
+        });
+        renderer.drawText(`Frakce: ${this.galaxySettings.factionCount} | Nepřátelskost: ${this.galaxySettings.hostilityLevel}/10`, width / 2, startY + 340, '#808080', '14px "Big Apple 3PM", monospace');
+    }
+    renderEconomySettings(renderer) {
         const width = renderer.getWidth();
         const startY = 250;
+        renderer.drawText('NASTAVENÍ EKONOMIKY', width / 2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
+        this.economyButtons = [];
+        Object.values(EconomyComplexity).forEach((complexity, index) => {
+            const data = ECONOMY_COMPLEXITY_DATA[complexity];
+            const y = startY + 80 + index * 80;
+            const isSelected = complexity === this.economySettings.complexity;
+            const buttonArea = {
+                x: width / 2 - 400,
+                y: y - 30,
+                width: 800,
+                height: 60,
+                complexity: complexity,
+                hovered: false
+            };
+            this.economyButtons.push(buttonArea);
+            let bgColor = 'rgba(64, 64, 64, 0.3)';
+            if (isSelected)
+                bgColor = 'rgba(96, 96, 96, 0.6)';
+            else if (buttonArea.hovered)
+                bgColor = 'rgba(80, 80, 80, 0.4)';
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
+            const color = isSelected ? '#dcd0c0' : '#606060';
+            renderer.drawText(data.name, width / 2 - 200, y, color, isSelected ? 'bold 20px "Big Apple 3PM", monospace' : '18px "Big Apple 3PM", monospace');
+            renderer.drawText(data.description, width / 2 + 50, y, color, '14px "Big Apple 3PM", monospace');
+        });
+        renderer.drawText(`Volatilita: ${this.economySettings.marketVolatility}/10 | Obchod: ${this.economySettings.tradeRouteFrequency}/10 | Piráti: ${this.economySettings.pirateActivity}/10`, width / 2, startY + 380, '#808080', '14px "Big Apple 3PM", monospace');
+    }
+    renderCharacterCreation(renderer) {
+        const width = renderer.getWidth();
+        const startY = 200;
         renderer.drawText('VYTVOŘENÍ POSTAVY', width / 2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
-        renderer.drawText('Jméno pilota:', width / 2 - 100, startY + 80, '#606060', '18px "Big Apple 3PM", monospace');
-        const nameBoxColor = this.isEditingName ? '#606060' : '#404040';
-        renderer.drawRect(width / 2 - 150, startY + 100, 300, 40, 'rgba(0, 0, 0, 0.5)');
-        renderer.drawRect(width / 2 - 150, startY + 100, 300, 40, nameBoxColor);
-        const displayName = this.playerName || 'Zadejte jméno...';
-        const nameColor = this.playerName ? '#606060' : '#505050';
-        renderer.drawText(displayName, width / 2, startY + 125, nameColor, '16px "Big Apple 3PM", monospace');
-        if (this.isEditingName) {
-            const cursorX = width / 2 + (this.playerName.length * 9);
-            renderer.drawText('|', cursorX, startY + 125, '#606060', '16px "Big Apple 3PM", monospace');
+        renderer.drawText('Jméno:', width / 4 - 50, startY + 50, '#606060', '16px "Big Apple 3PM", monospace');
+        this.nameInputButton.x = width / 4 - 100;
+        this.nameInputButton.y = startY + 70;
+        this.nameInputButton.width = 200;
+        let nameBoxColor = 'rgba(64, 64, 64, 0.7)';
+        if (this.isEditingName)
+            nameBoxColor = 'rgba(96, 96, 96, 0.8)';
+        else if (this.nameInputButton.hovered)
+            nameBoxColor = 'rgba(80, 80, 80, 0.7)';
+        renderer.drawRect(this.nameInputButton.x, this.nameInputButton.y, this.nameInputButton.width, this.nameInputButton.height, nameBoxColor);
+        renderer.drawRect(this.nameInputButton.x, this.nameInputButton.y, this.nameInputButton.width, this.nameInputButton.height, '#505050');
+        const displayName = this.character.name || 'Jméno...';
+        const nameColor = this.character.name ? '#dcd0c0' : '#808080';
+        renderer.drawText(displayName, width / 4, startY + 95, nameColor, '14px "Big Apple 3PM", monospace');
+        if (this.isEditingName && Math.floor(Date.now() / 500) % 2 === 0) {
+            const cursorX = width / 4 + (this.character.name.length * 8);
+            renderer.drawText('|', cursorX, startY + 95, '#dcd0c0', '14px "Big Apple 3PM", monospace');
         }
-        renderer.drawText('ENTER pro editaci | TAB pro dokončení', width / 2, startY + 180, '#505050', '12px "Big Apple 3PM", monospace');
+        renderer.drawText('Věk:', width / 4 - 50, startY + 130, '#606060', '16px "Big Apple 3PM", monospace');
+        this.ageInputButton.x = width / 4 - 50;
+        this.ageInputButton.y = startY + 150;
+        let ageBoxColor = this.ageInputButton.hovered ? 'rgba(80, 80, 80, 0.7)' : 'rgba(64, 64, 64, 0.7)';
+        renderer.drawRect(this.ageInputButton.x, this.ageInputButton.y, this.ageInputButton.width, this.ageInputButton.height, ageBoxColor);
+        renderer.drawRect(this.ageInputButton.x, this.ageInputButton.y, this.ageInputButton.width, this.ageInputButton.height, '#505050');
+        renderer.drawText(this.character.age.toString(), width / 4, startY + 175, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        renderer.drawText('Pohlaví:', 3 * width / 4 - 100, startY + 50, '#606060', '16px "Big Apple 3PM", monospace');
+        this.genderButtons = [];
+        Object.values(CharacterGender).forEach((gender, index) => {
+            const x = 3 * width / 4 - 80 + (index % 2) * 160;
+            const y = startY + 80 + Math.floor(index / 2) * 40;
+            const isSelected = gender === this.character.gender;
+            const buttonArea = {
+                x: x - 70,
+                y: y - 15,
+                width: 140,
+                height: 30,
+                gender: gender,
+                hovered: false
+            };
+            this.genderButtons.push(buttonArea);
+            let bgColor = 'rgba(64, 64, 64, 0.3)';
+            if (isSelected)
+                bgColor = 'rgba(96, 96, 96, 0.6)';
+            else if (buttonArea.hovered)
+                bgColor = 'rgba(80, 80, 80, 0.4)';
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
+            const genderName = gender === CharacterGender.MALE ? 'Muž' :
+                gender === CharacterGender.FEMALE ? 'Žena' :
+                    gender === CharacterGender.NON_BINARY ? 'Nebinární' : 'Jiné';
+            const color = isSelected ? '#dcd0c0' : '#808080';
+            renderer.drawText(genderName, x, y, color, isSelected ? 'bold 12px "Big Apple 3PM", monospace' : '12px "Big Apple 3PM", monospace');
+        });
+        renderer.drawText('Rasa:', width / 2, startY + 180, '#606060', '16px "Big Apple 3PM", monospace');
+        this.raceButtons = [];
+        const raceKeys = Object.keys(RACE_DATA);
+        const racesPerRow = 5;
+        raceKeys.forEach((race, index) => {
+            const data = RACE_DATA[race];
+            const row = Math.floor(index / racesPerRow);
+            const col = index % racesPerRow;
+            const x = width / 2 - (racesPerRow * 140) / 2 + col * 140 + 70;
+            const y = startY + 220 + row * 60;
+            const isSelected = race === this.character.race;
+            const buttonArea = {
+                x: x - 65,
+                y: y - 25,
+                width: 130,
+                height: 50,
+                race: race,
+                hovered: false
+            };
+            this.raceButtons.push(buttonArea);
+            let bgColor = 'rgba(64, 64, 64, 0.3)';
+            if (isSelected)
+                bgColor = 'rgba(96, 96, 96, 0.6)';
+            else if (buttonArea.hovered)
+                bgColor = 'rgba(80, 80, 80, 0.4)';
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
+            renderer.drawRect(x - 15, y - 20, 30, 30, data.portraitColor);
+            renderer.drawRect(x - 15, y - 20, 30, 30, '#505050');
+            const color = isSelected ? '#dcd0c0' : '#808080';
+            renderer.drawText(data.name, x, y + 15, color, isSelected ? 'bold 10px "Big Apple 3PM", monospace' : '10px "Big Apple 3PM", monospace');
+        });
+        renderer.drawText('Pozadí:', width / 2, startY + 360, '#606060', '16px "Big Apple 3PM", monospace');
+        this.backgroundButtons = [];
+        const backgroundKeys = Object.keys(BACKGROUND_DATA);
+        const backgroundsPerRow = 5;
+        backgroundKeys.forEach((background, index) => {
+            const data = BACKGROUND_DATA[background];
+            const row = Math.floor(index / backgroundsPerRow);
+            const col = index % backgroundsPerRow;
+            const x = width / 2 - (backgroundsPerRow * 140) / 2 + col * 140 + 70;
+            const y = startY + 390 + row * 50;
+            const isSelected = background === this.character.background;
+            const buttonArea = {
+                x: x - 65,
+                y: y - 20,
+                width: 130,
+                height: 40,
+                background: background,
+                hovered: false
+            };
+            this.backgroundButtons.push(buttonArea);
+            let bgColor = 'rgba(64, 64, 64, 0.3)';
+            if (isSelected)
+                bgColor = 'rgba(96, 96, 96, 0.6)';
+            else if (buttonArea.hovered)
+                bgColor = 'rgba(80, 80, 80, 0.4)';
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
+            const color = isSelected ? '#dcd0c0' : '#808080';
+            renderer.drawText(data.name, x, y, color, isSelected ? 'bold 10px "Big Apple 3PM", monospace' : '10px "Big Apple 3PM", monospace');
+        });
+    }
+    renderSkillSelection(renderer) {
+        const width = renderer.getWidth();
+        const startY = 200;
+        renderer.drawText('DOVEDNOSTI', width / 2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
+        renderer.drawText(`Zbývající body: ${this.remainingSkillPoints}`, width / 2, startY + 40, '#808080', '16px "Big Apple 3PM", monospace');
+        this.skillButtons = [];
+        const skillKeys = Object.keys(SKILL_DATA);
+        const skillsPerRow = 2;
+        skillKeys.forEach((skill, index) => {
+            const data = SKILL_DATA[skill];
+            const row = Math.floor(index / skillsPerRow);
+            const col = index % skillsPerRow;
+            const x = width / 2 - 300 + col * 600;
+            const y = startY + 80 + row * 60;
+            const currentLevel = this.character.skills.get(skill) || 1;
+            renderer.drawText(`${data.icon} ${data.name}:`, x - 200, y, '#606060', '16px "Big Apple 3PM", monospace');
+            for (let level = 1; level <= 10; level++) {
+                const buttonX = x - 100 + (level - 1) * 25;
+                const buttonY = y - 10;
+                const isActive = level <= currentLevel;
+                const buttonArea = {
+                    x: buttonX - 10,
+                    y: buttonY - 10,
+                    width: 20,
+                    height: 20,
+                    skill: skill,
+                    level: level,
+                    hovered: false
+                };
+                this.skillButtons.push(buttonArea);
+                let bgColor = isActive ? 'rgba(96, 96, 96, 0.8)' : 'rgba(64, 64, 64, 0.3)';
+                if (buttonArea.hovered)
+                    bgColor = 'rgba(120, 120, 120, 0.6)';
+                renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
+                renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
+                const color = isActive ? '#dcd0c0' : '#404040';
+                renderer.drawText(level.toString(), buttonX, buttonY + 5, color, '10px "Big Apple 3PM", monospace');
+            }
+            renderer.drawText(`Úroveň: ${currentLevel}`, x + 160, y, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        });
+        renderer.drawText('Klepněte na čísla pro změnu úrovně dovedností', width / 2, startY + 380, '#505050', '12px "Big Apple 3PM", monospace');
     }
     renderShipSelection(renderer) {
         const width = renderer.getWidth();
@@ -372,6 +761,7 @@ class NewGameSetupState {
         const shipsPerRow = 3;
         const shipWidth = 250;
         const shipHeight = 120;
+        this.shipButtons = [];
         ships.forEach((shipType, index) => {
             const template = SHIP_TEMPLATES[shipType];
             const row = Math.floor(index / shipsPerRow);
@@ -379,11 +769,26 @@ class NewGameSetupState {
             const x = width / 2 - (shipsPerRow * shipWidth) / 2 + col * shipWidth + shipWidth / 2;
             const y = startY + 60 + row * (shipHeight + 20);
             const isSelected = shipType === this.selectedShip;
+            const buttonArea = {
+                x: x - shipWidth / 2,
+                y: y - shipHeight / 2,
+                width: shipWidth,
+                height: shipHeight,
+                shipType: shipType,
+                hovered: false
+            };
+            this.shipButtons.push(buttonArea);
+            let bgColor = 'rgba(64, 64, 64, 0.7)';
             if (isSelected) {
-                renderer.drawRect(x - shipWidth / 2, y - shipHeight / 2, shipWidth, shipHeight, 'rgba(96, 96, 96, 0.3)');
+                bgColor = 'rgba(96, 96, 96, 0.8)';
             }
-            renderer.drawRect(x - shipWidth / 2 + 5, y - shipHeight / 2 + 5, shipWidth - 10, shipHeight - 10, 'rgba(64, 64, 64, 0.7)');
-            const color = isSelected ? '#606060' : '#505050';
+            else if (buttonArea.hovered) {
+                bgColor = 'rgba(80, 80, 80, 0.7)';
+            }
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
+            renderer.drawRect(buttonArea.x + 5, buttonArea.y + 5, buttonArea.width - 10, buttonArea.height - 10, 'rgba(32, 32, 32, 0.7)');
+            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
+            const color = isSelected ? '#dcd0c0' : '#808080';
             renderer.drawText(template.name, x, y - 35, color, isSelected ? 'bold 16px "Big Apple 3PM", monospace' : '14px "Big Apple 3PM", monospace');
             renderer.drawText(`Hull: ${template.baseStats.hull}`, x - 80, y - 10, color, '10px "Big Apple 3PM", monospace');
             renderer.drawText(`Speed: ${template.baseStats.speed}`, x + 80, y - 10, color, '10px "Big Apple 3PM", monospace');
@@ -393,20 +798,302 @@ class NewGameSetupState {
     }
     renderSummary(renderer) {
         const width = renderer.getWidth();
-        const startY = 250;
+        const startY = 200;
         renderer.drawText('SOUHRN NASTAVENÍ', width / 2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
         const difficultySettings = DIFFICULTY_SETTINGS[this.selectedDifficulty];
         const shipTemplate = SHIP_TEMPLATES[this.selectedShip];
-        renderer.drawText('Pilot: ' + (this.playerName || 'Neznámý'), width / 2, startY + 60, '#606060', '18px "Big Apple 3PM", monospace');
-        renderer.drawText('Obtížnost: ' + difficultySettings.name, width / 2, startY + 100, '#606060', '18px "Big Apple 3PM", monospace');
-        renderer.drawText('Loď: ' + shipTemplate.name, width / 2, startY + 140, '#606060', '18px "Big Apple 3PM", monospace');
-        renderer.drawText('Počáteční zdroje:', width / 2, startY + 200, '#505050', '16px "Big Apple 3PM", monospace');
-        renderer.drawText(`Palivo: ${difficultySettings.startingResources.fuel}%`, width / 2 - 100, startY + 230, '#505050', '14px "Big Apple 3PM", monospace');
-        renderer.drawText(`Energie: ${difficultySettings.startingResources.energy}%`, width / 2, startY + 230, '#505050', '14px "Big Apple 3PM", monospace');
-        renderer.drawText(`Kredity: ${difficultySettings.startingResources.credits}`, width / 2 + 100, startY + 230, '#505050', '14px "Big Apple 3PM", monospace');
-        renderer.drawText('ENTER pro zahájení hry', width / 2, startY + 300, '#606060', 'bold 20px "Big Apple 3PM", monospace');
+        const raceData = RACE_DATA[this.character.race];
+        const backgroundData = BACKGROUND_DATA[this.character.background];
+        renderer.drawText('=== POSTAVA ===', width / 2, startY + 50, '#808080', '16px "Big Apple 3PM", monospace');
+        renderer.drawText(`Jméno: ${this.character.name || 'Neznámý'}`, width / 2, startY + 80, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        renderer.drawText(`Věk: ${this.character.age} | Pohlaví: ${this.character.gender === CharacterGender.MALE ? 'Muž' : this.character.gender === CharacterGender.FEMALE ? 'Žena' : 'Jiné'}`, width / 2, startY + 105, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        renderer.drawText(`Rasa: ${raceData.name} | Pozadí: ${backgroundData.name}`, width / 2, startY + 130, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        renderer.drawText('=== NASTAVENÍ HRY ===', width / 2, startY + 170, '#808080', '16px "Big Apple 3PM", monospace');
+        renderer.drawText(`Obtížnost: ${difficultySettings.name}`, width / 2, startY + 200, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        renderer.drawText(`Galaxie: ${GALAXY_SIZE_DATA[this.galaxySettings.size].name} (${GALAXY_DENSITY_DATA[this.galaxySettings.density].name})`, width / 2, startY + 225, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        renderer.drawText(`Ekonomika: ${ECONOMY_COMPLEXITY_DATA[this.economySettings.complexity].name}`, width / 2, startY + 250, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        renderer.drawText(`Loď: ${shipTemplate.name}`, width / 2, startY + 275, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        renderer.drawText('=== POČÁTEČNÍ ZDROJE ===', width / 2, startY + 315, '#808080', '16px "Big Apple 3PM", monospace');
+        renderer.drawText(`Palivo: ${difficultySettings.startingResources.fuel}% | Energie: ${difficultySettings.startingResources.energy}% | Kredity: ${difficultySettings.startingResources.credits + backgroundData.startingCredits}`, width / 2, startY + 345, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        const topSkills = Array.from(this.character.skills.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([skill, level]) => `${SKILL_DATA[skill].name}: ${level}`)
+            .join(' | ');
+        renderer.drawText(`Nejlepší dovednosti: ${topSkills}`, width / 2, startY + 375, '#808080', '12px "Big Apple 3PM", monospace');
+        this.startGameButton.x = width / 2 - this.startGameButton.width / 2;
+        this.startGameButton.y = startY + 420;
+        const buttonColor = this.startGameButton.pressed ? 'rgba(96, 96, 96, 0.8)' :
+            this.startGameButton.hovered ? 'rgba(96, 96, 96, 0.4)' : 'rgba(64, 64, 64, 0.7)';
+        renderer.drawRect(this.startGameButton.x, this.startGameButton.y, this.startGameButton.width, this.startGameButton.height, buttonColor);
+        renderer.drawRect(this.startGameButton.x, this.startGameButton.y, this.startGameButton.width, this.startGameButton.height, '#505050');
+        renderer.drawText('SPUSTIT HRU', width / 2, startY + 450, '#dcd0c0', 'bold 20px "Big Apple 3PM", monospace');
+    }
+    isPointInRect(x, y, rect) {
+        return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
+    }
+    showTooltip(x, y, title, description) {
+        this.tooltip.visible = true;
+        this.tooltip.x = x + 10;
+        this.tooltip.y = y - 10;
+        this.tooltip.title = title;
+        this.tooltip.description = description;
+        const lines = description.split('\n');
+        const maxLineLength = Math.max(title.length, ...lines.map(line => line.length));
+        this.tooltip.width = Math.min(400, Math.max(250, maxLineLength * 8));
+    }
+    renderTooltip(renderer) {
+        if (!this.tooltip.visible)
+            return;
+        const lines = this.tooltip.description.split('\n');
+        const totalLines = lines.length + 1;
+        const lineHeight = 16;
+        const padding = 10;
+        const tooltipHeight = totalLines * lineHeight + padding * 2;
+        const screenWidth = renderer.getWidth();
+        const screenHeight = renderer.getHeight();
+        let x = this.tooltip.x;
+        let y = this.tooltip.y;
+        if (x + this.tooltip.width > screenWidth) {
+            x = screenWidth - this.tooltip.width - 10;
+        }
+        if (y + tooltipHeight > screenHeight) {
+            y = screenHeight - tooltipHeight - 10;
+        }
+        if (y < 0)
+            y = 10;
+        renderer.drawRect(x - 2, y - 2, this.tooltip.width + 4, tooltipHeight + 4, 'rgba(0, 0, 0, 0.9)');
+        renderer.drawRect(x, y, this.tooltip.width, tooltipHeight, 'rgba(32, 32, 48, 0.95)');
+        renderer.drawRect(x, y, this.tooltip.width, tooltipHeight, 'rgba(96, 96, 128, 0.8)');
+        renderer.drawText(this.tooltip.title, x + padding, y + padding + 12, '#ffeb3b', 'bold 14px "Big Apple 3PM", monospace');
+        lines.forEach((line, index) => {
+            const lineY = y + padding + 12 + (index + 1) * lineHeight;
+            renderer.drawText(line, x + padding, lineY, '#dcd0c0', '12px "Big Apple 3PM", monospace');
+        });
+    }
+    updateHoverStates(input) {
+        this.backButton.hovered = false;
+        this.nextButton.hovered = false;
+        this.nameInputButton.hovered = false;
+        this.ageInputButton.hovered = false;
+        this.startGameButton.hovered = false;
+        this.difficultyButtons.forEach(btn => btn.hovered = false);
+        this.galaxySizeButtons.forEach(btn => btn.hovered = false);
+        this.galaxyDensityButtons.forEach(btn => btn.hovered = false);
+        this.economyButtons.forEach(btn => btn.hovered = false);
+        this.raceButtons.forEach(btn => btn.hovered = false);
+        this.genderButtons.forEach(btn => btn.hovered = false);
+        this.backgroundButtons.forEach(btn => btn.hovered = false);
+        this.skillButtons.forEach(btn => btn.hovered = false);
+        this.shipButtons.forEach(btn => btn.hovered = false);
+        this.tooltip.visible = false;
+        if (!input.isMobile) {
+            const mousePos = input.getMousePosition();
+            let mouseX = mousePos.x, mouseY = mousePos.y;
+            const canvas = document.getElementById('gameCanvas');
+            if (canvas) {
+                const rect = canvas.getBoundingClientRect();
+                mouseX = mousePos.x - rect.left;
+                mouseY = mousePos.y - rect.top;
+            }
+            this.backButton.hovered = this.isPointInRect(mouseX, mouseY, this.backButton);
+            this.nextButton.hovered = this.isPointInRect(mouseX, mouseY, this.nextButton);
+            this.nameInputButton.hovered = this.isPointInRect(mouseX, mouseY, this.nameInputButton);
+            this.ageInputButton.hovered = this.isPointInRect(mouseX, mouseY, this.ageInputButton);
+            this.startGameButton.hovered = this.isPointInRect(mouseX, mouseY, this.startGameButton);
+            this.difficultyButtons.forEach(btn => {
+                btn.hovered = this.isPointInRect(mouseX, mouseY, btn);
+            });
+            this.galaxySizeButtons.forEach(btn => {
+                btn.hovered = this.isPointInRect(mouseX, mouseY, btn);
+            });
+            this.galaxyDensityButtons.forEach(btn => {
+                btn.hovered = this.isPointInRect(mouseX, mouseY, btn);
+            });
+            this.economyButtons.forEach(btn => {
+                btn.hovered = this.isPointInRect(mouseX, mouseY, btn);
+            });
+            this.raceButtons.forEach(btn => {
+                btn.hovered = this.isPointInRect(mouseX, mouseY, btn);
+                if (btn.hovered) {
+                    const raceData = RACE_DATA[btn.race];
+                    this.showTooltip(mouseX, mouseY, raceData.name, raceData.description + '\nRasové bonusy: ' + Object.entries(raceData.bonuses).map(([skill, bonus]) => `${SKILL_DATA[skill].name} +${bonus}`).join(', '));
+                }
+            });
+            this.genderButtons.forEach(btn => {
+                btn.hovered = this.isPointInRect(mouseX, mouseY, btn);
+            });
+            this.backgroundButtons.forEach(btn => {
+                btn.hovered = this.isPointInRect(mouseX, mouseY, btn);
+                if (btn.hovered) {
+                    const backgroundData = BACKGROUND_DATA[btn.background];
+                    this.showTooltip(mouseX, mouseY, backgroundData.name, backgroundData.description + `\nBonus kredity: ${backgroundData.startingCredits}\nVybavení: ${backgroundData.startingEquipment.join(', ')}`);
+                }
+            });
+            this.skillButtons.forEach(btn => {
+                btn.hovered = this.isPointInRect(mouseX, mouseY, btn);
+                if (btn.hovered) {
+                    const skillData = SKILL_DATA[btn.skill];
+                    this.showTooltip(mouseX, mouseY, skillData.name, skillData.description);
+                }
+            });
+            this.shipButtons.forEach(btn => {
+                btn.hovered = this.isPointInRect(mouseX, mouseY, btn);
+                if (btn.hovered) {
+                    const shipData = SHIP_TEMPLATES[btn.shipType];
+                    this.showTooltip(mouseX, mouseY, shipData.name, shipData.description + `\nStat: Hull ${shipData.baseStats.hull}, Štíty ${shipData.baseStats.shields}, Rychlost ${shipData.baseStats.speed}, Náklad ${shipData.baseStats.cargo}\nZbraně: ${shipData.weapons.map(w => WEAPON_DATA[w].name).join(', ')}`);
+                }
+            });
+        }
+    }
+    handleTouchAndMouseClicks(input) {
+        let handled = false;
+        this.backButton.pressed = false;
+        this.nextButton.pressed = false;
+        this.startGameButton.pressed = false;
+        const mousePressed = input.mouse.justPressed;
+        const touchPressed = input.touches.size > 0;
+        if (mousePressed || touchPressed) {
+            let clickX = 0, clickY = 0;
+            if (mousePressed) {
+                const canvas = document.getElementById('gameCanvas');
+                if (canvas) {
+                    const rect = canvas.getBoundingClientRect();
+                    clickX = input.mouse.x - rect.left;
+                    clickY = input.mouse.y - rect.top;
+                }
+            }
+            else if (touchPressed) {
+                const touch = input.touches.values().next().value;
+                if (touch) {
+                    clickX = touch.x;
+                    clickY = touch.y;
+                }
+            }
+            if (this.currentStep > 0 && this.isPointInRect(clickX, clickY, this.backButton)) {
+                this.backButton.pressed = true;
+                this.currentStep--;
+                handled = true;
+            }
+            else if (this.canProceedFromCurrentStep() && this.isPointInRect(clickX, clickY, this.nextButton)) {
+                this.nextButton.pressed = true;
+                if (this.currentStep === this.steps.length - 1) {
+                    this.startGame();
+                }
+                else {
+                    this.currentStep++;
+                }
+                handled = true;
+            }
+            if (!handled) {
+                switch (this.currentStep) {
+                    case 0:
+                        this.difficultyButtons.forEach(btn => {
+                            if (this.isPointInRect(clickX, clickY, btn)) {
+                                this.selectedDifficulty = btn.difficulty;
+                                handled = true;
+                            }
+                        });
+                        break;
+                    case 1:
+                        this.galaxySizeButtons.forEach(btn => {
+                            if (this.isPointInRect(clickX, clickY, btn)) {
+                                this.galaxySettings.size = btn.size;
+                                handled = true;
+                            }
+                        });
+                        this.galaxyDensityButtons.forEach(btn => {
+                            if (this.isPointInRect(clickX, clickY, btn)) {
+                                this.galaxySettings.density = btn.density;
+                                handled = true;
+                            }
+                        });
+                        break;
+                    case 2:
+                        this.economyButtons.forEach(btn => {
+                            if (this.isPointInRect(clickX, clickY, btn)) {
+                                this.economySettings.complexity = btn.complexity;
+                                handled = true;
+                            }
+                        });
+                        break;
+                    case 3:
+                        if (this.isPointInRect(clickX, clickY, this.nameInputButton)) {
+                            this.isEditingName = !this.isEditingName;
+                            if (input.isMobile && this.isEditingName) {
+                                input.activateMobileTextInput(this.character.name, (newText) => {
+                                    this.character.name = newText.slice(0, 20);
+                                });
+                            }
+                            else if (input.isMobile && !this.isEditingName) {
+                                input.deactivateMobileTextInput();
+                            }
+                            handled = true;
+                        }
+                        if (this.isPointInRect(clickX, clickY, this.ageInputButton)) {
+                            this.character.age = Math.min(100, this.character.age + 1);
+                            if (this.character.age > 100)
+                                this.character.age = 18;
+                            handled = true;
+                        }
+                        this.genderButtons.forEach(btn => {
+                            if (this.isPointInRect(clickX, clickY, btn)) {
+                                this.character.gender = btn.gender;
+                                handled = true;
+                            }
+                        });
+                        this.raceButtons.forEach(btn => {
+                            if (this.isPointInRect(clickX, clickY, btn)) {
+                                this.character.race = btn.race;
+                                handled = true;
+                            }
+                        });
+                        this.backgroundButtons.forEach(btn => {
+                            if (this.isPointInRect(clickX, clickY, btn)) {
+                                this.character.background = btn.background;
+                                handled = true;
+                            }
+                        });
+                        break;
+                    case 4:
+                        this.skillButtons.forEach(btn => {
+                            if (this.isPointInRect(clickX, clickY, btn)) {
+                                const currentLevel = this.character.skills.get(btn.skill) || 1;
+                                const targetLevel = btn.level;
+                                const difference = targetLevel - currentLevel;
+                                if (difference <= this.remainingSkillPoints && targetLevel >= 1 && targetLevel <= 10) {
+                                    this.character.skills.set(btn.skill, targetLevel);
+                                    this.remainingSkillPoints -= difference;
+                                    handled = true;
+                                }
+                            }
+                        });
+                        break;
+                    case 5:
+                        this.shipButtons.forEach(btn => {
+                            if (this.isPointInRect(clickX, clickY, btn)) {
+                                this.selectedShip = btn.shipType;
+                                handled = true;
+                            }
+                        });
+                        break;
+                    case 6:
+                        if (this.isPointInRect(clickX, clickY, this.startGameButton)) {
+                            this.startGameButton.pressed = true;
+                            this.startGame();
+                            handled = true;
+                        }
+                        break;
+                }
+            }
+        }
+        return handled;
     }
     handleInput(input) {
+        this.updateHoverStates(input);
+        if (this.handleTouchAndMouseClicks(input)) {
+            return;
+        }
         if (input.wasKeyJustPressed('escape')) {
             const game = window.game;
             if (game) {
@@ -414,19 +1101,27 @@ class NewGameSetupState {
             }
             return;
         }
-        if (this.currentStep === 1) {
+        if (this.currentStep === 3) {
             if (input.wasKeyJustPressed('enter')) {
                 this.isEditingName = !this.isEditingName;
+                if (input.isMobile && this.isEditingName) {
+                    input.activateMobileTextInput(this.character.name, (newText) => {
+                        this.character.name = newText.slice(0, 20);
+                    });
+                }
+                else if (input.isMobile && !this.isEditingName) {
+                    input.deactivateMobileTextInput();
+                }
                 return;
             }
             if (this.isEditingName) {
                 input.keys.forEach((keyState, key) => {
-                    if (keyState.justPressed && key.length === 1 && this.playerName.length < 20) {
-                        this.playerName += key.toUpperCase();
+                    if (keyState.justPressed && key.length === 1 && this.character.name.length < 20) {
+                        this.character.name += key.toUpperCase();
                     }
                 });
-                if (input.wasKeyJustPressed('backspace') && this.playerName.length > 0) {
-                    this.playerName = this.playerName.slice(0, -1);
+                if (input.wasKeyJustPressed('backspace') && this.character.name.length > 0) {
+                    this.character.name = this.character.name.slice(0, -1);
                 }
                 if (input.wasKeyJustPressed('tab')) {
                     this.isEditingName = false;
@@ -437,7 +1132,7 @@ class NewGameSetupState {
         if (input.wasKeyJustPressed('arrowleft') && this.currentStep > 0) {
             this.currentStep--;
         }
-        if (input.wasKeyJustPressed('arrowright') && this.currentStep < this.steps.length - 1) {
+        if (input.wasKeyJustPressed('arrowright') && this.canProceedFromCurrentStep() && this.currentStep < this.steps.length - 1) {
             this.currentStep++;
         }
         switch (this.currentStep) {
@@ -451,7 +1146,7 @@ class NewGameSetupState {
                     this.selectedDifficulty = difficulties[newIndex];
                 }
                 break;
-            case 2:
+            case 5:
                 if (input.wasKeyJustPressed('arrowup') || input.wasKeyJustPressed('arrowdown') ||
                     input.wasKeyJustPressed('arrowleft') || input.wasKeyJustPressed('arrowright')) {
                     const ships = Object.values(ShipType);
@@ -468,7 +1163,7 @@ class NewGameSetupState {
                     this.selectedShip = ships[newIndex];
                 }
                 break;
-            case 3:
+            case 6:
                 if (input.wasKeyJustPressed('enter')) {
                     this.startGame();
                 }
@@ -480,9 +1175,11 @@ class NewGameSetupState {
         if (!game)
             return;
         this.gameSetup = {
-            playerName: this.playerName || 'Neznámý Pilot',
+            character: this.character,
             difficulty: this.selectedDifficulty,
             shipType: this.selectedShip,
+            galaxySettings: this.galaxySettings,
+            economySettings: this.economySettings,
             startingResources: DIFFICULTY_SETTINGS[this.selectedDifficulty].startingResources
         };
         window.gameSetup = this.gameSetup;
@@ -504,7 +1201,7 @@ class PlayingState {
             game.player.maxShields = shipTemplate.baseStats.shields;
             game.player.shields = shipTemplate.baseStats.shields;
             game.player.maxCargoWeight = shipTemplate.baseStats.cargo;
-            console.log(`Game started as ${gameSetup.playerName} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
+            console.log(`Game started as ${gameSetup.character.name} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
         }
     }
     update(deltaTime) {

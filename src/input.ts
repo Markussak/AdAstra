@@ -39,11 +39,17 @@ export class InputManager implements IInputManager {
 
   private joystickTouchId: number | null = null;
   private canvas: HTMLCanvasElement | null = null;
+  
+  // Mobile text input support
+  private mobileTextInput: HTMLInputElement | null = null;
+  private textInputCallback: ((text: string) => void) | null = null;
+  private textInputActive: boolean = false;
 
   constructor() {
     this.isMobile = this.detectMobile();
     this.setupEventListeners();
     this.initializeTouchControls();
+    this.setupMobileTextInput();
   }
 
   private detectMobile(): boolean {
@@ -98,6 +104,78 @@ export class InputManager implements IInputManager {
       document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
       document.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
     }
+  }
+
+  private setupMobileTextInput(): void {
+    if (this.isMobile) {
+      // Create hidden input element for mobile text input
+      this.mobileTextInput = document.createElement('input');
+      this.mobileTextInput.type = 'text';
+      this.mobileTextInput.style.position = 'absolute';
+      this.mobileTextInput.style.left = '-9999px';
+      this.mobileTextInput.style.top = '-9999px';
+      this.mobileTextInput.style.opacity = '0';
+      this.mobileTextInput.style.pointerEvents = 'none';
+      this.mobileTextInput.autocomplete = 'off';
+      this.mobileTextInput.autocorrect = 'off' as any;
+      this.mobileTextInput.autocapitalize = 'off';
+      this.mobileTextInput.spellcheck = false;
+      
+      document.body.appendChild(this.mobileTextInput);
+      
+      // Handle input events
+      this.mobileTextInput.addEventListener('input', (e) => {
+        if (this.textInputCallback && this.textInputActive) {
+          this.textInputCallback(this.mobileTextInput!.value);
+        }
+      });
+      
+      // Handle keyboard hide/show
+      this.mobileTextInput.addEventListener('blur', () => {
+        this.textInputActive = false;
+      });
+    }
+  }
+
+  public activateMobileTextInput(currentText: string, callback: (text: string) => void): void {
+    if (this.mobileTextInput && this.isMobile) {
+      this.mobileTextInput.value = currentText;
+      this.textInputCallback = callback;
+      this.textInputActive = true;
+      
+      // Show the input temporarily and focus it
+      this.mobileTextInput.style.left = '50%';
+      this.mobileTextInput.style.top = '50%';
+      this.mobileTextInput.style.transform = 'translate(-50%, -50%)';
+      this.mobileTextInput.style.zIndex = '9999';
+      this.mobileTextInput.style.opacity = '0.1';
+      this.mobileTextInput.style.pointerEvents = 'auto';
+      
+      this.mobileTextInput.focus();
+      this.mobileTextInput.select();
+      
+      // Hide it again after a short delay, but keep it focused
+      setTimeout(() => {
+        if (this.mobileTextInput) {
+          this.mobileTextInput.style.left = '-9999px';
+          this.mobileTextInput.style.top = '-9999px';
+          this.mobileTextInput.style.opacity = '0';
+          this.mobileTextInput.style.pointerEvents = 'none';
+        }
+      }, 100);
+    }
+  }
+
+  public deactivateMobileTextInput(): void {
+    if (this.mobileTextInput && this.isMobile) {
+      this.textInputActive = false;
+      this.mobileTextInput.blur();
+      this.textInputCallback = null;
+    }
+  }
+
+  public isMobileTextInputActive(): boolean {
+    return this.textInputActive;
   }
 
   private handleKeyDown(event: KeyboardEvent): void {

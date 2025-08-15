@@ -177,10 +177,92 @@ export interface StatusPanel {
     width: number;
     color: string;
 }
+export declare enum CharacterGender {
+    MALE = "male",
+    FEMALE = "female",
+    NON_BINARY = "nonBinary",
+    OTHER = "other"
+}
+export declare enum CharacterRace {
+    HUMAN = "human",
+    TERRAN = "terran",
+    ZEPHYRIAN = "zephyrian",
+    CRYSTALLINE = "crystalline",
+    VORTHAN = "vorthan",
+    AQUARIAN = "aquarian",
+    MECHANO = "mechano",
+    ETHEREAL = "ethereal",
+    DRAKONID = "drakonid",
+    SYLVAN = "sylvan"
+}
+export declare enum CharacterSkill {
+    PILOTING = "piloting",
+    ENGINEERING = "engineering",
+    COMBAT = "combat",
+    TRADING = "trading",
+    DIPLOMACY = "diplomacy",
+    EXPLORATION = "exploration",
+    MINING = "mining",
+    RESEARCH = "research",
+    STEALTH = "stealth",
+    LEADERSHIP = "leadership"
+}
+export declare enum CharacterBackground {
+    MILITARY_PILOT = "militaryPilot",
+    MERCHANT = "merchant",
+    EXPLORER = "explorer",
+    SCIENTIST = "scientist",
+    ENGINEER = "engineer",
+    BOUNTY_HUNTER = "bountyHunter",
+    DIPLOMAT = "diplomat",
+    MINER = "miner",
+    SMUGGLER = "smuggler",
+    REFUGEE = "refugee"
+}
+export declare enum GalaxySize {
+    SMALL = "small",
+    MEDIUM = "medium",
+    LARGE = "large",
+    HUGE = "huge"
+}
+export declare enum GalaxyDensity {
+    SPARSE = "sparse",
+    NORMAL = "normal",
+    DENSE = "dense",
+    PACKED = "packed"
+}
+export declare enum EconomyComplexity {
+    SIMPLE = "simple",
+    MODERATE = "moderate",
+    COMPLEX = "complex",
+    REALISTIC = "realistic"
+}
+export interface CharacterCreation {
+    name: string;
+    age: number;
+    gender: CharacterGender;
+    race: CharacterRace;
+    skills: Map<CharacterSkill, number>;
+    background: CharacterBackground;
+}
+export interface GalaxySettings {
+    size: GalaxySize;
+    density: GalaxyDensity;
+    factionCount: number;
+    hostilityLevel: number;
+}
+export interface EconomySettings {
+    complexity: EconomyComplexity;
+    marketVolatility: number;
+    tradeRouteFrequency: number;
+    pirateActivity: number;
+}
 export interface GameSetup {
-    playerName: string;
+    character: CharacterCreation;
     difficulty: DifficultyLevel;
     shipType: ShipType;
+    galaxySettings: GalaxySettings;
+    economySettings: EconomySettings;
     startingResources: {
         fuel: number;
         energy: number;
@@ -407,6 +489,9 @@ export interface IInputManager {
     setTouchControlsEnabled(enabled: boolean): void;
     renderTouchControls(renderer: any): void;
     update(): void;
+    activateMobileTextInput(currentText: string, callback: (text: string) => void): void;
+    deactivateMobileTextInput(): void;
+    isMobileTextInputActive(): boolean;
 }
 export interface IGameObject {
     position: Vector2D;
