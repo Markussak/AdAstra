@@ -1688,7 +1688,7 @@ class PlayingState implements IGameState {
 
 class PausedState implements IGameState {
   private selectedOption: number = 0;
-  private menuOptions: string[] = ['POKRAČOVAT', 'NASTAVENÍ', 'HLAVNÍ MENU', 'UKONČIT'];
+  private menuOptions: string[] = ['POKRAČOVAT', 'ULOŽIT HRU', 'NAČÍST HRU', 'NASTAVENÍ', 'HLAVNÍ MENU', 'UKONČIT'];
 
   public enter(): void {
     console.log('Game paused');
@@ -1703,26 +1703,55 @@ class PausedState implements IGameState {
     const width = renderer.getWidth();
     const height = renderer.getHeight();
     
-    // Semi-transparent overlay
-    renderer.getContext().fillStyle = 'rgba(0, 0, 0, 0.7)';
+    // Semi-transparent overlay with enhanced retro effect
+    renderer.getContext().fillStyle = 'rgba(0, 0, 0, 0.8)';
     renderer.getContext().fillRect(0, 0, width, height);
     
-    renderer.drawText('HRA POZASTAVENA', width/2, height/2 - 100, '#ff8c00', 'bold 32px "Big Apple 3PM", monospace');
+    // Enhanced pause title with glow effect
+    renderer.getContext().shadowColor = '#ffc357';
+    renderer.getContext().shadowBlur = 10;
+    renderer.drawText('HRA POZASTAVENA', width/2, height/2 - 120, '#ffc357', 'bold 36px "Big Apple 3PM", monospace');
+    renderer.getContext().shadowBlur = 0;
     
-    // Menu options
-    const startY = height/2 + 20;
-    const spacing = 50;
+    // Menu background panel
+    const menuWidth = 400;
+    const menuHeight = this.menuOptions.length * 50 + 40;
+    const menuX = width/2 - menuWidth/2;
+    const menuY = height/2 - 40;
+    
+    renderer.drawRect(menuX, menuY, menuWidth, menuHeight, 'rgba(26, 28, 32, 0.9)');
+    renderer.strokeRect(menuX, menuY, menuWidth, menuHeight, '#434c55', 2);
+    
+    // Menu options with enhanced styling
+    const startY = height/2;
+    const spacing = 45;
 
     this.menuOptions.forEach((option, index) => {
       const y = startY + index * spacing;
       const isSelected = index === this.selectedOption;
       
       if (isSelected) {
-        renderer.drawText('▶ ' + option + ' ◀', width/2, y, '#00ffff', 'bold 20px "Big Apple 3PM", monospace');
+        // Selection highlight background
+        renderer.drawRect(menuX + 10, y - 18, menuWidth - 20, 36, 'rgba(95, 158, 158, 0.3)');
+        renderer.strokeRect(menuX + 10, y - 18, menuWidth - 20, 36, '#5f9e9e', 1);
+        
+        renderer.drawText('▶ ' + option + ' ◀', width/2, y, '#52de44', 'bold 20px "Big Apple 3PM", monospace');
       } else {
-        renderer.drawText(option, width/2, y, '#dcd0c0', '18px "Big Apple 3PM", monospace');
+        renderer.drawText(option, width/2, y, '#a2aab2', '18px "Big Apple 3PM", monospace');
       }
     });
+    
+    // Controls hint
+    renderer.drawText('↑↓ Navigace | ENTER Výběr | ESC Pokračovat', width/2, height - 80, '#5a6978', '14px "Big Apple 3PM", monospace');
+    
+    // Show temporary message if exists
+    const message = (this as any).message;
+    if (message && Date.now() - message.time < 2000) {
+      renderer.getContext().shadowColor = message.color;
+      renderer.getContext().shadowBlur = 5;
+      renderer.drawText(message.text, width/2, height/2 + 200, message.color, 'bold 24px "Big Apple 3PM", monospace');
+      renderer.getContext().shadowBlur = 0;
+    }
   }
 
   public handleInput(input: IInputManager): void {
@@ -1757,20 +1786,75 @@ class PausedState implements IGameState {
       case 0: // POKRAČOVAT
         game.stateManager.setState(GameState.PLAYING);
         break;
-      case 1: // NASTAVENÍ
-        console.log('Settings not implemented yet');
+      case 1: // ULOŽIT HRU
+        this.quickSave(game);
         break;
-      case 2: // HLAVNÍ MENU
+      case 2: // NAČÍST HRU
+        this.showLoadMenu(game);
+        break;
+      case 3: // NASTAVENÍ
+        game.stateManager.setState(GameState.SETTINGS);
+        break;
+      case 4: // HLAVNÍ MENU
         if (confirm('Opravdu se chcete vrátit do hlavního menu? Neuložený postup bude ztracen.')) {
           game.stateManager.setState(GameState.MAIN_MENU);
         }
         break;
-      case 3: // UKONČIT
+      case 5: // UKONČIT
         if (confirm('Opravdu chcete ukončit hru? Neuložený postup bude ztracen.')) {
           window.close();
         }
         break;
     }
+  }
+
+  private quickSave(game: any): void {
+    try {
+      // Find next available slot or use slot 1
+      const saveList = SaveSystem.getSaveList();
+      const nextSlot = saveList.length > 0 ? saveList.length + 1 : 1;
+      
+      const saveData = SaveSystem.createSaveData(game);
+      SaveSystem.saveGame(nextSlot, saveData);
+      
+      // Show save confirmation briefly
+      this.showMessage('HRA ULOŽENA', '#52de44');
+      
+      console.log(`Game saved to slot ${nextSlot}`);
+    } catch (error) {
+      console.error('Failed to save game:', error);
+      this.showMessage('CHYBA PĜI UKLÁDÁNÍ', '#d43d3d');
+    }
+  }
+
+  private showLoadMenu(game: any): void {
+    const saveList = SaveSystem.getSaveList();
+    if (saveList.length === 0) {
+      this.showMessage('ŽÁDNÉ ULOŽENÉ HRY', '#ffc357');
+      return;
+    }
+
+    // For now, load the most recent save
+    // TODO: Implement proper load menu with save slot selection
+    try {
+      const mostRecentSave = saveList[0];
+      const saveData = SaveSystem.loadGame(mostRecentSave.slot);
+      if (saveData) {
+        SaveSystem.applySaveData(game, saveData);
+        game.stateManager.setState(GameState.PLAYING);
+        this.showMessage('HRA NAČTENA', '#52de44');
+      } else {
+        this.showMessage('CHYBA PĜI NAČÍTÁNÍ', '#d43d3d');
+      }
+    } catch (error) {
+      console.error('Failed to load game:', error);
+      this.showMessage('CHYBA PĜI NAČÍTÁNÍ', '#d43d3d');
+    }
+  }
+
+  private showMessage(text: string, color: string): void {
+    // Store the message to display temporarily
+    (this as any).message = { text, color, time: Date.now() };
   }
 }
 
@@ -2197,7 +2281,7 @@ class StatusBar implements IStatusBar {
 
   public update(player: IPlayerShip): void {
     const screenHeight = this.renderer.getHeight();
-    this.height = Math.floor(screenHeight * 0.12); // Smaller, more compact
+    this.height = Math.floor(screenHeight * 0.15); // Increased for button panel and more content
   }
 
   public render(player: IPlayerShip): void {
@@ -2211,11 +2295,20 @@ class StatusBar implements IStatusBar {
     // Draw ship status section
     this.drawShipStatus(player, 20, statusY + 8);
     
-    // Draw system information
-    this.drawSystemInfo(player, screenWidth / 2 - 100, statusY + 8);
+    // Draw weapon and cargo status
+    this.drawWeaponCargoStatus(player, 240, statusY + 8);
+    
+    // Draw system information and time
+    this.drawSystemInfo(player, screenWidth / 2 - 80, statusY + 8);
+    
+    // Draw mission and quest status
+    this.drawMissionStatus(player, screenWidth / 2 + 120, statusY + 8);
     
     // Draw radar and navigation
     this.drawRadarSection(player, screenWidth - 160, statusY + 8);
+    
+    // Draw functional buttons
+    this.drawFunctionalButtons(screenWidth, statusY);
   }
 
   private drawMainPanel(screenWidth: number, statusY: number): void {
@@ -2592,12 +2685,194 @@ class StatusBar implements IStatusBar {
     ctx.fillText('2K', radarX + radarSize + 8, radarY + 55);
     
     // Navigation info
-    ctx.fillStyle = this.colors.textSecondary;
+    ctx.fillStyle = this.colors.textGreenDim;
     ctx.font = '6px "Big Apple 3PM", monospace';
     ctx.textAlign = 'left';
     ctx.fillText('RANGE: 1000U', x + 60, y + 25);
     ctx.fillText('CONTACTS: 0', x + 60, y + 35);
     ctx.fillText('THREAT: LOW', x + 60, y + 45);
+  }
+
+  private drawWeaponCargoStatus(player: IPlayerShip, x: number, y: number): void {
+    const ctx = this.renderer.getContext();
+    
+    // Weapon systems CRT bezel
+    this.drawCRTBezel(ctx, x - 5, y - 5, 180, 70);
+    
+    // Section header with red glow
+    ctx.fillStyle = this.colors.statusRed;
+    ctx.font = 'bold 8px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'left';
+    ctx.shadowBlur = 3;
+    ctx.shadowColor = this.colors.statusRed;
+    ctx.fillText('>>> WEAPONS <<<', x + 5, y + 10);
+    ctx.shadowBlur = 0;
+    
+    // Weapon status indicators
+    const weapons = [
+      { name: 'PLS', charge: 85, active: true },  // Plasma
+      { name: 'LSR', charge: 92, active: true },  // Laser
+      { name: 'MSL', charge: 12, active: false }, // Missiles
+      { name: 'TRP', charge: 0, active: false }   // Torpedoes
+    ];
+    
+    for (let i = 0; i < weapons.length; i++) {
+      const weapon = weapons[i];
+      const weaponY = y + 20 + i * 9;
+      
+      // Weapon indicator light
+      ctx.fillStyle = this.colors.borderDark;
+      ctx.fillRect(x + 5, weaponY, 6, 6);
+      
+      const lightColor = weapon.active ? this.colors.statusRed : this.colors.statusOff;
+      if (weapon.active) {
+        ctx.shadowBlur = 2;
+        ctx.shadowColor = lightColor;
+      }
+      ctx.fillStyle = lightColor;
+      ctx.fillRect(x + 6, weaponY + 1, 4, 4);
+      ctx.shadowBlur = 0;
+      
+      // Weapon name
+      ctx.fillStyle = weapon.active ? this.colors.statusRed : this.colors.textGray;
+      ctx.font = '6px "Big Apple 3PM", monospace';
+      ctx.fillText(weapon.name, x + 15, weaponY + 5);
+      
+      // Charge bar
+      const chargeWidth = 60;
+      ctx.fillStyle = this.colors.borderDark;
+      ctx.fillRect(x + 35, weaponY, chargeWidth + 2, 6);
+      
+      if (weapon.charge > 0) {
+        const fillWidth = (chargeWidth * weapon.charge) / 100;
+        ctx.fillStyle = weapon.active ? this.colors.statusRed : this.colors.textGray;
+        ctx.fillRect(x + 36, weaponY + 1, fillWidth, 4);
+      }
+      
+      // Charge percentage
+      ctx.fillStyle = this.colors.textAmberDim;
+      ctx.font = '5px "Big Apple 3PM", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${weapon.charge}%`, x + 170, weaponY + 5);
+    }
+    
+    // Cargo summary
+    ctx.fillStyle = this.colors.textAmber;
+    ctx.font = 'bold 6px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('CARGO: 15/50 TONS', x + 5, y + 62);
+  }
+
+  private drawMissionStatus(player: IPlayerShip, x: number, y: number): void {
+    const ctx = this.renderer.getContext();
+    
+    // Mission CRT bezel
+    this.drawCRTBezel(ctx, x - 5, y - 5, 160, 70);
+    
+    // Section header with amber glow
+    ctx.fillStyle = this.colors.textAmber;
+    ctx.font = 'bold 8px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'left';
+    ctx.shadowBlur = 3;
+    ctx.shadowColor = this.colors.textAmber;
+    ctx.fillText('>>> MISSION <<<', x + 5, y + 10);
+    ctx.shadowBlur = 0;
+    
+    // Current mission info
+    ctx.fillStyle = this.colors.textAmberDim;
+    ctx.font = '6px "Big Apple 3PM", monospace';
+    ctx.fillText('PRIMARY: EXPLORATION', x + 5, y + 22);
+    ctx.fillText('STATUS: IN PROGRESS', x + 5, y + 32);
+    ctx.fillText('PROGRESS: 23%', x + 5, y + 42);
+    
+    // Mission timer
+    const gameTime = new Date(Date.now());
+    const hours = gameTime.getHours().toString().padStart(2, '0');
+    const minutes = gameTime.getMinutes().toString().padStart(2, '0');
+    const seconds = gameTime.getSeconds().toString().padStart(2, '0');
+    
+    ctx.fillStyle = this.colors.statusBlue;
+    ctx.font = 'bold 7px "Big Apple 3PM", monospace';
+    ctx.fillText(`TIME: ${hours}:${minutes}:${seconds}`, x + 5, y + 54);
+    
+    // Credits display
+    ctx.fillStyle = this.colors.statusGreen;
+    ctx.fillText('CREDITS: 2,847', x + 5, y + 62);
+  }
+
+  private drawFunctionalButtons(screenWidth: number, statusY: number): void {
+    const ctx = this.renderer.getContext();
+    
+    // Button panel background
+    const buttonPanelY = statusY - 25;
+    ctx.fillStyle = this.colors.chassisPrimary;
+    ctx.fillRect(0, buttonPanelY, screenWidth, 25);
+    
+    ctx.fillStyle = this.colors.borderDark;
+    ctx.fillRect(0, buttonPanelY, screenWidth, 1);
+    
+    // Function buttons with enhanced styling
+    const buttons = [
+      { label: 'INV', key: 'I', active: false },
+      { label: 'MAP', key: 'M', active: false },
+      { label: 'LOG', key: 'L', active: false },
+      { label: 'COM', key: 'C', active: true },
+      { label: 'TRD', key: 'T', active: false },
+      { label: 'OPT', key: 'O', active: false }
+    ];
+    
+    const buttonWidth = 60;
+    const buttonSpacing = 80;
+    const startX = 50;
+    
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i];
+      const buttonX = startX + i * buttonSpacing;
+      const buttonY = buttonPanelY + 5;
+      
+      // Button housing with industrial styling
+      ctx.fillStyle = button.active ? this.colors.chassisLight : this.colors.chassisMidtone;
+      ctx.fillRect(buttonX, buttonY, buttonWidth, 15);
+      
+      // Button border
+      ctx.strokeStyle = this.colors.borderPrimary;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(buttonX, buttonY, buttonWidth, 15);
+      
+      // Button label
+      ctx.fillStyle = button.active ? this.colors.statusGreen : this.colors.textGray;
+      ctx.font = 'bold 7px "Big Apple 3PM", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(button.label, buttonX + buttonWidth/2, buttonY + 10);
+      
+      // Hotkey indicator
+      ctx.fillStyle = this.colors.textAmberDim;
+      ctx.font = '5px "Big Apple 3PM", monospace';
+      ctx.fillText(`[${button.key}]`, buttonX + buttonWidth/2, buttonY + 18);
+      
+      // Active indicator light
+      if (button.active) {
+        ctx.fillStyle = this.colors.statusGreen;
+        ctx.shadowBlur = 2;
+        ctx.shadowColor = this.colors.statusGreen;
+        ctx.fillRect(buttonX + 2, buttonY + 2, 3, 3);
+        ctx.shadowBlur = 0;
+      }
+    }
+    
+    // System clock in top right
+    const gameTime = new Date(Date.now());
+    const timeString = gameTime.toLocaleTimeString('en-US', { hour12: false });
+    
+    ctx.fillStyle = this.colors.textAmber;
+    ctx.font = 'bold 8px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`SYSTEM TIME: ${timeString}`, screenWidth - 20, buttonPanelY + 15);
+    
+    // Performance indicator
+    ctx.fillStyle = this.colors.statusGreen;
+    ctx.font = '6px "Big Apple 3PM", monospace';
+    ctx.fillText('60 FPS', screenWidth - 20, buttonPanelY + 8);
   }
 }
 

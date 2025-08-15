@@ -457,9 +457,12 @@ export interface ShieldEffect extends VisualEffect {
 }
 
 export interface WarpEffect extends VisualEffect {
-  phase: 'charging' | 'bubble' | 'distortion' | 'collapse' | 'accretion';
+  phase: 'charging' | 'blackhole' | 'distortion' | 'collapse';
   bubbleRadius: number;
   distortionLevel: number;
+  accretionDiskRadius: number;
+  gravitationalLensing: number;
+  spacetimeDistortion: number;
 }
 
 export interface EngineEffect extends VisualEffect {
