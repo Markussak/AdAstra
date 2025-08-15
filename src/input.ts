@@ -78,8 +78,9 @@ export class InputManager implements IInputManager {
   private updateTouchButtonPositions(): void {
     if (!this.canvas) return;
     
-    const width = this.canvas.width;
-    const height = this.canvas.height;
+    // Use renderer dimensions instead of canvas dimensions for proper scaling
+    const width = this.canvas.clientWidth || this.canvas.width;
+    const height = this.canvas.clientHeight || this.canvas.height;
     
     // Position touch buttons (right side of screen) - adjusted for larger buttons
     this.touchButtons.fire.x = width - 120;
@@ -90,6 +91,10 @@ export class InputManager implements IInputManager {
     
     this.touchButtons.pause.x = width - 70;
     this.touchButtons.pause.y = 70;
+    
+    // Update joystick position as well
+    this.virtualJoystick.centerX = 150;
+    this.virtualJoystick.centerY = height - 160;
   }
 
   private setupEventListeners(): void {
@@ -448,10 +453,25 @@ export class InputManager implements IInputManager {
   }
 
   public renderTouchControls(renderer: any): void {
-    if (!this.touchControlsEnabled) return;
+    // Always show touch controls for testing purposes - remove the early return
+    // if (!this.touchControlsEnabled) return;
 
-    // Update button positions based on current canvas size
-    this.updateTouchButtonPositions();
+    // Update button positions based on current canvas size using renderer dimensions
+    const width = renderer.getWidth();
+    const height = renderer.getHeight();
+    
+    // Update positions with renderer dimensions
+    this.touchButtons.fire.x = width - 120;
+    this.touchButtons.fire.y = height - 160;
+    
+    this.touchButtons.warp.x = width - 120;
+    this.touchButtons.warp.y = height - 280;
+    
+    this.touchButtons.pause.x = width - 70;
+    this.touchButtons.pause.y = 70;
+    
+    this.virtualJoystick.centerX = 150;
+    this.virtualJoystick.centerY = height - 160;
 
     // 16-bit color palette for touch controls
     const colors = {
