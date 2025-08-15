@@ -180,8 +180,21 @@ class MainMenuState {
     render(renderer) {
         const width = renderer.getWidth();
         const height = renderer.getHeight();
-        renderer.drawImage('/assets/main-menu-bg.jpg', 0, 0, width, height);
-        renderer.getContext().fillStyle = 'rgba(0, 0, 0, 0.4)';
+        renderer.clear('#0a0a1a');
+        for (let i = 0; i < 200; i++) {
+            const x = (i * 123.456) % width;
+            const y = (i * 789.123) % height;
+            const alpha = Math.sin(Date.now() * 0.001 + i) * 0.3 + 0.7;
+            renderer.getContext().globalAlpha = alpha * 0.4;
+            const size = Math.random() > 0.8 ? 2 : 1;
+            renderer.drawRect(x, y, size, size, '#606060');
+        }
+        renderer.getContext().globalAlpha = 1.0;
+        const gradient = renderer.getContext().createRadialGradient(width / 2, height / 3, 0, width / 2, height / 3, width);
+        gradient.addColorStop(0, 'rgba(64, 32, 128, 0.1)');
+        gradient.addColorStop(0.5, 'rgba(32, 16, 64, 0.05)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        renderer.getContext().fillStyle = gradient;
         renderer.getContext().fillRect(0, 0, width, height);
         renderer.getContext().shadowColor = '#404040';
         renderer.getContext().shadowBlur = 0;
@@ -277,8 +290,16 @@ class NewGameSetupState {
     render(renderer) {
         const width = renderer.getWidth();
         const height = renderer.getHeight();
-        renderer.drawImage('/assets/setup-bg.jpg', 0, 0, width, height);
-        renderer.getContext().fillStyle = 'rgba(0, 0, 0, 0.6)';
+        renderer.clear('#0a0a15');
+        for (let i = 0; i < 150; i++) {
+            const x = (i * 87.456) % width;
+            const y = (i * 543.123) % height;
+            const alpha = Math.sin(Date.now() * 0.0008 + i) * 0.2 + 0.5;
+            renderer.getContext().globalAlpha = alpha * 0.3;
+            renderer.drawRect(x, y, 1, 1, '#505060');
+        }
+        renderer.getContext().globalAlpha = 1.0;
+        renderer.getContext().fillStyle = 'rgba(16, 16, 32, 0.7)';
         renderer.getContext().fillRect(0, 0, width, height);
         renderer.drawText('NASTAVENÍ NOVÉ HRY', width / 2, 100, '#606060', 'bold 36px "Big Apple 3PM", monospace');
         const stepY = 150;
