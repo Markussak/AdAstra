@@ -137,8 +137,8 @@ class LoadingState {
             renderer.drawRect(x, y, 1, 1, '#ffffff');
         }
         renderer.getContext().globalAlpha = 1.0;
-        renderer.drawText('STAR DUST VOYAGER', width / 2, height / 2 - 150, '#00ffff', 'bold 48px monospace');
-        renderer.drawText('GALAXY WANDERER', width / 2, height / 2 - 100, '#5f9e9e', '24px monospace');
+        renderer.drawText('STAR DUST VOYAGER', width / 2, height / 2 - 150, '#00ffff', 'bold 48px "Big Apple 3PM", monospace');
+        renderer.drawText('GALAXY WANDERER', width / 2, height / 2 - 100, '#5f9e9e', '24px "Big Apple 3PM", monospace');
         const barWidth = 400;
         const barHeight = 20;
         const barX = width / 2 - barWidth / 2;
@@ -151,8 +151,8 @@ class LoadingState {
         gradient.addColorStop(1, '#0088cc');
         renderer.getContext().fillStyle = gradient;
         renderer.getContext().fillRect(barX, barY, fillWidth, barHeight);
-        renderer.drawText(this.loadingTexts[this.currentTextIndex], width / 2, height / 2 + 100, '#dcd0c0', '14px monospace');
-        renderer.drawText(`${Math.round(this.progress)}%`, width / 2, height / 2 + 130, '#5f9e9e', '12px monospace');
+        renderer.drawText(this.loadingTexts[this.currentTextIndex], width / 2, height / 2 + 100, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        renderer.drawText(`${Math.round(this.progress)}%`, width / 2, height / 2 + 130, '#5f9e9e', '12px "Big Apple 3PM", monospace');
     }
     handleInput(input) {
     }
@@ -180,8 +180,8 @@ class MainMenuState {
         const titleGlow = Math.sin(this.animationTime * 2) * 0.3 + 0.7;
         renderer.getContext().shadowColor = '#00ffff';
         renderer.getContext().shadowBlur = 20 * titleGlow;
-        renderer.drawText('STAR DUST VOYAGER', width / 2, height / 4, '#00ffff', 'bold 64px monospace');
-        renderer.drawText('GALAXY WANDERER', width / 2, height / 4 + 60, '#5f9e9e', '32px monospace');
+        renderer.drawText('STAR DUST VOYAGER', width / 2, height / 4, '#00ffff', 'bold 64px "Big Apple 3PM", monospace');
+        renderer.drawText('GALAXY WANDERER', width / 2, height / 4 + 60, '#5f9e9e', '32px "Big Apple 3PM", monospace');
         renderer.getContext().shadowBlur = 0;
         const startY = height / 2 + 50;
         const spacing = 60;
@@ -190,14 +190,14 @@ class MainMenuState {
             const isSelected = index === this.selectedOption;
             if (isSelected) {
                 renderer.drawRect(width / 2 - 200, y - 25, 400, 50, 'rgba(0, 255, 255, 0.2)');
-                renderer.drawText('▶ ' + option + ' ◀', width / 2, y, '#00ffff', 'bold 24px monospace');
+                renderer.drawText('▶ ' + option + ' ◀', width / 2, y, '#00ffff', 'bold 24px "Big Apple 3PM", monospace');
             }
             else {
-                renderer.drawText(option, width / 2, y, '#dcd0c0', '20px monospace');
+                renderer.drawText(option, width / 2, y, '#dcd0c0', '20px "Big Apple 3PM", monospace');
             }
         });
-        renderer.drawText('v2.0.0', width - 100, height - 30, '#666666', '12px monospace');
-        renderer.drawText('↑↓ Navigace | ENTER Výběr | ESC Zpět', width / 2, height - 50, '#888888', '14px monospace');
+        renderer.drawText('v2.0.0', width - 100, height - 30, '#666666', '12px "Big Apple 3PM", monospace');
+        renderer.drawText('↑↓ Navigace | ENTER Výběr | ESC Zpět', width / 2, height - 50, '#888888', '14px "Big Apple 3PM", monospace');
     }
     handleInput(input) {
         if (input.wasKeyJustPressed('arrowup') || input.wasKeyJustPressed('w')) {
@@ -275,7 +275,7 @@ class NewGameSetupState {
         renderer.drawImage('/assets/setup-bg.jpg', 0, 0, width, height);
         renderer.getContext().fillStyle = 'rgba(0, 0, 0, 0.6)';
         renderer.getContext().fillRect(0, 0, width, height);
-        renderer.drawText('NASTAVENÍ NOVÉ HRY', width / 2, 100, '#00ffff', 'bold 36px monospace');
+        renderer.drawText('NASTAVENÍ NOVÉ HRY', width / 2, 100, '#00ffff', 'bold 36px "Big Apple 3PM", monospace');
         const stepY = 150;
         this.steps.forEach((step, index) => {
             const x = (width / this.steps.length) * (index + 0.5);
@@ -286,7 +286,7 @@ class NewGameSetupState {
                 color = '#00ff00';
             if (isActive)
                 color = '#00ffff';
-            renderer.drawText(`${index + 1}. ${step}`, x, stepY, color, isActive ? 'bold 18px monospace' : '16px monospace');
+            renderer.drawText(`${index + 1}. ${step}`, x, stepY, color, isActive ? 'bold 18px "Big Apple 3PM", monospace' : '16px "Big Apple 3PM", monospace');
         });
         switch (this.currentStep) {
             case 0:
@@ -302,12 +302,12 @@ class NewGameSetupState {
                 this.renderSummary(renderer);
                 break;
         }
-        renderer.drawText('←→ Navigace | ENTER Potvrdit | ESC Zpět', width / 2, height - 50, '#888888', '14px monospace');
+        renderer.drawText('←→ Navigace | ENTER Potvrdit | ESC Zpět', width / 2, height - 50, '#888888', '14px "Big Apple 3PM", monospace');
     }
     renderDifficultySelection(renderer) {
         const width = renderer.getWidth();
         const startY = 250;
-        renderer.drawText('VYBERTE OBTÍŽNOST', width / 2, startY, '#dcd0c0', 'bold 24px monospace');
+        renderer.drawText('VYBERTE OBTÍŽNOST', width / 2, startY, '#dcd0c0', 'bold 24px "Big Apple 3PM", monospace');
         Object.values(DifficultyLevel).forEach((difficulty, index) => {
             const settings = DIFFICULTY_SETTINGS[difficulty];
             const y = startY + 80 + index * 80;
@@ -316,31 +316,31 @@ class NewGameSetupState {
                 renderer.drawRect(width / 2 - 400, y - 30, 800, 60, 'rgba(0, 255, 255, 0.2)');
             }
             const color = isSelected ? '#00ffff' : '#dcd0c0';
-            renderer.drawText(settings.name, width / 2 - 200, y, color, isSelected ? 'bold 20px monospace' : '18px monospace');
-            renderer.drawText(settings.description, width / 2 + 50, y, color, '14px monospace');
+            renderer.drawText(settings.name, width / 2 - 200, y, color, isSelected ? 'bold 20px "Big Apple 3PM", monospace' : '18px "Big Apple 3PM", monospace');
+            renderer.drawText(settings.description, width / 2 + 50, y, color, '14px "Big Apple 3PM", monospace');
         });
     }
     renderCharacterCreation(renderer) {
         const width = renderer.getWidth();
         const startY = 250;
-        renderer.drawText('VYTVOŘENÍ POSTAVY', width / 2, startY, '#dcd0c0', 'bold 24px monospace');
-        renderer.drawText('Jméno pilota:', width / 2 - 100, startY + 80, '#dcd0c0', '18px monospace');
+        renderer.drawText('VYTVOŘENÍ POSTAVY', width / 2, startY, '#dcd0c0', 'bold 24px "Big Apple 3PM", monospace');
+        renderer.drawText('Jméno pilota:', width / 2 - 100, startY + 80, '#dcd0c0', '18px "Big Apple 3PM", monospace');
         const nameBoxColor = this.isEditingName ? '#00ffff' : '#666666';
         renderer.drawRect(width / 2 - 150, startY + 100, 300, 40, 'rgba(0, 0, 0, 0.5)');
         renderer.drawRect(width / 2 - 150, startY + 100, 300, 40, nameBoxColor);
         const displayName = this.playerName || 'Zadejte jméno...';
         const nameColor = this.playerName ? '#ffffff' : '#888888';
-        renderer.drawText(displayName, width / 2, startY + 125, nameColor, '16px monospace');
+        renderer.drawText(displayName, width / 2, startY + 125, nameColor, '16px "Big Apple 3PM", monospace');
         if (this.isEditingName) {
             const cursorX = width / 2 + (this.playerName.length * 9);
-            renderer.drawText('|', cursorX, startY + 125, '#00ffff', '16px monospace');
+            renderer.drawText('|', cursorX, startY + 125, '#00ffff', '16px "Big Apple 3PM", monospace');
         }
-        renderer.drawText('ENTER pro editaci | TAB pro dokončení', width / 2, startY + 180, '#888888', '12px monospace');
+        renderer.drawText('ENTER pro editaci | TAB pro dokončení', width / 2, startY + 180, '#888888', '12px "Big Apple 3PM", monospace');
     }
     renderShipSelection(renderer) {
         const width = renderer.getWidth();
         const startY = 250;
-        renderer.drawText('VYBERTE TYP LODĚ', width / 2, startY, '#dcd0c0', 'bold 24px monospace');
+        renderer.drawText('VYBERTE TYP LODĚ', width / 2, startY, '#dcd0c0', 'bold 24px "Big Apple 3PM", monospace');
         const ships = Object.values(ShipType);
         const shipsPerRow = 3;
         const shipWidth = 250;
@@ -357,27 +357,27 @@ class NewGameSetupState {
             }
             renderer.drawRect(x - shipWidth / 2 + 5, y - shipHeight / 2 + 5, shipWidth - 10, shipHeight - 10, 'rgba(0, 0, 0, 0.7)');
             const color = isSelected ? '#00ffff' : '#dcd0c0';
-            renderer.drawText(template.name, x, y - 35, color, isSelected ? 'bold 16px monospace' : '14px monospace');
-            renderer.drawText(`Hull: ${template.baseStats.hull}`, x - 80, y - 10, color, '10px monospace');
-            renderer.drawText(`Speed: ${template.baseStats.speed}`, x + 80, y - 10, color, '10px monospace');
-            renderer.drawText(`Shields: ${template.baseStats.shields}`, x - 80, y + 10, color, '10px monospace');
-            renderer.drawText(`Cargo: ${template.baseStats.cargo}`, x + 80, y + 10, color, '10px monospace');
+            renderer.drawText(template.name, x, y - 35, color, isSelected ? 'bold 16px "Big Apple 3PM", monospace' : '14px "Big Apple 3PM", monospace');
+            renderer.drawText(`Hull: ${template.baseStats.hull}`, x - 80, y - 10, color, '10px "Big Apple 3PM", monospace');
+            renderer.drawText(`Speed: ${template.baseStats.speed}`, x + 80, y - 10, color, '10px "Big Apple 3PM", monospace');
+            renderer.drawText(`Shields: ${template.baseStats.shields}`, x - 80, y + 10, color, '10px "Big Apple 3PM", monospace');
+            renderer.drawText(`Cargo: ${template.baseStats.cargo}`, x + 80, y + 10, color, '10px "Big Apple 3PM", monospace');
         });
     }
     renderSummary(renderer) {
         const width = renderer.getWidth();
         const startY = 250;
-        renderer.drawText('SOUHRN NASTAVENÍ', width / 2, startY, '#dcd0c0', 'bold 24px monospace');
+        renderer.drawText('SOUHRN NASTAVENÍ', width / 2, startY, '#dcd0c0', 'bold 24px "Big Apple 3PM", monospace');
         const difficultySettings = DIFFICULTY_SETTINGS[this.selectedDifficulty];
         const shipTemplate = SHIP_TEMPLATES[this.selectedShip];
-        renderer.drawText('Pilot: ' + (this.playerName || 'Neznámý'), width / 2, startY + 60, '#00ffff', '18px monospace');
-        renderer.drawText('Obtížnost: ' + difficultySettings.name, width / 2, startY + 100, '#00ffff', '18px monospace');
-        renderer.drawText('Loď: ' + shipTemplate.name, width / 2, startY + 140, '#00ffff', '18px monospace');
-        renderer.drawText('Počáteční zdroje:', width / 2, startY + 200, '#dcd0c0', '16px monospace');
-        renderer.drawText(`Palivo: ${difficultySettings.startingResources.fuel}%`, width / 2 - 100, startY + 230, '#5f9e9e', '14px monospace');
-        renderer.drawText(`Energie: ${difficultySettings.startingResources.energy}%`, width / 2, startY + 230, '#5f9e9e', '14px monospace');
-        renderer.drawText(`Kredity: ${difficultySettings.startingResources.credits}`, width / 2 + 100, startY + 230, '#5f9e9e', '14px monospace');
-        renderer.drawText('ENTER pro zahájení hry', width / 2, startY + 300, '#00ff00', 'bold 20px monospace');
+        renderer.drawText('Pilot: ' + (this.playerName || 'Neznámý'), width / 2, startY + 60, '#00ffff', '18px "Big Apple 3PM", monospace');
+        renderer.drawText('Obtížnost: ' + difficultySettings.name, width / 2, startY + 100, '#00ffff', '18px "Big Apple 3PM", monospace');
+        renderer.drawText('Loď: ' + shipTemplate.name, width / 2, startY + 140, '#00ffff', '18px "Big Apple 3PM", monospace');
+        renderer.drawText('Počáteční zdroje:', width / 2, startY + 200, '#dcd0c0', '16px "Big Apple 3PM", monospace');
+        renderer.drawText(`Palivo: ${difficultySettings.startingResources.fuel}%`, width / 2 - 100, startY + 230, '#5f9e9e', '14px "Big Apple 3PM", monospace');
+        renderer.drawText(`Energie: ${difficultySettings.startingResources.energy}%`, width / 2, startY + 230, '#5f9e9e', '14px "Big Apple 3PM", monospace');
+        renderer.drawText(`Kredity: ${difficultySettings.startingResources.credits}`, width / 2 + 100, startY + 230, '#5f9e9e', '14px "Big Apple 3PM", monospace');
+        renderer.drawText('ENTER pro zahájení hry', width / 2, startY + 300, '#00ff00', 'bold 20px "Big Apple 3PM", monospace');
     }
     handleInput(input) {
         if (input.wasKeyJustPressed('escape')) {
@@ -545,17 +545,17 @@ class PausedState {
         const height = renderer.getHeight();
         renderer.getContext().fillStyle = 'rgba(0, 0, 0, 0.7)';
         renderer.getContext().fillRect(0, 0, width, height);
-        renderer.drawText('HRA POZASTAVENA', width / 2, height / 2 - 100, '#ff8c00', 'bold 32px monospace');
+        renderer.drawText('HRA POZASTAVENA', width / 2, height / 2 - 100, '#ff8c00', 'bold 32px "Big Apple 3PM", monospace');
         const startY = height / 2 + 20;
         const spacing = 50;
         this.menuOptions.forEach((option, index) => {
             const y = startY + index * spacing;
             const isSelected = index === this.selectedOption;
             if (isSelected) {
-                renderer.drawText('▶ ' + option + ' ◀', width / 2, y, '#00ffff', 'bold 20px monospace');
+                renderer.drawText('▶ ' + option + ' ◀', width / 2, y, '#00ffff', 'bold 20px "Big Apple 3PM", monospace');
             }
             else {
-                renderer.drawText(option, width / 2, y, '#dcd0c0', '18px monospace');
+                renderer.drawText(option, width / 2, y, '#dcd0c0', '18px "Big Apple 3PM", monospace');
             }
         });
     }
@@ -620,20 +620,20 @@ class SettingsState {
         const width = renderer.getWidth();
         const height = renderer.getHeight();
         renderer.clear('#0a0a0f');
-        renderer.drawText('NASTAVENÍ', width / 2, 80, '#00ffff', 'bold 36px monospace');
+        renderer.drawText('NASTAVENÍ', width / 2, 80, '#00ffff', 'bold 36px "Big Apple 3PM", monospace');
         const tabY = 150;
         this.tabs.forEach((tab, index) => {
             const x = (width / this.tabs.length) * (index + 0.5);
             const isActive = index === this.selectedTab;
             const color = isActive ? '#00ffff' : '#888888';
-            const font = isActive ? 'bold 18px monospace' : '16px monospace';
+            const font = isActive ? 'bold 18px "Big Apple 3PM", monospace' : '16px "Big Apple 3PM", monospace';
             renderer.drawText(tab, x, tabY, color, font);
             if (isActive) {
                 renderer.drawRect(x - 50, tabY + 10, 100, 2, '#00ffff');
             }
         });
         this.renderSettingsContent(renderer);
-        renderer.drawText('←→ Taby | ↑↓ Možnosti | ENTER Změnit | ESC Zpět', width / 2, height - 50, '#888888', '14px monospace');
+        renderer.drawText('←→ Taby | ↑↓ Možnosti | ENTER Změnit | ESC Zpět', width / 2, height - 50, '#888888', '14px "Big Apple 3PM", monospace');
     }
     renderSettingsContent(renderer) {
         const width = renderer.getWidth();
@@ -667,8 +667,8 @@ class SettingsState {
             const isSelected = index === this.selectedOption;
             const nameColor = isSelected ? '#00ffff' : '#dcd0c0';
             const valueColor = isSelected ? '#ffff00' : '#5f9e9e';
-            renderer.drawText(option.name, width / 2 - 200, y, nameColor, isSelected ? 'bold 18px monospace' : '16px monospace');
-            renderer.drawText(option.value, width / 2 + 200, y, valueColor, '16px monospace');
+            renderer.drawText(option.name, width / 2 - 200, y, nameColor, isSelected ? 'bold 18px "Big Apple 3PM", monospace' : '16px "Big Apple 3PM", monospace');
+            renderer.drawText(option.value, width / 2 + 200, y, valueColor, '16px "Big Apple 3PM", monospace');
             if (isSelected) {
                 renderer.drawRect(width / 2 - 250, y - 20, 500, 40, 'rgba(0, 255, 255, 0.1)');
             }
@@ -687,8 +687,8 @@ class SettingsState {
             const isSelected = index === this.selectedOption;
             const nameColor = isSelected ? '#00ffff' : '#dcd0c0';
             const valueColor = isSelected ? '#ffff00' : '#5f9e9e';
-            renderer.drawText(option.name, width / 2 - 200, y, nameColor, isSelected ? 'bold 18px monospace' : '16px monospace');
-            renderer.drawText(option.value, width / 2 + 200, y, valueColor, '16px monospace');
+            renderer.drawText(option.name, width / 2 - 200, y, nameColor, isSelected ? 'bold 18px "Big Apple 3PM", monospace' : '16px "Big Apple 3PM", monospace');
+            renderer.drawText(option.value, width / 2 + 200, y, valueColor, '16px "Big Apple 3PM", monospace');
             if (isSelected) {
                 renderer.drawRect(width / 2 - 250, y - 20, 500, 40, 'rgba(0, 255, 255, 0.1)');
             }
@@ -696,11 +696,11 @@ class SettingsState {
     }
     renderControlSettings(renderer, startY, spacing) {
         const width = renderer.getWidth();
-        renderer.drawText('OVLÁDÁNÍ - Zatím není implementováno', width / 2, startY + 100, '#888888', '18px monospace');
-        renderer.drawText('Plánované funkce:', width / 2, startY + 150, '#dcd0c0', '16px monospace');
-        renderer.drawText('• Změna kláves', width / 2, startY + 180, '#5f9e9e', '14px monospace');
-        renderer.drawText('• Citlivost myši', width / 2, startY + 200, '#5f9e9e', '14px monospace');
-        renderer.drawText('• Gamepad podpora', width / 2, startY + 220, '#5f9e9e', '14px monospace');
+        renderer.drawText('OVLÁDÁNÍ - Zatím není implementováno', width / 2, startY + 100, '#888888', '18px "Big Apple 3PM", monospace');
+        renderer.drawText('Plánované funkce:', width / 2, startY + 150, '#dcd0c0', '16px "Big Apple 3PM", monospace');
+        renderer.drawText('• Změna kláves', width / 2, startY + 180, '#5f9e9e', '14px "Big Apple 3PM", monospace');
+        renderer.drawText('• Citlivost myši', width / 2, startY + 200, '#5f9e9e', '14px "Big Apple 3PM", monospace');
+        renderer.drawText('• Gamepad podpora', width / 2, startY + 220, '#5f9e9e', '14px "Big Apple 3PM", monospace');
     }
     renderGameplaySettings(renderer, startY, spacing) {
         const width = renderer.getWidth();
@@ -715,8 +715,8 @@ class SettingsState {
             const isSelected = index === this.selectedOption;
             const nameColor = isSelected ? '#00ffff' : '#dcd0c0';
             const valueColor = isSelected ? '#ffff00' : '#5f9e9e';
-            renderer.drawText(option.name, width / 2 - 200, y, nameColor, isSelected ? 'bold 18px monospace' : '16px monospace');
-            renderer.drawText(option.value, width / 2 + 200, y, valueColor, '16px monospace');
+            renderer.drawText(option.name, width / 2 - 200, y, nameColor, isSelected ? 'bold 18px "Big Apple 3PM", monospace' : '16px "Big Apple 3PM", monospace');
+            renderer.drawText(option.value, width / 2 + 200, y, valueColor, '16px "Big Apple 3PM", monospace');
             if (isSelected) {
                 renderer.drawRect(width / 2 - 250, y - 20, 500, 40, 'rgba(0, 255, 255, 0.1)');
             }
@@ -868,16 +868,16 @@ class StatusBar {
         const statusY = screenHeight - this.height;
         this.renderer.drawRect(0, statusY, screenWidth, this.height, '#1a1a2a');
         this.renderer.drawRect(0, screenHeight - 5, screenWidth, 5, '#333333');
-        this.renderer.drawText(`HULL: ${Math.round(player.hull)}%`, 20, statusY + 20, '#00ff00', '10px monospace');
-        this.renderer.drawText(`SHIELDS: ${Math.round(player.shields)}%`, 20, statusY + 35, '#00ffff', '10px monospace');
-        this.renderer.drawText(`FUEL: ${Math.round(player.fuel)}%`, 20, statusY + 50, '#ffff00', '10px monospace');
-        this.renderer.drawText(`ENERGY: ${Math.round(player.energy)}%`, 20, statusY + 65, '#ff00ff', '10px monospace');
+        this.renderer.drawText(`HULL: ${Math.round(player.hull)}%`, 20, statusY + 20, '#00ff00', '10px "Big Apple 3PM", monospace');
+        this.renderer.drawText(`SHIELDS: ${Math.round(player.shields)}%`, 20, statusY + 35, '#00ffff', '10px "Big Apple 3PM", monospace');
+        this.renderer.drawText(`FUEL: ${Math.round(player.fuel)}%`, 20, statusY + 50, '#ffff00', '10px "Big Apple 3PM", monospace');
+        this.renderer.drawText(`ENERGY: ${Math.round(player.energy)}%`, 20, statusY + 65, '#ff00ff', '10px "Big Apple 3PM", monospace');
         const weapon = player.getWeaponStatus(player.selectedWeapon);
         if (weapon) {
-            this.renderer.drawText(`WEAPON: ${weapon.type.toUpperCase()}`, screenWidth - 200, statusY + 20, '#dcd0c0', '10px monospace');
-            this.renderer.drawText(`HEAT: ${Math.round(weapon.heat)}%`, screenWidth - 200, statusY + 35, '#ff6600', '10px monospace');
+            this.renderer.drawText(`WEAPON: ${weapon.type.toUpperCase()}`, screenWidth - 200, statusY + 20, '#dcd0c0', '10px "Big Apple 3PM", monospace');
+            this.renderer.drawText(`HEAT: ${Math.round(weapon.heat)}%`, screenWidth - 200, statusY + 35, '#ff6600', '10px "Big Apple 3PM", monospace');
             if (weapon.ammo !== undefined) {
-                this.renderer.drawText(`AMMO: ${weapon.ammo}/${weapon.maxAmmo}`, screenWidth - 200, statusY + 50, '#dcd0c0', '10px monospace');
+                this.renderer.drawText(`AMMO: ${weapon.ammo}/${weapon.maxAmmo}`, screenWidth - 200, statusY + 50, '#dcd0c0', '10px "Big Apple 3PM", monospace');
             }
         }
     }
@@ -947,20 +947,20 @@ export class GameEngine {
         const height = this.renderer.getHeight();
         this.renderer.drawLine(width / 2 - 8, height / 2, width / 2 + 8, height / 2, 'rgba(0, 255, 255, 0.6)', 1);
         this.renderer.drawLine(width / 2, height / 2 - 8, width / 2, height / 2 + 8, 'rgba(0, 255, 255, 0.6)', 1);
-        this.renderer.drawText(`X: ${Math.round(this.player.position.x)} AU`, 10, 25, '#5f9e9e', '10px monospace');
-        this.renderer.drawText(`Y: ${Math.round(this.player.position.y)} AU`, 10, 40, '#5f9e9e', '10px monospace');
+        this.renderer.drawText(`X: ${Math.round(this.player.position.x)} AU`, 10, 25, '#5f9e9e', '10px "Big Apple 3PM", monospace');
+        this.renderer.drawText(`Y: ${Math.round(this.player.position.y)} AU`, 10, 40, '#5f9e9e', '10px "Big Apple 3PM", monospace');
         const speed = Math.sqrt(this.player.velocity.x ** 2 + this.player.velocity.y ** 2);
-        this.renderer.drawText(`V: ${(speed * 100).toFixed(1)} m/s`, 10, 55, '#5f9e9e', '10px monospace');
-        this.renderer.drawText(`SCENE: STAR SYSTEM`, 10, 70, '#5f9e9e', '10px monospace');
+        this.renderer.drawText(`V: ${(speed * 100).toFixed(1)} m/s`, 10, 55, '#5f9e9e', '10px "Big Apple 3PM", monospace');
+        this.renderer.drawText(`SCENE: STAR SYSTEM`, 10, 70, '#5f9e9e', '10px "Big Apple 3PM", monospace');
         this.renderActiveQuests();
         const warpPercent = Math.round((this.player.warpCharge / this.player.maxWarpCharge) * 100);
         const warpColor = this.player.canWarp() ? '#00ff00' : '#ffaa00';
-        this.renderer.drawText(`WARP: ${warpPercent}%`, 10, 100, warpColor, 'bold 10px monospace');
+        this.renderer.drawText(`WARP: ${warpPercent}%`, 10, 100, warpColor, 'bold 10px "Big Apple 3PM", monospace');
         if (this.player.isWarping) {
-            this.renderer.drawText('WARPING...', 10, 115, '#ff0000', 'bold 12px monospace');
+            this.renderer.drawText('WARPING...', 10, 115, '#ff0000', 'bold 12px "Big Apple 3PM", monospace');
         }
         const statusBarHeight = this.renderer.getHeight() * gameConfig.ui.statusBarHeight;
-        this.renderer.drawText('WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests | J: Warp | H: Test Damage', 10, this.renderer.getHeight() - statusBarHeight - 20, '#8c8c8c', '8px monospace');
+        this.renderer.drawText('WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests | J: Warp | H: Test Damage', 10, this.renderer.getHeight() - statusBarHeight - 20, '#8c8c8c', '8px "Big Apple 3PM", monospace');
     }
     renderActiveQuests() {
         const activeQuests = this.questSystem.getActiveQuests();
@@ -970,21 +970,21 @@ export class GameEngine {
         const startX = width - 350;
         const startY = 20;
         this.renderer.drawRect(startX - 10, startY - 10, 340, Math.min(200, activeQuests.length * 60 + 40), 'rgba(0, 0, 0, 0.7)');
-        this.renderer.drawText('AKTIVNÍ ÚKOLY', startX + 160, startY + 10, '#00ffff', 'bold 12px monospace');
+        this.renderer.drawText('AKTIVNÍ ÚKOLY', startX + 160, startY + 10, '#00ffff', 'bold 12px "Big Apple 3PM", monospace');
         activeQuests.slice(0, 3).forEach((quest, index) => {
             const y = startY + 40 + index * 60;
-            this.renderer.drawText(quest.title, startX, y, '#dcd0c0', 'bold 10px monospace');
+            this.renderer.drawText(quest.title, startX, y, '#dcd0c0', 'bold 10px "Big Apple 3PM", monospace');
             const completedObjectives = quest.objectives.filter(obj => obj.completed).length;
-            this.renderer.drawText(`${completedObjectives}/${quest.objectives.length}`, startX + 280, y, '#5f9e9e', '10px monospace');
+            this.renderer.drawText(`${completedObjectives}/${quest.objectives.length}`, startX + 280, y, '#5f9e9e', '10px "Big Apple 3PM", monospace');
             if (quest.timeRemaining !== undefined) {
                 const minutes = Math.floor(quest.timeRemaining / 60);
                 const seconds = Math.floor(quest.timeRemaining % 60);
                 const timeColor = quest.timeRemaining < 300 ? '#ff4444' : '#ffff00';
-                this.renderer.drawText(`${minutes}:${seconds.toString().padStart(2, '0')}`, startX + 280, y + 15, timeColor, '8px monospace');
+                this.renderer.drawText(`${minutes}:${seconds.toString().padStart(2, '0')}`, startX + 280, y + 15, timeColor, '8px "Big Apple 3PM", monospace');
             }
             const currentObjective = quest.objectives.find(obj => !obj.completed);
             if (currentObjective) {
-                this.renderer.drawText(currentObjective.description, startX, y + 15, '#888888', '8px monospace');
+                this.renderer.drawText(currentObjective.description, startX, y + 15, '#888888', '8px "Big Apple 3PM", monospace');
                 const progress = currentObjective.currentProgress / currentObjective.quantity;
                 const barWidth = 250;
                 this.renderer.drawRect(startX, y + 30, barWidth, 4, '#333333');
