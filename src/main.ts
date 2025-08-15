@@ -247,11 +247,26 @@ class MainMenuState implements IGameState {
     const width = renderer.getWidth();
     const height = renderer.getHeight();
 
-    // Background image (placeholder for your first attached image)
-    renderer.drawImage('/assets/main-menu-bg.jpg', 0, 0, width, height);
+    // Procedural star field background
+    renderer.clear('#0a0a1a');
     
-    // Overlay for better text readability
-    renderer.getContext().fillStyle = 'rgba(0, 0, 0, 0.4)';
+    // Stars background
+    for (let i = 0; i < 200; i++) {
+      const x = (i * 123.456) % width;
+      const y = (i * 789.123) % height;
+      const alpha = Math.sin(Date.now() * 0.001 + i) * 0.3 + 0.7;
+      renderer.getContext().globalAlpha = alpha * 0.4;
+      const size = Math.random() > 0.8 ? 2 : 1;
+      renderer.drawRect(x, y, size, size, '#606060');
+    }
+    renderer.getContext().globalAlpha = 1.0;
+    
+    // Space nebula effect
+    const gradient = renderer.getContext().createRadialGradient(width/2, height/3, 0, width/2, height/3, width);
+    gradient.addColorStop(0, 'rgba(64, 32, 128, 0.1)');
+    gradient.addColorStop(0.5, 'rgba(32, 16, 64, 0.05)');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    renderer.getContext().fillStyle = gradient;
     renderer.getContext().fillRect(0, 0, width, height);
 
     // Title with no glow effect
@@ -366,11 +381,21 @@ class NewGameSetupState implements IGameState {
     const width = renderer.getWidth();
     const height = renderer.getHeight();
 
-    // Background image (placeholder for your second attached image)
-    renderer.drawImage('/assets/setup-bg.jpg', 0, 0, width, height);
+    // Procedural background with darker theme for setup
+    renderer.clear('#0a0a15');
     
-    // Dark overlay
-    renderer.getContext().fillStyle = 'rgba(0, 0, 0, 0.6)';
+    // Subtle stars background
+    for (let i = 0; i < 150; i++) {
+      const x = (i * 87.456) % width;
+      const y = (i * 543.123) % height;
+      const alpha = Math.sin(Date.now() * 0.0008 + i) * 0.2 + 0.5;
+      renderer.getContext().globalAlpha = alpha * 0.3;
+      renderer.drawRect(x, y, 1, 1, '#505060');
+    }
+    renderer.getContext().globalAlpha = 1.0;
+    
+    // Setup panel background
+    renderer.getContext().fillStyle = 'rgba(16, 16, 32, 0.7)';
     renderer.getContext().fillRect(0, 0, width, height);
 
     // Title
