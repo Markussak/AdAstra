@@ -1,0 +1,53 @@
+{
+  "name": "space-explorer-typescript",
+  "version": "2.0.0",
+  "description": "Space Explorer 16-Bit game written in TypeScript",
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "dev": "vite",
+    "preview": "vite preview",
+    "start": "npm run build && npm run serve",
+    "serve": "http-server dist -p 8080 -c-1",
+    "clean": "rimraf dist",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "game",
+    "typescript",
+    "canvas",
+    "space",
+    "16-bit",
+    "retro"
+  ],
+  "author": "Space Explorer Development Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.45.0",
+    "http-server": "^14.1.1",
+    "prettier": "^3.0.0",
+    "rimraf": "^5.0.1",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.0"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/space-explorer-typescript.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/space-explorer-typescript/issues"
+  },
+  "homepage": "https://github.com/your-username/space-explorer-typescript#readme",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}

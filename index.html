@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Dust Voyager: Galaxy Wanderer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0a0f;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        #gameCanvas {
+            border: 2px solid #333;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0f;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease-out;
+        }
+        
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-title {
+            color: #00ffff;
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        .loading-subtitle {
+            color: #5f9e9e;
+            font-size: 1.5em;
+            margin-bottom: 40px;
+        }
+        
+        .loading-bar {
+            width: 400px;
+            height: 20px;
+            border: 2px solid #333;
+            background: #1a1a2a;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .loading-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ffff, #0088cc);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .loading-text {
+            color: #dcd0c0;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+        
+        .loading-percent {
+            color: #5f9e9e;
+            font-size: 0.8em;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-title pulse">STAR DUST VOYAGER</div>
+        <div class="loading-subtitle">GALAXY WANDERER</div>
+        <div class="loading-bar">
+            <div id="loadingFill" class="loading-fill"></div>
+        </div>
+        <div id="loadingText" class="loading-text">INICIALIZACE KVANTOVÉ MATRICE...</div>
+        <div id="loadingPercent" class="loading-percent">0%</div>
+    </div>
+    
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas" width="1920" height="1080"></canvas>
+    
+    <!-- Development mode script loading -->
+    <script type="module">
+        // Development mode - load TypeScript files directly via Vite
+        if (import.meta.env?.DEV) {
+            import('./src/main.ts');
+        } else {
+            // Production mode - load built JavaScript
+            import('./dist/main.js');
+        }
+    </script>
+</body>
+</html>
