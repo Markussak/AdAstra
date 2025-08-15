@@ -9,6 +9,7 @@ export class InputManager {
             justReleased: false
         };
         this.touches = new Map();
+        this.touchesJustEnded = new Map();
         this.touchControlsEnabled = true;
         this.virtualJoystick = {
             active: false,
@@ -264,6 +265,7 @@ export class InputManager {
                 const deltaY = touchData.y - touchData.startY;
                 const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                 if (distance < 30) {
+                    this.touchesJustEnded.set(touch.identifier, { ...touchData });
                 }
             }
             if (touch.identifier === this.joystickTouchId) {
@@ -393,6 +395,11 @@ export class InputManager {
                 if (deltaY > 30)
                     down = true;
             }
+        });
+        this.touchesJustEnded.forEach(touch => {
+            const deltaY = touch.y - touch.startY;
+            const deltaX = touch.x - touch.startX;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
             if (distance < 30) {
                 select = true;
             }
@@ -409,6 +416,9 @@ export class InputManager {
             this.virtualJoystick.active = false;
             this.releaseTouchButtons();
         }
+    }
+    getJustEndedTouches() {
+        return this.touchesJustEnded;
     }
     renderTouchControls(renderer) {
         const width = renderer.getWidth();
@@ -539,6 +549,7 @@ export class InputManager {
         Object.values(this.touchButtons).forEach(button => {
             button.justPressed = false;
         });
+        this.touchesJustEnded.clear();
     }
 }
 //# sourceMappingURL=input.js.map

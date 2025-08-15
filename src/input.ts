@@ -19,6 +19,8 @@ export class InputManager implements IInputManager {
     justReleased: false
   };
   public touches: Map<number, TouchData> = new Map();
+  // Add a separate map to track touches that just ended (for menu selection)
+  private touchesJustEnded: Map<number, TouchData> = new Map();
   public isMobile: boolean;
   public touchControlsEnabled: boolean = true;
   public virtualJoystick: VirtualJoystick = {
@@ -356,10 +358,11 @@ export class InputManager implements IInputManager {
         
         // console.log('Touch end - distance moved:', distance);
         
-        // If it was a tap (small movement), ensure it's registered as a selection
+        // If it was a tap (small movement), store it for menu selection detection
         if (distance < 30) {
           // console.log('Touch tap detected for menu selection');
-          // This will be picked up by getTouchMenuInput on the next frame
+          // Store the touch data so it can be picked up by getTouchMenuInput on the next frame
+          this.touchesJustEnded.set(touch.identifier, { ...touchData });
         }
       }
       
@@ -506,7 +509,7 @@ export class InputManager implements IInputManager {
 
     let up = false, down = false, select = false, back = false;
 
-    // Check for swipe gestures and taps
+    // Check active touches for swipe gestures
     this.touches.forEach(touch => {
       const deltaY = touch.y - touch.startY;
       const deltaX = touch.x - touch.startX;
@@ -517,6 +520,13 @@ export class InputManager implements IInputManager {
         if (deltaY < -30) up = true;
         if (deltaY > 30) down = true;
       }
+    });
+
+    // Check just-ended touches for tap detection (menu selection)
+    this.touchesJustEnded.forEach(touch => {
+      const deltaY = touch.y - touch.startY;
+      const deltaX = touch.x - touch.startX;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
       
       // Tap detection (increased tolerance for small movements)
       if (distance < 30) {
@@ -541,6 +551,11 @@ export class InputManager implements IInputManager {
       this.virtualJoystick.active = false;
       this.releaseTouchButtons();
     }
+  }
+
+  // Getter for just-ended touches (for direct menu clicking)
+  public getJustEndedTouches(): Map<number, TouchData> {
+    return this.touchesJustEnded;
   }
 
   public renderTouchControls(renderer: any): void {
@@ -731,5 +746,8 @@ export class InputManager implements IInputManager {
     Object.values(this.touchButtons).forEach(button => {
       button.justPressed = false;
     });
+
+    // Clear just-ended touches after they've been processed for one frame
+    this.touchesJustEnded.clear();
   }
 }

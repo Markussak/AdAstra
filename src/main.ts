@@ -326,6 +326,14 @@ class MainMenuState implements IGameState {
     // Handle touch menu navigation
     const touchInput = input.getTouchMenuInput();
     
+    // Check for direct click/touch on menu items
+    const directMenuClick = this.checkDirectMenuClick(input);
+    if (directMenuClick !== -1) {
+      this.selectedOption = directMenuClick;
+      this.handleMenuSelection();
+      return;
+    }
+    
     if (input.wasKeyJustPressed('arrowup') || input.wasKeyJustPressed('w') || touchInput.up) {
       this.selectedOption = Math.max(0, this.selectedOption - 1);
     }
@@ -337,6 +345,50 @@ class MainMenuState implements IGameState {
     if (input.wasKeyJustPressed('enter') || touchInput.select) {
       this.handleMenuSelection();
     }
+  }
+
+  private checkDirectMenuClick(input: IInputManager): number {
+    const game = (window as any).game;
+    if (!game || !game.renderer) return -1;
+
+    const width = game.renderer.getWidth();
+    const height = game.renderer.getHeight();
+    const startY = height/2 + 50;
+    const spacing = 60;
+
+    // Check mouse click
+    if (input.mouse.justPressed) {
+      const clickX = input.mouse.x;
+      const clickY = input.mouse.y;
+      
+      for (let i = 0; i < this.menuOptions.length; i++) {
+        const menuY = startY + i * spacing;
+        // Check if click is within menu item bounds (wider area for easier clicking)
+        if (clickX >= width/2 - 250 && clickX <= width/2 + 250 &&
+            clickY >= menuY - 30 && clickY <= menuY + 30) {
+          return i;
+        }
+      }
+    }
+
+    // Check touch taps from just-ended touches
+    let clickedIndex = -1;
+    input.getJustEndedTouches().forEach((touch) => {
+      const tapX = touch.x;
+      const tapY = touch.y;
+      
+      for (let i = 0; i < this.menuOptions.length; i++) {
+        const menuY = startY + i * spacing;
+        // Check if tap is within menu item bounds (wider area for easier tapping)
+        if (tapX >= width/2 - 250 && tapX <= width/2 + 250 &&
+            tapY >= menuY - 30 && tapY <= menuY + 30) {
+          clickedIndex = i;
+          return;
+        }
+      }
+    });
+
+    return clickedIndex;
   }
 
   private handleMenuSelection(): void {
