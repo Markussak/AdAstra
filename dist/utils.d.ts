@@ -1,4 +1,4 @@
-import { Vector2D, GameConfig } from './types';
+import { Vector2D, GameConfig, CharacterRace } from './types';
 export declare const Vector2DUtils: {
     create: (x?: number, y?: number) => Vector2D;
     add: (a: Vector2D, b: Vector2D) => Vector2D;
@@ -66,4 +66,8 @@ export declare class ColorUtils {
     static rgbToHex(r: number, g: number, b: number): string;
     static interpolateColor(color1: string, color2: string, factor: number): string;
     static addAlpha(color: string, alpha: number): string;
+}
+export declare class NameGenerator {
+    private static nameData;
+    static generateRandomName(race: CharacterRace): string;
 }

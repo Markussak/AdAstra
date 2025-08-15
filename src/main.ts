@@ -43,6 +43,7 @@ import {
   GALAXY_DENSITY_DATA,
   ECONOMY_COMPLEXITY_DATA
 } from './gameData';
+import { NameGenerator } from './utils';
 import { SaveSystem, AutoSaveManager } from './saveSystem';
 import { QuestSystem } from './questSystem';
 import { EffectSystem } from './effectSystem';
@@ -441,7 +442,9 @@ class NewGameSetupState implements IGameState {
   private backgroundButtons: Array<{ x: number, y: number, width: number, height: number, background: CharacterBackground, hovered: boolean }> = [];
   private skillButtons: Array<{ x: number, y: number, width: number, height: number, skill: CharacterSkill, level: number, hovered: boolean }> = [];
   private shipButtons: Array<{ x: number, y: number, width: number, height: number, shipType: ShipType, hovered: boolean }> = [];
-  private nameInputButton = { x: 0, y: 0, width: 300, height: 40, hovered: false };
+  private nameInputButton = { x: 0, y: 0, width: 200, height: 40, hovered: false };
+  private randomNameButton = { x: 0, y: 0, width: 80, height: 40, hovered: false };
+  private skipNameButton = { x: 0, y: 0, width: 100, height: 40, hovered: false };
   private ageInputButton = { x: 0, y: 0, width: 100, height: 40, hovered: false };
   private startGameButton = { x: 0, y: 0, width: 200, height: 50, hovered: false, pressed: false };
 
@@ -638,8 +641,8 @@ class NewGameSetupState implements IGameState {
 
   private canProceedFromCurrentStep(): boolean {
     switch (this.currentStep) {
-      case 3: // Character creation - need name
-        return this.character.name.trim().length > 0;
+      case 3: // Character creation - name is now optional
+        return true; // Name can be empty, race and other settings have defaults
       case 4: // Skills - can't have negative remaining points
         return this.remainingSkillPoints >= 0;
       default:
@@ -802,9 +805,11 @@ class NewGameSetupState implements IGameState {
     
     renderer.drawText('VYTVOŘENÍ POSTAVY', width/2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
     
-    // Name input
+    // Name input section
     renderer.drawText('Jméno:', width/4 - 50, startY + 50, '#606060', '16px "Big Apple 3PM", monospace');
-    this.nameInputButton.x = width/4 - 100;
+    
+    // Name input box
+    this.nameInputButton.x = width/4 - 150;
     this.nameInputButton.y = startY + 70;
     this.nameInputButton.width = 200;
     
@@ -817,12 +822,30 @@ class NewGameSetupState implements IGameState {
     
     const displayName = this.character.name || 'Jméno...';
     const nameColor = this.character.name ? '#dcd0c0' : '#808080';
-    renderer.drawText(displayName, width/4, startY + 95, nameColor, '14px "Big Apple 3PM", monospace');
+    renderer.drawText(displayName, width/4 - 50, startY + 95, nameColor, '14px "Big Apple 3PM", monospace');
     
     if (this.isEditingName && Math.floor(Date.now() / 500) % 2 === 0) {
-      const cursorX = width/4 + (this.character.name.length * 8);
+      const cursorX = width/4 - 50 + (this.character.name.length * 8);
       renderer.drawText('|', cursorX, startY + 95, '#dcd0c0', '14px "Big Apple 3PM", monospace');
     }
+    
+    // Random name button
+    this.randomNameButton.x = width/4 + 70;
+    this.randomNameButton.y = startY + 70;
+    
+    let randomButtonColor = this.randomNameButton.hovered ? 'rgba(80, 120, 80, 0.7)' : 'rgba(64, 96, 64, 0.7)';
+    renderer.drawRect(this.randomNameButton.x, this.randomNameButton.y, this.randomNameButton.width, this.randomNameButton.height, randomButtonColor);
+    renderer.drawRect(this.randomNameButton.x, this.randomNameButton.y, this.randomNameButton.width, this.randomNameButton.height, '#505050');
+    renderer.drawText('🎲', this.randomNameButton.x + 40, startY + 95, '#dcd0c0', '16px "Big Apple 3PM", monospace');
+    
+    // Skip name button
+    this.skipNameButton.x = width/4 + 160;
+    this.skipNameButton.y = startY + 70;
+    
+    let skipButtonColor = this.skipNameButton.hovered ? 'rgba(120, 80, 80, 0.7)' : 'rgba(96, 64, 64, 0.7)';
+    renderer.drawRect(this.skipNameButton.x, this.skipNameButton.y, this.skipNameButton.width, this.skipNameButton.height, skipButtonColor);
+    renderer.drawRect(this.skipNameButton.x, this.skipNameButton.y, this.skipNameButton.width, this.skipNameButton.height, '#505050');
+    renderer.drawText('Přeskočit', this.skipNameButton.x + 50, startY + 95, '#dcd0c0', '12px "Big Apple 3PM", monospace');
     
     // Age input  
     renderer.drawText('Věk:', width/4 - 50, startY + 130, '#606060', '16px "Big Apple 3PM", monospace');
@@ -900,9 +923,8 @@ class NewGameSetupState implements IGameState {
       renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
       renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
       
-      // Draw 16-bit style portrait (simple colored square for now)
-      renderer.drawRect(x - 15, y - 20, 30, 30, data.portraitColor);
-      renderer.drawRect(x - 15, y - 20, 30, 30, '#505050');
+      // Draw detailed race portrait
+      renderer.drawRacePortrait(data.name, x - 18, y - 25, 36, data.portraitColor);
       
       const color = isSelected ? '#dcd0c0' : '#808080';
       renderer.drawText(data.name, x, y + 15, color, isSelected ? 'bold 10px "Big Apple 3PM", monospace' : '10px "Big Apple 3PM", monospace');
@@ -1169,6 +1191,8 @@ class NewGameSetupState implements IGameState {
     this.backButton.hovered = false;
     this.nextButton.hovered = false;
     this.nameInputButton.hovered = false;
+    this.randomNameButton.hovered = false;
+    this.skipNameButton.hovered = false;
     this.ageInputButton.hovered = false;
     this.startGameButton.hovered = false;
     this.difficultyButtons.forEach(btn => btn.hovered = false);
@@ -1200,6 +1224,8 @@ class NewGameSetupState implements IGameState {
       this.backButton.hovered = this.isPointInRect(mouseX, mouseY, this.backButton);
       this.nextButton.hovered = this.isPointInRect(mouseX, mouseY, this.nextButton);
       this.nameInputButton.hovered = this.isPointInRect(mouseX, mouseY, this.nameInputButton);
+      this.randomNameButton.hovered = this.isPointInRect(mouseX, mouseY, this.randomNameButton);
+      this.skipNameButton.hovered = this.isPointInRect(mouseX, mouseY, this.skipNameButton);
       this.ageInputButton.hovered = this.isPointInRect(mouseX, mouseY, this.ageInputButton);
       this.startGameButton.hovered = this.isPointInRect(mouseX, mouseY, this.startGameButton);
       
@@ -1355,6 +1381,32 @@ class NewGameSetupState implements IGameState {
               handled = true;
             }
             
+            if (this.isPointInRect(clickX, clickY, this.randomNameButton)) {
+              // Generate random name based on selected race
+              this.character.name = NameGenerator.generateRandomName(this.character.race);
+              this.isEditingName = false;
+              
+              // Deactivate mobile text input if active
+              if (input.isMobile) {
+                input.deactivateMobileTextInput();
+              }
+              
+              handled = true;
+            }
+            
+            if (this.isPointInRect(clickX, clickY, this.skipNameButton)) {
+              // Skip name and continue without setting one
+              this.character.name = '';
+              this.isEditingName = false;
+              
+              // Deactivate mobile text input if active
+              if (input.isMobile) {
+                input.deactivateMobileTextInput();
+              }
+              
+              handled = true;
+            }
+            
             if (this.isPointInRect(clickX, clickY, this.ageInputButton)) {
               // Simple age increment (could be improved with proper input)
               this.character.age = Math.min(100, this.character.age + 1);
@@ -1460,14 +1512,17 @@ class NewGameSetupState implements IGameState {
       
       if (this.isEditingName) {
         // Simple text input handling
-        input.keys.forEach((keyState, key) => {
-          if (keyState.justPressed && key.length === 1 && this.character.name.length < 20) {
-            this.character.name += key.toUpperCase();
+        // Only handle keyboard input if we're not on mobile (mobile uses virtual keyboard)
+        if (!input.isMobile || !input.isMobileTextInputActive()) {
+          input.keys.forEach((keyState, key) => {
+            if (keyState.justPressed && key.length === 1 && this.character.name.length < 20) {
+              this.character.name += key.toUpperCase();
+            }
+          });
+          
+          if (input.wasKeyJustPressed('backspace') && this.character.name.length > 0) {
+            this.character.name = this.character.name.slice(0, -1);
           }
-        });
-        
-        if (input.wasKeyJustPressed('backspace') && this.character.name.length > 0) {
-          this.character.name = this.character.name.slice(0, -1);
         }
         
         if (input.wasKeyJustPressed('tab')) {
