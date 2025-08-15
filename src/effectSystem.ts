@@ -171,15 +171,18 @@ export class EffectSystem {
       id,
       type: EffectType.WARP_CHARGE,
       position: { ...position },
-      duration: 3.0,
-      timeRemaining: 3.0,
+      duration: 4.0, // Longer charge time for dramatic effect
+      timeRemaining: 4.0,
       intensity: 0.0,
-      color: '#505050',
-      size: 10,
+      color: '#000000', // Black hole core
+      size: 20,
       animationFrame: 0,
       phase: 'charging',
-      bubbleRadius: 10,
-      distortionLevel: 0.0
+      bubbleRadius: 20,
+      distortionLevel: 0.0,
+      accretionDiskRadius: 0,
+      gravitationalLensing: 0.0,
+      spacetimeDistortion: 0.0
     };
   }
 
@@ -188,15 +191,18 @@ export class EffectSystem {
       id,
       type: EffectType.WARP_BUBBLE,
       position: { ...position },
-      duration: 2.0,
-      timeRemaining: 2.0,
+      duration: 3.0, // Longer warp effect
+      timeRemaining: 3.0,
       intensity: 1.0,
-      color: '#505050',
-      size: 80,
+      color: '#000000',
+      size: 150,
       animationFrame: 0,
-      phase: 'bubble',
-      bubbleRadius: 80,
-      distortionLevel: 0.5
+      phase: 'blackhole',
+      bubbleRadius: 150,
+      distortionLevel: 1.0,
+      accretionDiskRadius: 200,
+      gravitationalLensing: 1.0,
+      spacetimeDistortion: 1.0
     };
   }
 
@@ -273,25 +279,42 @@ export class EffectSystem {
   }
 
   private updateWarpChargeEffect(effect: WarpEffect, progress: number, deltaTime: number): void {
-    effect.intensity = progress;
-    effect.bubbleRadius = 10 + progress * 70;
+    // Gradually build up the black hole effect
+    effect.intensity = Math.pow(progress, 2); // Exponential buildup
+    effect.bubbleRadius = 20 + progress * 80;
+    effect.accretionDiskRadius = progress * 120;
+    effect.gravitationalLensing = progress * 0.5;
+    effect.spacetimeDistortion = progress * 0.8;
     
-    if (progress > 0.8) {
-      effect.phase = 'bubble';
+    // Transition to full black hole at 90% charge
+    if (progress > 0.9) {
+      effect.phase = 'blackhole';
     }
   }
 
   private updateWarpBubbleEffect(effect: WarpEffect, progress: number, deltaTime: number): void {
-    if (progress < 0.3) {
-      effect.phase = 'bubble';
-      effect.distortionLevel = progress * 2;
-    } else if (progress < 0.7) {
+    if (progress < 0.2) {
+      // Initial black hole formation
+      effect.phase = 'blackhole';
+      effect.intensity = 1.0;
+      effect.accretionDiskRadius = 200 + progress * 50;
+      effect.gravitationalLensing = 1.0;
+      effect.spacetimeDistortion = 1.0 + progress * 0.5;
+    } else if (progress < 0.8) {
+      // Stable black hole with maximum distortion
       effect.phase = 'distortion';
-      effect.distortionLevel = 0.6 + (progress - 0.3) * 2;
+      effect.accretionDiskRadius = 250 + Math.sin((progress - 0.2) * 20) * 30;
+      effect.gravitationalLensing = 1.0 + Math.sin((progress - 0.2) * 15) * 0.3;
+      effect.spacetimeDistortion = 1.5 + Math.sin((progress - 0.2) * 12) * 0.2;
     } else {
+      // Black hole collapse
       effect.phase = 'collapse';
-      effect.bubbleRadius = 80 * (1 - (progress - 0.7) * 3);
-      effect.intensity = 1 - (progress - 0.7) * 3;
+      const collapseProgress = (progress - 0.8) / 0.2;
+      effect.bubbleRadius = 150 * (1 - collapseProgress);
+      effect.accretionDiskRadius = 250 * (1 - collapseProgress);
+      effect.intensity = 1 - collapseProgress;
+      effect.gravitationalLensing = (1 - collapseProgress) * 1.3;
+      effect.spacetimeDistortion = (1 - collapseProgress) * 1.7;
     }
   }
 
@@ -429,78 +452,286 @@ export class EffectSystem {
   }
 
   private renderWarpEffect(effect: WarpEffect, renderer: IRenderer, camera: ICamera): void {
-    const { position, bubbleRadius, distortionLevel, phase, intensity } = effect;
+    const { position, bubbleRadius, distortionLevel, phase, intensity, accretionDiskRadius, gravitationalLensing, spacetimeDistortion } = effect;
     
     switch (phase) {
       case 'charging':
-        this.renderWarpCharging(renderer, position, bubbleRadius, intensity, camera);
+        this.renderWarpCharging(renderer, position, bubbleRadius, intensity, accretionDiskRadius, gravitationalLensing, camera);
         break;
-      case 'bubble':
-        this.renderWarpBubble(renderer, position, bubbleRadius, distortionLevel, intensity, camera);
+      case 'blackhole':
+        this.renderBlackHole(renderer, position, bubbleRadius, accretionDiskRadius, gravitationalLensing, spacetimeDistortion, intensity, camera);
         break;
       case 'distortion':
-        this.renderWarpDistortion(renderer, position, bubbleRadius, distortionLevel, intensity, camera);
+        this.renderBlackHoleDistortion(renderer, position, bubbleRadius, accretionDiskRadius, gravitationalLensing, spacetimeDistortion, intensity, camera);
         break;
       case 'collapse':
-        this.renderWarpCollapse(renderer, position, bubbleRadius, intensity, camera);
+        this.renderBlackHoleCollapse(renderer, position, bubbleRadius, accretionDiskRadius, gravitationalLensing, intensity, camera);
         break;
     }
   }
 
-  private renderWarpCharging(renderer: IRenderer, pos: Vector2D, radius: number, intensity: number, camera: ICamera): void {
+  private renderWarpCharging(renderer: IRenderer, pos: Vector2D, radius: number, intensity: number, accretionRadius: number, lensing: number, camera: ICamera): void {
     const screenPos = camera.worldToScreen(pos.x, pos.y);
-    // Pulsing energy buildup
-    const pulseIntensity = intensity * (0.5 + 0.5 * Math.sin(Date.now() * 0.01));
+    const ctx = renderer.getContext();
     
-    renderer.strokeCircle(screenPos.x, screenPos.y, radius, `rgba(255, 255, 255, ${pulseIntensity})`, 2);
-    renderer.fillCircle(screenPos.x, screenPos.y, radius * 0.3, `rgba(255, 255, 255, ${pulseIntensity * 0.3})`);
-  }
-
-  private renderWarpBubble(renderer: IRenderer, pos: Vector2D, radius: number, distortion: number, intensity: number, camera: ICamera): void {
-    const screenPos = camera.worldToScreen(pos.x, pos.y);
-    // Semi-transparent warp bubble
-    renderer.strokeCircle(screenPos.x, screenPos.y, radius, `rgba(170, 204, 255, ${intensity * 0.8})`, 3);
-    
-    // Inner shimmer
-    for (let i = 0; i < 3; i++) {
-      const innerRadius = radius * (0.7 + i * 0.1);
-      const alpha = intensity * 0.2 * (1 - i * 0.3);
-      renderer.strokeCircle(screenPos.x, screenPos.y, innerRadius, `rgba(255, 255, 255, ${alpha})`, 1);
+    // Building energy distortion field
+    if (intensity > 0.1) {
+      ctx.save();
+      
+      // Pulsing gravitational distortion
+      const pulseIntensity = intensity * (0.7 + 0.3 * Math.sin(Date.now() * 0.008));
+      
+      // Early accretion disk formation
+      if (accretionRadius > 30) {
+        this.renderAccretionDisk(ctx, screenPos, accretionRadius, intensity * 0.6);
+      }
+      
+      // Space distortion rings
+      for (let i = 1; i <= 3; i++) {
+        const ringRadius = radius * i * 0.8;
+        const alpha = (intensity * 0.4) / i;
+        ctx.strokeStyle = `rgba(100, 100, 255, ${alpha})`;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(screenPos.x, screenPos.y, ringRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      
+      // Central energy buildup
+      const gradient = ctx.createRadialGradient(screenPos.x, screenPos.y, 0, screenPos.x, screenPos.y, radius * 0.5);
+      gradient.addColorStop(0, `rgba(150, 150, 255, ${pulseIntensity * 0.8})`);
+      gradient.addColorStop(0.5, `rgba(100, 100, 200, ${pulseIntensity * 0.4})`);
+      gradient.addColorStop(1, 'rgba(50, 50, 150, 0.1)');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(screenPos.x, screenPos.y, radius * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
     }
   }
 
-  private renderWarpDistortion(renderer: IRenderer, pos: Vector2D, radius: number, distortion: number, intensity: number, camera: ICamera): void {
+  private renderBlackHole(renderer: IRenderer, pos: Vector2D, radius: number, accretionRadius: number, lensing: number, distortion: number, intensity: number, camera: ICamera): void {
     const screenPos = camera.worldToScreen(pos.x, pos.y);
-    // Render gravitational lensing effect approximation
-    const rings = 5;
-    for (let i = 0; i < rings; i++) {
-      const ringRadius = radius * (0.5 + i * 0.3) * distortion;
-      const alpha = intensity * 0.6 * (1 - i * 0.15);
+    const ctx = renderer.getContext();
+    
+    ctx.save();
+    
+    // Render space-time distortion field first
+    this.renderSpacetimeDistortion(ctx, screenPos, radius * 2, distortion, intensity);
+    
+    // Render accretion disk
+    this.renderAccretionDisk(ctx, screenPos, accretionRadius, intensity);
+    
+    // Render gravitational lensing effect
+    this.renderGravitationalLensing(ctx, screenPos, radius * 1.5, lensing, intensity);
+    
+    // Render the black hole event horizon
+    this.renderEventHorizon(ctx, screenPos, radius * 0.6, intensity);
+    
+    // Render photon sphere
+    ctx.strokeStyle = `rgba(255, 255, 255, ${intensity * 0.3})`;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 4]);
+    ctx.beginPath();
+    ctx.arc(screenPos.x, screenPos.y, radius * 0.9, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    ctx.restore();
+  }
+
+  private renderBlackHoleDistortion(renderer: IRenderer, pos: Vector2D, radius: number, accretionRadius: number, lensing: number, distortion: number, intensity: number, camera: ICamera): void {
+    this.renderBlackHole(renderer, pos, radius, accretionRadius, lensing, distortion, intensity, camera);
+    
+    const screenPos = camera.worldToScreen(pos.x, pos.y);
+    const ctx = renderer.getContext();
+    
+    // Additional distortion effects for maximum warp
+    ctx.save();
+    
+    // Intense gravitational waves
+    const time = Date.now() * 0.003;
+    for (let i = 0; i < 5; i++) {
+      const waveRadius = radius * (2 + i * 0.8) + Math.sin(time + i) * 20;
+      const alpha = (intensity * 0.2) / (i + 1);
       
-      // Distorted rings
-      renderer.strokeCircle(screenPos.x, screenPos.y, ringRadius, `rgba(255, 255, 0, ${alpha})`, 2);
+      ctx.strokeStyle = `rgba(200, 200, 255, ${alpha})`;
+      ctx.lineWidth = 3 - i * 0.4;
+      ctx.beginPath();
+      ctx.arc(screenPos.x, screenPos.y, waveRadius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    
+    ctx.restore();
+  }
+
+  private renderBlackHoleCollapse(renderer: IRenderer, pos: Vector2D, radius: number, accretionRadius: number, lensing: number, intensity: number, camera: ICamera): void {
+    const screenPos = camera.worldToScreen(pos.x, pos.y);
+    const ctx = renderer.getContext();
+    
+    ctx.save();
+    
+    // Collapsing accretion disk
+    if (accretionRadius > 10) {
+      this.renderAccretionDisk(ctx, screenPos, accretionRadius, intensity * 0.8);
+    }
+    
+    // Fading event horizon
+    this.renderEventHorizon(ctx, screenPos, radius * 0.6, intensity);
+    
+    // Final gravitational wave burst
+    const burstRadius = radius * 3;
+    const burstAlpha = intensity * 0.6;
+    
+    ctx.strokeStyle = `rgba(255, 255, 255, ${burstAlpha})`;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(screenPos.x, screenPos.y, burstRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    ctx.restore();
+  }
+
+  private renderAccretionDisk(ctx: CanvasRenderingContext2D, center: Vector2D, radius: number, intensity: number): void {
+    const time = Date.now() * 0.002;
+    
+    // Create swirling accretion disk with multiple particle streams
+    for (let ring = 0; ring < 8; ring++) {
+      const ringRadius = radius * 0.4 + ring * (radius * 0.6) / 8;
+      const particlesInRing = Math.floor(ringRadius * 0.3);
       
-      // Add chromatic aberration effect
-      renderer.strokeCircle(screenPos.x - 1, screenPos.y, ringRadius, `rgba(255, 0, 0, ${alpha * 0.5})`, 1);
-      renderer.strokeCircle(screenPos.x + 1, screenPos.y, ringRadius, `rgba(0, 0, 255, ${alpha * 0.5})`, 1);
+      for (let i = 0; i < particlesInRing; i++) {
+        const angle = (i / particlesInRing) * Math.PI * 2 + time * (2 - ring * 0.2);
+        const x = center.x + Math.cos(angle) * ringRadius;
+        const y = center.y + Math.sin(angle) * ringRadius * 0.3; // Flatten the disk
+        
+        // Color based on temperature (closer = hotter)
+        const temp = 1 - (ring / 8);
+        const r = Math.floor(255 * temp);
+        const g = Math.floor(200 * temp * 0.7);
+        const b = Math.floor(100 * temp * 0.3);
+        const alpha = intensity * (0.8 - ring * 0.1);
+        
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        
+        // Particle size based on distance and intensity
+        const particleSize = Math.max(1, (2 - ring * 0.2) * intensity);
+        ctx.fillRect(x - particleSize/2, y - particleSize/2, particleSize, particleSize);
+        
+        // Add some bright hot spots
+        if (Math.random() < 0.05 * intensity) {
+          ctx.fillStyle = `rgba(255, 255, 200, ${alpha * 0.8})`;
+          ctx.fillRect(x - 1, y - 1, 2, 2);
+        }
+      }
     }
   }
 
-  private renderWarpCollapse(renderer: IRenderer, pos: Vector2D, radius: number, intensity: number, camera: ICamera): void {
-    if (radius <= 0 || intensity <= 0) return;
+  private renderEventHorizon(ctx: CanvasRenderingContext2D, center: Vector2D, radius: number, intensity: number): void {
+    // Perfect black circle for the event horizon
+    const gradient = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, radius);
+    gradient.addColorStop(0, '#000000');
+    gradient.addColorStop(0.8, '#000000');
+    gradient.addColorStop(1, `rgba(0, 0, 0, ${intensity * 0.9})`);
     
-    const screenPos = camera.worldToScreen(pos.x, pos.y);
-    // Collapsing black hole effect
-    renderer.fillCircle(screenPos.x, screenPos.y, Math.max(1, radius * 0.1), '#000000');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+    ctx.fill();
     
-    // Accretion disk
-    const diskRadius = radius * 0.5;
-    for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
-      const x = screenPos.x + Math.cos(angle) * diskRadius;
-      const y = screenPos.y + Math.sin(angle) * diskRadius * 0.3; // Flattened disk
+    // Event horizon edge glow
+    ctx.strokeStyle = `rgba(100, 100, 200, ${intensity * 0.6})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  private renderGravitationalLensing(ctx: CanvasRenderingContext2D, center: Vector2D, radius: number, lensing: number, intensity: number): void {
+    // Create gravitational lensing distortion rings
+    for (let i = 1; i <= 4; i++) {
+      const lensRadius = radius + i * 30;
+      const alpha = (intensity * lensing * 0.15) / i;
       
-      const alpha = intensity * 0.8;
-      renderer.fillCircle(x, y, 2, `rgba(255, 150, 0, ${alpha})`);
+      ctx.strokeStyle = `rgba(150, 200, 255, ${alpha})`;
+      ctx.lineWidth = 3 - i * 0.5;
+      ctx.setLineDash([3, 6]);
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, lensRadius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    
+    // Light bending effects
+    const time = Date.now() * 0.001;
+    for (let i = 0; i < 16; i++) {
+      const angle = (i / 16) * Math.PI * 2 + time * 0.5;
+      const startRadius = radius * 1.2;
+      const endRadius = radius * 1.8;
+      
+      const startX = center.x + Math.cos(angle) * startRadius;
+      const startY = center.y + Math.sin(angle) * startRadius;
+      const endX = center.x + Math.cos(angle + lensing * 0.3) * endRadius;
+      const endY = center.y + Math.sin(angle + lensing * 0.3) * endRadius;
+      
+      ctx.strokeStyle = `rgba(255, 255, 200, ${intensity * lensing * 0.3})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+    }
+  }
+
+  private renderSpacetimeDistortion(ctx: CanvasRenderingContext2D, center: Vector2D, radius: number, distortion: number, intensity: number): void {
+    // Create grid distortion to show spacetime curvature
+    const gridSize = 40;
+    const time = Date.now() * 0.001;
+    
+    ctx.strokeStyle = `rgba(100, 150, 200, ${intensity * distortion * 0.2})`;
+    ctx.lineWidth = 1;
+    
+    // Distorted grid lines
+    for (let x = -radius; x <= radius; x += gridSize) {
+      ctx.beginPath();
+      for (let y = -radius; y <= radius; y += 5) {
+        const dist = Math.sqrt(x*x + y*y);
+        if (dist < radius) {
+          const distortionFactor = Math.max(0, 1 - dist / radius);
+          const warpX = x + Math.sin(time + y * 0.01) * distortion * distortionFactor * 20;
+          const warpY = y + Math.cos(time + x * 0.01) * distortion * distortionFactor * 15;
+          
+          if (y === -radius) {
+            ctx.moveTo(center.x + warpX, center.y + warpY);
+          } else {
+            ctx.lineTo(center.x + warpX, center.y + warpY);
+          }
+        }
+      }
+      ctx.stroke();
+    }
+    
+    for (let y = -radius; y <= radius; y += gridSize) {
+      ctx.beginPath();
+      for (let x = -radius; x <= radius; x += 5) {
+        const dist = Math.sqrt(x*x + y*y);
+        if (dist < radius) {
+          const distortionFactor = Math.max(0, 1 - dist / radius);
+          const warpX = x + Math.sin(time + y * 0.01) * distortion * distortionFactor * 20;
+          const warpY = y + Math.cos(time + x * 0.01) * distortion * distortionFactor * 15;
+          
+          if (x === -radius) {
+            ctx.moveTo(center.x + warpX, center.y + warpY);
+          } else {
+            ctx.lineTo(center.x + warpX, center.y + warpY);
+          }
+        }
+      }
+      ctx.stroke();
     }
   }
 
