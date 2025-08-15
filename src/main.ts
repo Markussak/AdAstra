@@ -176,21 +176,21 @@ class LoadingState implements IGameState {
     const height = renderer.getHeight();
 
     // Background
-    renderer.clear('#0a0a0f');
+    renderer.clear('#1a1a1a');
     
     // Stars in background
     for (let i = 0; i < 100; i++) {
       const x = (i * 123.456) % width;
       const y = (i * 789.123) % height;
       const alpha = Math.sin(Date.now() * 0.001 + i) * 0.3 + 0.7;
-      renderer.getContext().globalAlpha = alpha * 0.3;
-      renderer.drawRect(x, y, 1, 1, '#ffffff');
+      renderer.getContext().globalAlpha = alpha * 0.1;
+      renderer.drawRect(x, y, 1, 1, '#606060');
     }
     renderer.getContext().globalAlpha = 1.0;
 
     // Title
-    renderer.drawText('STAR DUST VOYAGER', width/2, height/2 - 150, '#00ffff', 'bold 48px "Big Apple 3PM", monospace');
-    renderer.drawText('GALAXY WANDERER', width/2, height/2 - 100, '#5f9e9e', '24px "Big Apple 3PM", monospace');
+    renderer.drawText('STAR DUST VOYAGER', width/2, height/2 - 150, '#606060', 'bold 48px "Big Apple 3PM", monospace');
+    renderer.drawText('GALAXY WANDERER', width/2, height/2 - 100, '#505050', '24px "Big Apple 3PM", monospace');
 
     // Loading bar background
     const barWidth = 400;
@@ -198,21 +198,21 @@ class LoadingState implements IGameState {
     const barX = width/2 - barWidth/2;
     const barY = height/2 + 50;
     
-    renderer.drawRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4, '#333333');
-    renderer.drawRect(barX, barY, barWidth, barHeight, '#1a1a2a');
+    renderer.drawRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4, '#404040');
+    renderer.drawRect(barX, barY, barWidth, barHeight, '#2a2a2a');
     
     // Loading bar fill
     const fillWidth = (this.progress / 100) * barWidth;
     const gradient = renderer.getContext().createLinearGradient(barX, barY, barX + fillWidth, barY);
-    gradient.addColorStop(0, '#00ffff');
-    gradient.addColorStop(1, '#0088cc');
+    gradient.addColorStop(0, '#505050');
+    gradient.addColorStop(1, '#404040');
     
     renderer.getContext().fillStyle = gradient;
     renderer.getContext().fillRect(barX, barY, fillWidth, barHeight);
 
     // Loading text
-    renderer.drawText(this.loadingTexts[this.currentTextIndex], width/2, height/2 + 100, '#dcd0c0', '14px "Big Apple 3PM", monospace');
-    renderer.drawText(`${Math.round(this.progress)}%`, width/2, height/2 + 130, '#5f9e9e', '12px "Big Apple 3PM", monospace');
+    renderer.drawText(this.loadingTexts[this.currentTextIndex], width/2, height/2 + 100, '#606060', '14px "Big Apple 3PM", monospace');
+    renderer.drawText(`${Math.round(this.progress)}%`, width/2, height/2 + 130, '#505050', '12px "Big Apple 3PM", monospace');
   }
 
   public handleInput(input: IInputManager): void {
@@ -246,12 +246,11 @@ class MainMenuState implements IGameState {
     renderer.getContext().fillStyle = 'rgba(0, 0, 0, 0.4)';
     renderer.getContext().fillRect(0, 0, width, height);
 
-    // Title with glow effect
-    const titleGlow = Math.sin(this.animationTime * 2) * 0.3 + 0.7;
-    renderer.getContext().shadowColor = '#00ffff';
-    renderer.getContext().shadowBlur = 20 * titleGlow;
-    renderer.drawText('STAR DUST VOYAGER', width/2, height/4, '#00ffff', 'bold 64px "Big Apple 3PM", monospace');
-    renderer.drawText('GALAXY WANDERER', width/2, height/4 + 60, '#5f9e9e', '32px "Big Apple 3PM", monospace');
+    // Title with no glow effect
+    renderer.getContext().shadowColor = '#404040';
+    renderer.getContext().shadowBlur = 0;
+    renderer.drawText('STAR DUST VOYAGER', width/2, height/4, '#606060', 'bold 64px "Big Apple 3PM", monospace');
+    renderer.drawText('GALAXY WANDERER', width/2, height/4 + 60, '#505050', '32px "Big Apple 3PM", monospace');
     renderer.getContext().shadowBlur = 0;
 
     // Menu options
@@ -264,10 +263,10 @@ class MainMenuState implements IGameState {
       
       if (isSelected) {
         // Selection highlight
-        renderer.drawRect(width/2 - 200, y - 25, 400, 50, 'rgba(0, 255, 255, 0.2)');
-        renderer.drawText('▶ ' + option + ' ◀', width/2, y, '#00ffff', 'bold 24px "Big Apple 3PM", monospace');
+        renderer.drawRect(width/2 - 200, y - 25, 400, 50, 'rgba(64, 64, 64, 0.3)');
+        renderer.drawText('▶ ' + option + ' ◀', width/2, y, '#606060', 'bold 24px "Big Apple 3PM", monospace');
       } else {
-        renderer.drawText(option, width/2, y, '#dcd0c0', '20px "Big Apple 3PM", monospace');
+        renderer.drawText(option, width/2, y, '#505050', '20px "Big Apple 3PM", monospace');
       }
     });
 
@@ -275,7 +274,7 @@ class MainMenuState implements IGameState {
     renderer.drawText('v2.0.0', width - 100, height - 30, '#666666', '12px "Big Apple 3PM", monospace');
     
     // Controls hint
-    renderer.drawText('↑↓ Navigace | ENTER Výběr | ESC Zpět', width/2, height - 50, '#888888', '14px "Big Apple 3PM", monospace');
+    renderer.drawText('↑↓ Navigace | ENTER Výběr | ESC Zpět', width/2, height - 50, '#505050', '14px "Big Apple 3PM", monospace');
   }
 
   public handleInput(input: IInputManager): void {
@@ -367,7 +366,7 @@ class NewGameSetupState implements IGameState {
     renderer.getContext().fillRect(0, 0, width, height);
 
     // Title
-    renderer.drawText('NASTAVENÍ NOVÉ HRY', width/2, 100, '#00ffff', 'bold 36px "Big Apple 3PM", monospace');
+    renderer.drawText('NASTAVENÍ NOVÉ HRY', width/2, 100, '#606060', 'bold 36px "Big Apple 3PM", monospace');
 
     // Step indicator
     const stepY = 150;
@@ -376,9 +375,9 @@ class NewGameSetupState implements IGameState {
       const isActive = index === this.currentStep;
       const isCompleted = index < this.currentStep;
       
-      let color = '#666666';
-      if (isCompleted) color = '#00ff00';
-      if (isActive) color = '#00ffff';
+      let color = '#404040';
+      if (isCompleted) color = '#606060';
+      if (isActive) color = '#505050';
       
       renderer.drawText(`${index + 1}. ${step}`, x, stepY, color, isActive ? 'bold 18px "Big Apple 3PM", monospace' : '16px "Big Apple 3PM", monospace');
     });
@@ -400,14 +399,14 @@ class NewGameSetupState implements IGameState {
     }
 
     // Navigation hints
-    renderer.drawText('←→ Navigace | ENTER Potvrdit | ESC Zpět', width/2, height - 50, '#888888', '14px "Big Apple 3PM", monospace');
+    renderer.drawText('←→ Navigace | ENTER Potvrdit | ESC Zpět', width/2, height - 50, '#505050', '14px "Big Apple 3PM", monospace');
   }
 
   private renderDifficultySelection(renderer: IRenderer): void {
     const width = renderer.getWidth();
     const startY = 250;
     
-    renderer.drawText('VYBERTE OBTÍŽNOST', width/2, startY, '#dcd0c0', 'bold 24px "Big Apple 3PM", monospace');
+    renderer.drawText('VYBERTE OBTÍŽNOST', width/2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
     
     Object.values(DifficultyLevel).forEach((difficulty, index) => {
       const settings = DIFFICULTY_SETTINGS[difficulty];
@@ -415,10 +414,10 @@ class NewGameSetupState implements IGameState {
       const isSelected = difficulty === this.selectedDifficulty;
       
       if (isSelected) {
-        renderer.drawRect(width/2 - 400, y - 30, 800, 60, 'rgba(0, 255, 255, 0.2)');
+        renderer.drawRect(width/2 - 400, y - 30, 800, 60, 'rgba(96, 96, 96, 0.2)');
       }
       
-      const color = isSelected ? '#00ffff' : '#dcd0c0';
+      const color = isSelected ? '#606060' : '#505050';
       renderer.drawText(settings.name, width/2 - 200, y, color, isSelected ? 'bold 20px "Big Apple 3PM", monospace' : '18px "Big Apple 3PM", monospace');
       renderer.drawText(settings.description, width/2 + 50, y, color, '14px "Big Apple 3PM", monospace');
     });
@@ -428,32 +427,32 @@ class NewGameSetupState implements IGameState {
     const width = renderer.getWidth();
     const startY = 250;
     
-    renderer.drawText('VYTVOŘENÍ POSTAVY', width/2, startY, '#dcd0c0', 'bold 24px "Big Apple 3PM", monospace');
+    renderer.drawText('VYTVOŘENÍ POSTAVY', width/2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
     
-    renderer.drawText('Jméno pilota:', width/2 - 100, startY + 80, '#dcd0c0', '18px "Big Apple 3PM", monospace');
+    renderer.drawText('Jméno pilota:', width/2 - 100, startY + 80, '#606060', '18px "Big Apple 3PM", monospace');
     
-    const nameBoxColor = this.isEditingName ? '#00ffff' : '#666666';
+    const nameBoxColor = this.isEditingName ? '#606060' : '#404040';
     renderer.drawRect(width/2 - 150, startY + 100, 300, 40, 'rgba(0, 0, 0, 0.5)');
     renderer.drawRect(width/2 - 150, startY + 100, 300, 40, nameBoxColor);
     
     const displayName = this.playerName || 'Zadejte jméno...';
-    const nameColor = this.playerName ? '#ffffff' : '#888888';
+    const nameColor = this.playerName ? '#606060' : '#505050';
     renderer.drawText(displayName, width/2, startY + 125, nameColor, '16px "Big Apple 3PM", monospace');
     
     if (this.isEditingName) {
       // Blinking cursor
       const cursorX = width/2 + (this.playerName.length * 9);
-      renderer.drawText('|', cursorX, startY + 125, '#00ffff', '16px "Big Apple 3PM", monospace');
+              renderer.drawText('|', cursorX, startY + 125, '#606060', '16px "Big Apple 3PM", monospace');
     }
     
-    renderer.drawText('ENTER pro editaci | TAB pro dokončení', width/2, startY + 180, '#888888', '12px "Big Apple 3PM", monospace');
+          renderer.drawText('ENTER pro editaci | TAB pro dokončení', width/2, startY + 180, '#505050', '12px "Big Apple 3PM", monospace');
   }
 
   private renderShipSelection(renderer: IRenderer): void {
     const width = renderer.getWidth();
     const startY = 250;
     
-    renderer.drawText('VYBERTE TYP LODĚ', width/2, startY, '#dcd0c0', 'bold 24px "Big Apple 3PM", monospace');
+    renderer.drawText('VYBERTE TYP LODĚ', width/2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
     
     const ships = Object.values(ShipType);
     const shipsPerRow = 3;
@@ -471,12 +470,12 @@ class NewGameSetupState implements IGameState {
       const isSelected = shipType === this.selectedShip;
       
       if (isSelected) {
-        renderer.drawRect(x - shipWidth/2, y - shipHeight/2, shipWidth, shipHeight, 'rgba(0, 255, 255, 0.3)');
+        renderer.drawRect(x - shipWidth/2, y - shipHeight/2, shipWidth, shipHeight, 'rgba(96, 96, 96, 0.3)');
       }
       
-      renderer.drawRect(x - shipWidth/2 + 5, y - shipHeight/2 + 5, shipWidth - 10, shipHeight - 10, 'rgba(0, 0, 0, 0.7)');
+      renderer.drawRect(x - shipWidth/2 + 5, y - shipHeight/2 + 5, shipWidth - 10, shipHeight - 10, 'rgba(64, 64, 64, 0.7)');
       
-      const color = isSelected ? '#00ffff' : '#dcd0c0';
+      const color = isSelected ? '#606060' : '#505050';
       renderer.drawText(template.name, x, y - 35, color, isSelected ? 'bold 16px "Big Apple 3PM", monospace' : '14px "Big Apple 3PM", monospace');
       renderer.drawText(`Hull: ${template.baseStats.hull}`, x - 80, y - 10, color, '10px "Big Apple 3PM", monospace');
       renderer.drawText(`Speed: ${template.baseStats.speed}`, x + 80, y - 10, color, '10px "Big Apple 3PM", monospace');
@@ -489,21 +488,21 @@ class NewGameSetupState implements IGameState {
     const width = renderer.getWidth();
     const startY = 250;
     
-    renderer.drawText('SOUHRN NASTAVENÍ', width/2, startY, '#dcd0c0', 'bold 24px "Big Apple 3PM", monospace');
-    
+        renderer.drawText('SOUHRN NASTAVENÍ', width/2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
+
     const difficultySettings = DIFFICULTY_SETTINGS[this.selectedDifficulty];
     const shipTemplate = SHIP_TEMPLATES[this.selectedShip];
     
-    renderer.drawText('Pilot: ' + (this.playerName || 'Neznámý'), width/2, startY + 60, '#00ffff', '18px "Big Apple 3PM", monospace');
-    renderer.drawText('Obtížnost: ' + difficultySettings.name, width/2, startY + 100, '#00ffff', '18px "Big Apple 3PM", monospace');
-    renderer.drawText('Loď: ' + shipTemplate.name, width/2, startY + 140, '#00ffff', '18px "Big Apple 3PM", monospace');
+    renderer.drawText('Pilot: ' + (this.playerName || 'Neznámý'), width/2, startY + 60, '#606060', '18px "Big Apple 3PM", monospace');
+    renderer.drawText('Obtížnost: ' + difficultySettings.name, width/2, startY + 100, '#606060', '18px "Big Apple 3PM", monospace');
+    renderer.drawText('Loď: ' + shipTemplate.name, width/2, startY + 140, '#606060', '18px "Big Apple 3PM", monospace');
     
-    renderer.drawText('Počáteční zdroje:', width/2, startY + 200, '#dcd0c0', '16px "Big Apple 3PM", monospace');
-    renderer.drawText(`Palivo: ${difficultySettings.startingResources.fuel}%`, width/2 - 100, startY + 230, '#5f9e9e', '14px "Big Apple 3PM", monospace');
-    renderer.drawText(`Energie: ${difficultySettings.startingResources.energy}%`, width/2, startY + 230, '#5f9e9e', '14px "Big Apple 3PM", monospace');
-    renderer.drawText(`Kredity: ${difficultySettings.startingResources.credits}`, width/2 + 100, startY + 230, '#5f9e9e', '14px "Big Apple 3PM", monospace');
+    renderer.drawText('Počáteční zdroje:', width/2, startY + 200, '#505050', '16px "Big Apple 3PM", monospace');
+    renderer.drawText(`Palivo: ${difficultySettings.startingResources.fuel}%`, width/2 - 100, startY + 230, '#505050', '14px "Big Apple 3PM", monospace');
+    renderer.drawText(`Energie: ${difficultySettings.startingResources.energy}%`, width/2, startY + 230, '#505050', '14px "Big Apple 3PM", monospace');
+    renderer.drawText(`Kredity: ${difficultySettings.startingResources.credits}`, width/2 + 100, startY + 230, '#505050', '14px "Big Apple 3PM", monospace');
     
-    renderer.drawText('ENTER pro zahájení hry', width/2, startY + 300, '#00ff00', 'bold 20px "Big Apple 3PM", monospace');
+    renderer.drawText('ENTER pro zahájení hry', width/2, startY + 300, '#606060', 'bold 20px "Big Apple 3PM", monospace');
   }
 
   public handleInput(input: IInputManager): void {
@@ -1104,22 +1103,22 @@ class StatusBar implements IStatusBar {
     const statusY = screenHeight - this.height;
 
     // Draw simple status bar
-    this.renderer.drawRect(0, statusY, screenWidth, this.height, '#1a1a2a');
-    this.renderer.drawRect(0, screenHeight - 5, screenWidth, 5, '#333333');
+    this.renderer.drawRect(0, statusY, screenWidth, this.height, '#2a2a2a');
+    this.renderer.drawRect(0, screenHeight - 5, screenWidth, 5, '#404040');
 
     // Draw basic ship stats
-    this.renderer.drawText(`HULL: ${Math.round(player.hull)}%`, 20, statusY + 20, '#00ff00', '10px "Big Apple 3PM", monospace');
-    this.renderer.drawText(`SHIELDS: ${Math.round(player.shields)}%`, 20, statusY + 35, '#00ffff', '10px "Big Apple 3PM", monospace');
-    this.renderer.drawText(`FUEL: ${Math.round(player.fuel)}%`, 20, statusY + 50, '#ffff00', '10px "Big Apple 3PM", monospace');
-    this.renderer.drawText(`ENERGY: ${Math.round(player.energy)}%`, 20, statusY + 65, '#ff00ff', '10px "Big Apple 3PM", monospace');
+    this.renderer.drawText(`HULL: ${Math.round(player.hull)}%`, 20, statusY + 20, '#606060', '10px "Big Apple 3PM", monospace');
+    this.renderer.drawText(`SHIELDS: ${Math.round(player.shields)}%`, 20, statusY + 35, '#606060', '10px "Big Apple 3PM", monospace');
+    this.renderer.drawText(`FUEL: ${Math.round(player.fuel)}%`, 20, statusY + 50, '#606060', '10px "Big Apple 3PM", monospace');
+    this.renderer.drawText(`ENERGY: ${Math.round(player.energy)}%`, 20, statusY + 65, '#606060', '10px "Big Apple 3PM", monospace');
 
     // Draw weapon info
     const weapon = player.getWeaponStatus(player.selectedWeapon);
     if (weapon) {
-      this.renderer.drawText(`WEAPON: ${weapon.type.toUpperCase()}`, screenWidth - 200, statusY + 20, '#dcd0c0', '10px "Big Apple 3PM", monospace');
-      this.renderer.drawText(`HEAT: ${Math.round(weapon.heat)}%`, screenWidth - 200, statusY + 35, '#ff6600', '10px "Big Apple 3PM", monospace');
+      this.renderer.drawText(`WEAPON: ${weapon.type.toUpperCase()}`, screenWidth - 200, statusY + 20, '#505050', '10px "Big Apple 3PM", monospace');
+      this.renderer.drawText(`HEAT: ${Math.round(weapon.heat)}%`, screenWidth - 200, statusY + 35, '#505050', '10px "Big Apple 3PM", monospace');
       if (weapon.ammo !== undefined) {
-        this.renderer.drawText(`AMMO: ${weapon.ammo}/${weapon.maxAmmo}`, screenWidth - 200, statusY + 50, '#dcd0c0', '10px "Big Apple 3PM", monospace');
+        this.renderer.drawText(`AMMO: ${weapon.ammo}/${weapon.maxAmmo}`, screenWidth - 200, statusY + 50, '#505050', '10px "Big Apple 3PM", monospace');
       }
     }
   }
@@ -1167,6 +1166,11 @@ export class GameEngine implements IGameEngine {
 
   public startGameLoop(): void {
     const gameLoop = (currentTime: number) => {
+      // Fix: Initialize lastFrameTime if it's the first frame
+      if (this.lastFrameTime === 0) {
+        this.lastFrameTime = currentTime;
+      }
+      
       const deltaTime = Math.min((currentTime - this.lastFrameTime) / 1000, 0.016);
       this.lastFrameTime = currentTime;
       this.gameTime = currentTime / 1000;
@@ -1178,7 +1182,8 @@ export class GameEngine implements IGameEngine {
     };
 
     console.log('Starting game loop');
-    gameLoop(0);
+    // Fix: Start with performance.now() instead of 0
+    requestAnimationFrame(gameLoop);
   }
 
   public update(deltaTime: number): void {
@@ -1227,35 +1232,35 @@ export class GameEngine implements IGameEngine {
     const height = this.renderer.getHeight();
 
     // Crosshair
-    this.renderer.drawLine(width/2 - 8, height/2, width/2 + 8, height/2, 'rgba(0, 255, 255, 0.6)', 1);
-    this.renderer.drawLine(width/2, height/2 - 8, width/2, height/2 + 8, 'rgba(0, 255, 255, 0.6)', 1);
+    this.renderer.drawLine(width/2 - 8, height/2, width/2 + 8, height/2, 'rgba(96, 96, 96, 0.6)', 1);
+    this.renderer.drawLine(width/2, height/2 - 8, width/2, height/2 + 8, 'rgba(96, 96, 96, 0.6)', 1);
 
     // Coordinates and status
-    this.renderer.drawText(`X: ${Math.round(this.player.position.x)} AU`, 10, 25, '#5f9e9e', '10px "Big Apple 3PM", monospace');
-    this.renderer.drawText(`Y: ${Math.round(this.player.position.y)} AU`, 10, 40, '#5f9e9e', '10px "Big Apple 3PM", monospace');
+    this.renderer.drawText(`X: ${Math.round(this.player.position.x)} AU`, 10, 25, '#505050', '10px "Big Apple 3PM", monospace');
+    this.renderer.drawText(`Y: ${Math.round(this.player.position.y)} AU`, 10, 40, '#505050', '10px "Big Apple 3PM", monospace');
 
     const speed = Math.sqrt(this.player.velocity.x ** 2 + this.player.velocity.y ** 2);
-    this.renderer.drawText(`V: ${(speed * 100).toFixed(1)} m/s`, 10, 55, '#5f9e9e', '10px "Big Apple 3PM", monospace');
+    this.renderer.drawText(`V: ${(speed * 100).toFixed(1)} m/s`, 10, 55, '#505050', '10px "Big Apple 3PM", monospace');
 
     // Current scene info
-    this.renderer.drawText(`SCENE: STAR SYSTEM`, 10, 70, '#5f9e9e', '10px "Big Apple 3PM", monospace');
+    this.renderer.drawText(`SCENE: STAR SYSTEM`, 10, 70, '#505050', '10px "Big Apple 3PM", monospace');
 
     // Active quests
     this.renderActiveQuests();
 
     // Warp charge indicator
     const warpPercent = Math.round((this.player.warpCharge / this.player.maxWarpCharge) * 100);
-    const warpColor = this.player.canWarp() ? '#00ff00' : '#ffaa00';
+    const warpColor = this.player.canWarp() ? '#606060' : '#505050';
     this.renderer.drawText(`WARP: ${warpPercent}%`, 10, 100, warpColor, 'bold 10px "Big Apple 3PM", monospace');
     
     if (this.player.isWarping) {
-      this.renderer.drawText('WARPING...', 10, 115, '#ff0000', 'bold 12px "Big Apple 3PM", monospace');
+      this.renderer.drawText('WARPING...', 10, 115, '#505050', 'bold 12px "Big Apple 3PM", monospace');
     }
 
     // Instructions
     const statusBarHeight = this.renderer.getHeight() * gameConfig.ui.statusBarHeight;
     this.renderer.drawText('WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests | J: Warp | H: Test Damage', 10, 
-      this.renderer.getHeight() - statusBarHeight - 20, '#8c8c8c', '8px "Big Apple 3PM", monospace');
+      this.renderer.getHeight() - statusBarHeight - 20, '#505050', '8px "Big Apple 3PM", monospace');
   }
 
   public renderActiveQuests(): void {

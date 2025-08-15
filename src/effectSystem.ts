@@ -105,7 +105,7 @@ export class EffectSystem {
       duration: 0.5,
       timeRemaining: 0.5,
       intensity: options.intensity || 1.0,
-      color: options.color || '#00aaff',
+      color: options.color || '#505050',
       size: options.size || 50,
       animationFrame: 0,
       hexagonPattern: true,
@@ -122,7 +122,7 @@ export class EffectSystem {
       duration: 2.0,
       timeRemaining: 2.0,
       intensity: 0.3,
-      color: '#00ffaa',
+      color: '#505050',
       size: options.size || 40,
       animationFrame: 0,
       hexagonPattern: true,
@@ -139,7 +139,7 @@ export class EffectSystem {
       duration: options.duration || 0.1,
       timeRemaining: options.duration || 0.1,
       intensity: options.intensity || 1.0,
-      color: '#ff6600',
+      color: '#404040',
       size: options.size || 30,
       animationFrame: 0,
       thrustVector: options.thrustVector || { x: 0, y: 1 },
@@ -156,7 +156,7 @@ export class EffectSystem {
       duration: 0.2,
       timeRemaining: 0.2,
       intensity: options.intensity || 0.7,
-      color: '#ff9900',
+      color: '#404040',
       size: 15,
       animationFrame: 0,
       thrustVector: options.thrustVector || { x: 1, y: 0 },
@@ -173,7 +173,7 @@ export class EffectSystem {
       duration: 3.0,
       timeRemaining: 3.0,
       intensity: 0.0,
-      color: '#ffffff',
+      color: '#505050',
       size: 10,
       animationFrame: 0,
       phase: 'charging',
@@ -190,7 +190,7 @@ export class EffectSystem {
       duration: 2.0,
       timeRemaining: 2.0,
       intensity: 1.0,
-      color: '#aaccff',
+      color: '#505050',
       size: 80,
       animationFrame: 0,
       phase: 'bubble',
@@ -207,7 +207,7 @@ export class EffectSystem {
       duration: 0.3,
       timeRemaining: 0.3,
       intensity: 1.0,
-      color: options.color || '#ffff00',
+      color: options.color || '#505050',
       size: options.size || 20,
       animationFrame: 0,
       data: { weaponType: options.weaponType }
@@ -222,7 +222,7 @@ export class EffectSystem {
       duration: options.duration || 1.0,
       timeRemaining: options.duration || 1.0,
       intensity: options.intensity || 1.0,
-      color: options.color || '#ffffff',
+      color: options.color || '#505050',
       size: options.size || 20,
       animationFrame: 0,
       data: options.data
@@ -352,10 +352,10 @@ export class EffectSystem {
       }
       
       // Draw hexagon with glow effect
-      renderer.strokePath(points, `rgba(0, 170, 255, ${alpha})`, 2);
+      renderer.strokePath(points, `rgba(80, 80, 80, ${alpha})`, 2);
       
       // Add glow
-      renderer.strokePath(points, `rgba(0, 170, 255, ${alpha * 0.3})`, 6);
+      renderer.strokePath(points, `rgba(80, 80, 80, ${alpha * 0.3})`, 6);
     }
     
     // Render impact ripple if hit
@@ -365,7 +365,7 @@ export class EffectSystem {
         effect.rippleCenter.x, 
         effect.rippleCenter.y, 
         rippleRadius, 
-        `rgba(255, 255, 255, ${effect.intensity})`, 
+        `rgba(80, 80, 80, ${effect.intensity})`, 
         3
       );
     }

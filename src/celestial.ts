@@ -58,7 +58,7 @@ export class CelestialBody implements ICelestialBody {
       this.surfaceFeatures.push({
         angle: Math.random() * Math.PI * 2,
         size: 0.1 + Math.random() * 0.3,
-        color: this.type === CelestialBodyType.PLANET ? '#444444' : '#666666'
+        color: this.type === CelestialBodyType.PLANET ? '#404040' : '#505050'
       });
     }
   }
