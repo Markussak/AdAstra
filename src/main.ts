@@ -2142,18 +2142,30 @@ class StatusBar implements IStatusBar {
   public panels: any[] = [];
   private renderer: IRenderer;
   
-  // 16-bit color palette (based on the detailed specification)
+  // 16-bit realistic information display color palette
   private colors = {
-    chassisPrimary: '#5a6978',
-    chassisMidtone: '#434c55', 
-    chassisDark: '#2b323a',
-    chassisAbyss: '#181c20',
-    highlightSpecular: '#e0e3e6',
-    highlightStandard: '#a2aab2',
-    accentYellow: '#ffc357',
-    accentOrange: '#e8732c',
-    accentRed: '#d43d3d',
-    accentGreen: '#52de44'
+    panelDark: '#1a1a1a',      // Very dark panel background
+    panelMid: '#2d2d2d',       // Mid-tone for borders
+    panelLight: '#404040',     // Light accent
+    textPrimary: '#e0e0e0',    // Main text color
+    textSecondary: '#a0a0a0',  // Secondary text
+    textDim: '#606060',        // Dimmed text
+    
+    // Status bar colors
+    barBackground: '#0f0f0f',  // Bar background
+    barBorder: '#555555',      // Bar border
+    
+    // System status colors
+    statusGreen: '#00ff00',    // Good status
+    statusYellow: '#ffff00',   // Warning status  
+    statusOrange: '#ff8000',   // Caution status
+    statusRed: '#ff0000',      // Critical status
+    
+    // Progress bar colors
+    hullBar: '#4080ff',        // Blue for hull
+    shieldBar: '#8040ff',      // Purple for shields
+    energyBar: '#ffff40',      // Yellow for energy
+    fuelBar: '#ff8040'         // Orange for fuel
   };
 
   constructor(renderer: IRenderer) {
@@ -2162,7 +2174,7 @@ class StatusBar implements IStatusBar {
 
   public update(player: IPlayerShip): void {
     const screenHeight = this.renderer.getHeight();
-    this.height = Math.floor(screenHeight * 0.18); // Larger for detailed UI
+    this.height = Math.floor(screenHeight * 0.12); // Smaller, more compact
   }
 
   public render(player: IPlayerShip): void {
@@ -2170,582 +2182,191 @@ class StatusBar implements IStatusBar {
     const screenHeight = this.renderer.getHeight();
     const statusY = screenHeight - this.height;
 
-    // Draw base chassis and frame
-    this.drawBaseChassis(screenWidth, statusY);
+    // Draw main information panel
+    this.drawMainPanel(screenWidth, statusY);
     
-    // Draw left panel - Ship Systems
-    this.drawShipSystemsPanel(player, 20, statusY + 10);
+    // Draw ship status section
+    this.drawShipStatus(player, 20, statusY + 8);
     
-    // Draw center panel - Damage Monitor (CRT style)
-    this.drawDamageMonitorPanel(player, screenWidth / 2 - 150, statusY + 10);
+    // Draw system information
+    this.drawSystemInfo(player, screenWidth / 2 - 100, statusY + 8);
     
-    // Draw right panels - Weapons and Radar
-    this.drawWeaponsPanel(player, screenWidth - 420, statusY + 10);
-    this.drawRadarPanel(player, screenWidth - 180, statusY + 10);
+    // Draw radar and navigation
+    this.drawRadarSection(player, screenWidth - 160, statusY + 8);
   }
 
-  private drawBaseChassis(screenWidth: number, statusY: number): void {
+  private drawMainPanel(screenWidth: number, statusY: number): void {
     const ctx = this.renderer.getContext();
     
-    // Main chassis plate with heavy industrial feel
-    const plateRect = { x: 10, y: statusY + 10, width: screenWidth - 20, height: this.height - 20 };
+    // Main panel background
+    ctx.fillStyle = this.colors.panelDark;
+    ctx.fillRect(0, statusY, screenWidth, this.height);
     
-    // Background chassis plate with gradient
-    ctx.fillStyle = this.colors.chassisPrimary;
-    ctx.fillRect(plateRect.x, plateRect.y, plateRect.width, plateRect.height);
+    // Top border line
+    ctx.fillStyle = this.colors.panelMid;
+    ctx.fillRect(0, statusY, screenWidth, 1);
     
-    // Heavy plate edges with 3D effect
-    this.drawHeavyPlateEdge(ctx, plateRect);
-    
-    // Corner screws for industrial feel
-    this.drawMassiveScrew(ctx, plateRect.x + 15, plateRect.y + 15);
-    this.drawMassiveScrew(ctx, plateRect.x + plateRect.width - 25, plateRect.y + 15);
-    this.drawMassiveScrew(ctx, plateRect.x + 15, plateRect.y + plateRect.height - 25);
-    this.drawMassiveScrew(ctx, plateRect.x + plateRect.width - 25, plateRect.y + plateRect.height - 25);
-    
-    // Ship identification plate
-    this.drawIdentificationPlate(ctx, plateRect);
-    
-    // Decorative oil stains and wear marks
-    this.drawChassisDetails(ctx, plateRect);
-  }
-
-  private drawHeavyPlateEdge(ctx: CanvasRenderingContext2D, rect: any): void {
-    // Top edge (illuminated) - 6px chamfer
-    const gradient = ctx.createLinearGradient(0, rect.y, 0, rect.y + 6);
-    gradient.addColorStop(0, this.colors.highlightStandard);
-    gradient.addColorStop(0.3, this.colors.highlightStandard);
-    gradient.addColorStop(0.6, this.colors.chassisPrimary);
-    gradient.addColorStop(1, this.colors.chassisMidtone);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(rect.x, rect.y, rect.width, 6);
-    
-    // Bottom edge (shadowed) - 4px shadow
-    ctx.fillStyle = this.colors.chassisAbyss;
-    ctx.fillRect(rect.x, rect.y + rect.height - 4, rect.width, 4);
-  }
-
-  private drawMassiveScrew(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-    // Industrial hex screw head
-    ctx.fillStyle = this.colors.chassisDark;
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-      const angle = (i * Math.PI) / 3;
-      const px = x + Math.cos(angle) * 8;
-      const py = y + Math.sin(angle) * 8;
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
+    // Subtle grid pattern
+    ctx.fillStyle = this.colors.panelMid;
+    for (let x = 0; x < screenWidth; x += 40) {
+      ctx.fillRect(x, statusY, 1, this.height);
     }
-    ctx.closePath();
-    ctx.fill();
-    
-    // Screw highlight
-    ctx.fillStyle = this.colors.highlightStandard;
-    ctx.fillRect(x - 6, y - 1, 12, 2);
-    ctx.fillRect(x - 1, y - 6, 2, 12);
   }
 
-  private drawIdentificationPlate(ctx: CanvasRenderingContext2D, rect: any): void {
-    const plateX = rect.x + 50;
-    const plateY = rect.y + rect.height - 40;
+  private drawShipStatus(player: IPlayerShip, x: number, y: number): void {
+    const ctx = this.renderer.getContext();
     
-    ctx.fillStyle = this.colors.chassisDark;
-    ctx.fillRect(plateX, plateY, 200, 25);
-    
-    // Thin metal bezel
-    ctx.strokeStyle = this.colors.highlightStandard;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(plateX, plateY, 200, 25);
-    
-    // ID text with 16-bit pixelated font
-    ctx.fillStyle = this.colors.accentYellow;
+    // Section header
+    ctx.fillStyle = this.colors.textPrimary;
     ctx.font = '8px "Big Apple 3PM", monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('UESC VOYAGER // REG: 7B-42', plateX + 100, plateY + 16);
+    ctx.textAlign = 'left';
+    ctx.fillText('SHIP STATUS', x, y + 8);
+    
+    // Status bars
+    this.drawStatusBar('HULL', player.hull, player.maxHull, x, y + 18, this.colors.hullBar, 120);
+    this.drawStatusBar('SHLD', player.shields, player.maxShields, x, y + 30, this.colors.shieldBar, 120);
+    this.drawStatusBar('PWR', player.energy, player.maxEnergy, x, y + 42, this.colors.energyBar, 120);
+    this.drawStatusBar('FUEL', player.fuel, player.maxFuel, x, y + 54, this.colors.fuelBar, 120);
+    
+    // Numerical readouts
+    ctx.fillStyle = this.colors.textSecondary;
+    ctx.font = '6px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${Math.floor(player.hull)}/${player.maxHull}`, x + 180, y + 22);
+    ctx.fillText(`${Math.floor(player.shields)}/${player.maxShields}`, x + 180, y + 34);
+    ctx.fillText(`${Math.floor(player.energy)}/${player.maxEnergy}`, x + 180, y + 46);
+    ctx.fillText(`${Math.floor(player.fuel)}/${player.maxFuel}`, x + 180, y + 58);
   }
 
-  private drawChassisDetails(ctx: CanvasRenderingContext2D, rect: any): void {
-    // Oil stains (random dithered patterns)
-    ctx.fillStyle = this.colors.chassisAbyss;
-    ctx.globalAlpha = 0.3;
-    for (let i = 0; i < 8; i++) {
-      const x = rect.x + Math.random() * rect.width;
-      const y = rect.y + Math.random() * rect.height;
-      ctx.fillRect(x, y, 2 + Math.random() * 4, 1 + Math.random() * 3);
-    }
-    ctx.globalAlpha = 1.0;
-  }
-
-  private drawShipSystemsPanel(player: IPlayerShip, x: number, y: number): void {
-    const panelWidth = 400;
-    const panelHeight = 140;
-    
-    // Panel base with recessed look
-    this.drawPanelBase(x, y, panelWidth, panelHeight);
-    
-    // Ship systems header
-    this.renderer.drawText('SYSTÉMY LODI', x + 10, y + 20, this.colors.accentGreen, 'bold 8px "Big Apple 3PM", monospace');
-    
-    // Resource bars with 16-bit segmented display
-    this.drawSegmentedResourceBar(player, 'TRUP', player.hull, player.maxHull, x + 10, y + 35, this.colors.accentGreen);
-    this.drawSegmentedResourceBar(player, 'ŠTÍTY', player.shields, player.maxShields, x + 10, y + 55, this.colors.accentYellow);
-    this.drawSegmentedResourceBar(player, 'ENERGIE', player.energy, player.maxEnergy, x + 10, y + 75, this.colors.accentOrange);
-    this.drawSegmentedResourceBar(player, 'PALIVO', player.fuel, player.maxFuel, x + 10, y + 95, this.colors.accentRed);
-    
-    // Pressure gauges
-    this.drawPressureGauges(x + 280, y + 45);
-    
-    // Exposed cables detail
-    this.drawExposedCables(x + 10, y + 115);
-  }
-
-  private drawSegmentedResourceBar(player: any, label: string, current: number, max: number, x: number, y: number, baseColor: string): void {
-    const segments = 20;
-    const segmentWidth = 8;
-    const segmentHeight = 12;
-    const spacing = 1;
+  private drawStatusBar(label: string, current: number, max: number, x: number, y: number, color: string, width: number): void {
+    const ctx = this.renderer.getContext();
     const percent = Math.max(0, Math.min(100, (current / max) * 100));
-    const activeSegments = Math.floor((segments * percent) / 100);
+    const barHeight = 8;
     
     // Label
-    this.renderer.drawText(`${label}:`, x, y + 8, this.colors.highlightStandard, '7px "Big Apple 3PM", monospace');
-    
-    // Draw segments
-    for (let i = 0; i < segments; i++) {
-      const segX = x + 60 + i * (segmentWidth + spacing);
-      const ctx = this.renderer.getContext();
-      
-      if (i < activeSegments) {
-        // Active segment with 3D effect
-        // Top highlight
-        ctx.fillStyle = this.colors.highlightSpecular;
-        ctx.fillRect(segX, y, segmentWidth, 1);
-        
-        // Main body with gradient
-        const gradient = ctx.createLinearGradient(0, y + 1, 0, y + segmentHeight - 1);
-        gradient.addColorStop(0, this.lightenColor(baseColor, 0.2));
-        gradient.addColorStop(1, this.darkenColor(baseColor, 0.2));
-        ctx.fillStyle = gradient;
-        ctx.fillRect(segX, y + 1, segmentWidth, segmentHeight - 2);
-        
-        // Bottom shadow
-        ctx.fillStyle = this.colors.chassisDark;
-        ctx.fillRect(segX, y + segmentHeight - 1, segmentWidth, 1);
-      } else {
-        // Inactive segment
-        ctx.fillStyle = this.colors.chassisAbyss;
-        ctx.fillRect(segX, y, segmentWidth, segmentHeight);
-        ctx.strokeStyle = this.colors.chassisMidtone;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(segX, y, segmentWidth, segmentHeight);
-      }
-    }
-    
-    // Percentage display
-    this.renderer.drawText(`${Math.round(percent)}%`, x + 280, y + 8, baseColor, '7px "Big Apple 3PM", monospace');
-  }
-
-  private drawPressureGauges(x: number, y: number): void {
-    for (let i = 0; i < 4; i++) {
-      const gaugeX = x + i * 25;
-      const radius = 10;
-      const value = 20 + Math.random() * 60; // Simulated pressure
-      
-      // Gauge recessed housing
-      const ctx = this.renderer.getContext();
-      ctx.fillStyle = this.colors.chassisAbyss;
-      ctx.beginPath();
-      ctx.arc(gaugeX, y, radius + 2, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Gauge face
-      ctx.fillStyle = this.colors.chassisDark;
-      ctx.beginPath();
-      ctx.arc(gaugeX, y, radius, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Needle (with subtle animation)
-      const angle = (value / 100) * Math.PI - Math.PI / 2;
-      const needleX = gaugeX + Math.cos(angle) * (radius - 2);
-      const needleY = y + Math.sin(angle) * (radius - 2);
-      
-      ctx.strokeStyle = value > 80 ? this.colors.accentRed : value > 60 ? this.colors.accentYellow : this.colors.accentGreen;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(gaugeX, y);
-      ctx.lineTo(needleX, needleY);
-      ctx.stroke();
-    }
-  }
-
-  private drawDamageMonitorPanel(player: IPlayerShip, x: number, y: number): void {
-    const monitorWidth = 300;
-    const monitorHeight = 140;
-    
-    // CRT monitor housing with deep recess
-    this.drawCRTHousing(x, y, monitorWidth, monitorHeight);
-    
-    // CRT screen with retro effects
-    this.drawCRTScreen(player, x + 20, y + 20, monitorWidth - 40, monitorHeight - 40);
-  }
-
-  private drawCRTHousing(x: number, y: number, width: number, height: number): void {
-    const ctx = this.renderer.getContext();
-    
-    // Outer housing
-    ctx.fillStyle = this.colors.chassisPrimary;
-    ctx.fillRect(x, y, width, height);
-    
-    // Deep recess shadow
-    ctx.fillStyle = this.colors.chassisAbyss;
-    ctx.fillRect(x + 15, y + 15, width - 30, height - 30);
-    
-    // Screen bezel
-    ctx.strokeStyle = this.colors.chassisMidtone;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x + 18, y + 18, width - 36, height - 36);
-    
-    // Manufacturer badge
-    ctx.fillStyle = this.colors.highlightStandard;
-    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = this.colors.textPrimary;
     ctx.font = '6px "Big Apple 3PM", monospace';
     ctx.textAlign = 'left';
-    ctx.fillText('OMNI-TECH CRT SYSTEMS', x + 5, y + height - 5);
-    ctx.globalAlpha = 1.0;
+    ctx.fillText(label, x, y + 6);
+    
+    // Bar background
+    ctx.fillStyle = this.colors.barBackground;
+    ctx.fillRect(x + 32, y, width, barHeight);
+    
+    // Bar border
+    ctx.strokeStyle = this.colors.barBorder;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 32, y, width, barHeight);
+    
+    // Bar fill
+    const fillWidth = (width - 2) * (percent / 100);
+    ctx.fillStyle = color;
+    ctx.fillRect(x + 33, y + 1, fillWidth, barHeight - 2);
+    
+    // Status indicator lights
+    ctx.fillStyle = percent > 75 ? this.colors.statusGreen : 
+                   percent > 50 ? this.colors.statusYellow :
+                   percent > 25 ? this.colors.statusOrange : this.colors.statusRed;
+    ctx.fillRect(x + 24, y + 2, 4, 4);
   }
 
-  private drawCRTScreen(player: IPlayerShip, x: number, y: number, width: number, height: number): void {
+  private drawSystemInfo(player: IPlayerShip, x: number, y: number): void {
     const ctx = this.renderer.getContext();
     
-    // Screen background (dark with slight green tint)
-    ctx.fillStyle = '#001100';
-    ctx.fillRect(x, y, width, height);
+    // Section header
+    ctx.fillStyle = this.colors.textPrimary;
+    ctx.font = '8px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('SYSTEM INFO', x, y + 8);
     
-    // Ship damage schematic (16-bit style)
-    this.drawShipSchematic(player, x + width/2, y + height/2);
+    // Speed and position info
+    const speed = Math.sqrt(player.velocity.x ** 2 + player.velocity.y ** 2);
+    ctx.fillStyle = this.colors.textSecondary;
+    ctx.font = '6px "Big Apple 3PM", monospace';
     
-    // CRT scanlines effect
-    this.applyCRTEffects(ctx, x, y, width, height);
-    
-    // Screen crack effect
-    this.drawScreenCrack(ctx, x, y, width, height);
-  }
-
-  private drawShipSchematic(player: IPlayerShip, centerX: number, centerY: number): void {
-    const ctx = this.renderer.getContext();
-    
-    // Ship outline (pixelated)
-    ctx.strokeStyle = this.colors.accentGreen;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    // Simple ship shape
-    ctx.moveTo(centerX, centerY - 30);
-    ctx.lineTo(centerX - 20, centerY + 20);
-    ctx.lineTo(centerX - 10, centerY + 15);
-    ctx.lineTo(centerX + 10, centerY + 15);
-    ctx.lineTo(centerX + 20, centerY + 20);
-    ctx.closePath();
-    ctx.stroke();
-    
-    // Damage indicators
-    const hullPercent = player.hull / player.maxHull;
-    if (hullPercent < 0.8) {
-      ctx.fillStyle = this.colors.accentRed;
-      ctx.fillRect(centerX - 5, centerY - 10, 10, 8);
-    }
+    ctx.fillText(`SPEED: ${speed.toFixed(1)} U/S`, x, y + 20);
+    ctx.fillText(`POS X: ${Math.floor(player.position.x)}`, x, y + 30);
+    ctx.fillText(`POS Y: ${Math.floor(player.position.y)}`, x, y + 40);
+    ctx.fillText(`ANGLE: ${Math.floor(player.angle * 180 / Math.PI)}°`, x, y + 50);
     
     // System status indicators
-    ctx.font = '6px "Big Apple 3PM", monospace';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = this.colors.accentYellow;
-    ctx.fillText('TRUP OK', centerX, centerY + 35);
-  }
-
-  private applyCRTEffects(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
-    // Scanlines
-    ctx.fillStyle = 'rgba(0, 255, 0, 0.05)';
-    for (let i = 0; i < height; i += 2) {
-      ctx.fillRect(x, y + i, width, 1);
-    }
+    ctx.fillStyle = this.colors.textDim;
+    ctx.fillText('SYSTEMS:', x, y + 62);
     
-    // Screen curvature reflection
-    const gradient = ctx.createRadialGradient(x + width/2, y + height/2, 0, x + width/2, y + height/2, width/2);
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.02)');
-    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(x, y, width, height);
-  }
-
-  private drawScreenCrack(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
-    // Spider web crack from corner
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    const crackX = x + width * 0.8;
-    const crackY = y + height * 0.2;
-    
-    // Main crack lines
-    ctx.moveTo(crackX, crackY);
-    ctx.lineTo(crackX + 15, crackY + 20);
-    ctx.moveTo(crackX, crackY);
-    ctx.lineTo(crackX - 10, crackY + 15);
-    ctx.stroke();
-  }
-
-  private drawWeaponsPanel(player: IPlayerShip, x: number, y: number): void {
-    const panelWidth = 200;
-    const panelHeight = 140;
-    
-    this.drawPanelBase(x, y, panelWidth, panelHeight);
-    
-    this.renderer.drawText('ZBRAŇOVÉ SYSTÉMY', x + 10, y + 20, this.colors.accentRed, 'bold 8px "Big Apple 3PM", monospace');
-    
-    const weapon = player.getWeaponStatus(player.selectedWeapon);
-    if (weapon) {
-      this.renderer.drawText(`TYP: ${weapon.type.toUpperCase()}`, x + 10, y + 35, this.colors.highlightStandard, '7px "Big Apple 3PM", monospace');
+    // System status lights
+    const systems = ['NAV', 'COM', 'DEF', 'PWR'];
+    for (let i = 0; i < systems.length; i++) {
+      ctx.fillStyle = this.colors.textSecondary;
+      ctx.fillText(systems[i], x + 60 + i * 30, y + 62);
       
-      // Heat indicator with cooling fins visualization
-      this.drawCoolingSystem(x + 10, y + 50, weapon.heat || 0);
-      
-      // Ammo belt visual
-      this.drawAmmoBelt(x + 10, y + 90, weapon.ammo || 0, weapon.maxAmmo || 100);
-      
-      // Safety switch
-      this.drawSafetySwitch(x + 150, y + 110);
+      // Status light
+      ctx.fillStyle = this.colors.statusGreen;
+      ctx.fillRect(x + 55 + i * 30, y + 58, 3, 3);
     }
   }
 
-  private drawCoolingSystem(x: number, y: number, heat: number): void {
+  private drawRadarSection(player: IPlayerShip, x: number, y: number): void {
     const ctx = this.renderer.getContext();
     
-    // Cooling fins
-    for (let i = 0; i < 10; i++) {
-      const finX = x + i * 8;
-      const heatLevel = Math.min(1, heat / 100);
-      const finHeight = 20 + heatLevel * 10;
-      
-      // Color based on heat
-      let finColor = this.colors.chassisMidtone;
-      if (heatLevel > 0.8) finColor = this.colors.accentRed;
-      else if (heatLevel > 0.6) finColor = this.colors.accentOrange;
-      else if (heatLevel > 0.4) finColor = this.colors.accentYellow;
-      
-      ctx.fillStyle = finColor;
-      ctx.fillRect(finX, y + 20 - finHeight, 6, finHeight);
-    }
-    
-    // Heat shimmer effect when hot
-    if (heat > 70) {
-      ctx.strokeStyle = 'rgba(255, 100, 0, 0.3)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 5; i++) {
-        const shimmerY = y - Math.random() * 15;
-        ctx.beginPath();
-        ctx.moveTo(x, shimmerY);
-        ctx.quadraticCurveTo(x + 40, shimmerY - 5, x + 80, shimmerY);
-        ctx.stroke();
-      }
-    }
-  }
-
-  private drawAmmoBelt(x: number, y: number, current: number, max: number): void {
-    const ctx = this.renderer.getContext();
-    
-    // Belt housing
-    ctx.fillStyle = this.colors.chassisDark;
-    ctx.fillRect(x, y, 120, 20);
-    
-    // Individual cartridges
-    const cartridges = 10;
-    const percent = current / max;
-    const visibleCartridges = Math.floor(cartridges * percent);
-    
-    for (let i = 0; i < visibleCartridges; i++) {
-      const cartX = x + 5 + i * 11;
-      ctx.fillStyle = this.colors.accentYellow;
-      ctx.fillRect(cartX, y + 5, 8, 10);
-      // Bullet tip
-      ctx.fillStyle = this.colors.highlightStandard;
-      ctx.fillRect(cartX + 2, y + 2, 4, 3);
-    }
-  }
-
-  private drawSafetySwitch(x: number, y: number): void {
-    const ctx = this.renderer.getContext();
-    
-    // Switch housing
-    ctx.fillStyle = this.colors.chassisDark;
-    ctx.fillRect(x, y, 30, 15);
-    
-    // Switch toggle (always shown as OFF for safety)
-    ctx.fillStyle = this.colors.accentRed;
-    ctx.fillRect(x + 20, y + 3, 8, 9);
-    
-    // SAFETY label
-    ctx.fillStyle = this.colors.highlightStandard;
-    ctx.font = '6px "Big Apple 3PM", monospace';
+    // Section header
+    ctx.fillStyle = this.colors.textPrimary;
+    ctx.font = '8px "Big Apple 3PM", monospace';
     ctx.textAlign = 'left';
-    ctx.fillText('SAFE', x - 25, y + 10);
-  }
-
-  private drawRadarPanel(player: IPlayerShip, x: number, y: number): void {
-    const radarSize = 140;
+    ctx.fillText('RADAR', x, y + 8);
     
-    // Radar housing
-    this.drawPanelBase(x, y, 160, radarSize);
+    // Radar display background
+    const radarSize = 50;
+    ctx.fillStyle = this.colors.barBackground;
+    ctx.fillRect(x, y + 12, radarSize, radarSize);
     
-    this.renderer.drawText('RADAR', x + 10, y + 20, this.colors.accentYellow, 'bold 8px "Big Apple 3PM", monospace');
-    
-    // Radar display
-    this.drawRadarDisplay(x + 80, y + 70, 50);
-    
-    // Rotary control knob
-    this.drawRotaryKnob(x + 20, y + 110);
-    
-    // Calibration screws
-    this.drawCalibrationScrews(x + 120, y + 100);
-  }
-
-  private drawRadarDisplay(centerX: number, centerY: number, radius: number): void {
-    const ctx = this.renderer.getContext();
-    
-    // Radar screen background
-    ctx.fillStyle = this.colors.chassisAbyss;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Burned-in grid (always visible)
-    ctx.strokeStyle = 'rgba(67, 76, 85, 0.3)';
+    // Radar border
+    ctx.strokeStyle = this.colors.barBorder;
     ctx.lineWidth = 1;
+    ctx.strokeRect(x, y + 12, radarSize, radarSize);
+    
+    // Radar grid
+    ctx.strokeStyle = this.colors.panelMid;
+    ctx.lineWidth = 1;
+    
+    // Center cross
+    const centerX = x + radarSize / 2;
+    const centerY = y + 12 + radarSize / 2;
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius * 0.3, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 2);
+    ctx.moveTo(centerX, y + 12);
+    ctx.lineTo(centerX, y + 12 + radarSize);
+    ctx.moveTo(x, centerY);
+    ctx.lineTo(x + radarSize, centerY);
     ctx.stroke();
     
-    // Range rings
-    ctx.strokeStyle = this.colors.accentGreen;
-    ctx.globalAlpha = 0.6;
+    // Range circles
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius * 0.9, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, radarSize / 4, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.globalAlpha = 1.0;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radarSize / 2.5, 0, Math.PI * 2);
+    ctx.stroke();
     
-    // Sweep line (rotating)
-    const sweepAngle = (Date.now() * 0.002) % (Math.PI * 2);
-    ctx.strokeStyle = this.colors.accentGreen;
-    ctx.lineWidth = 2;
+    // Player ship indicator (center)
+    ctx.fillStyle = this.colors.statusGreen;
+    ctx.fillRect(centerX - 1, centerY - 1, 2, 2);
+    
+    // Radar sweep line (rotating)
+    const sweepAngle = (Date.now() * 0.003) % (Math.PI * 2);
+    ctx.strokeStyle = this.colors.statusGreen;
+    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
-    ctx.lineTo(
-      centerX + Math.cos(sweepAngle) * radius * 0.9,
-      centerY + Math.sin(sweepAngle) * radius * 0.9
-    );
+    ctx.lineTo(centerX + Math.cos(sweepAngle) * radarSize / 2, 
+               centerY + Math.sin(sweepAngle) * radarSize / 2);
     ctx.stroke();
     
-    // Glass cover reflections
-    this.drawGlassCoverReflections(ctx, centerX, centerY, radius);
-  }
-
-  private drawGlassCoverReflections(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number): void {
-    // Main light reflection
-    ctx.strokeStyle = this.colors.highlightSpecular;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(centerX - radius * 0.3, centerY - radius * 0.3, radius * 0.2, Math.PI * 0.6, Math.PI * 1.1);
-    ctx.stroke();
-    
-    // Secondary reflection
-    ctx.strokeStyle = 'rgba(162, 170, 178, 0.3)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(centerX + radius * 0.2, centerY - radius * 0.4, radius * 0.15, -Math.PI * 0.2, Math.PI * 0.2);
-    ctx.stroke();
-  }
-
-  private drawRotaryKnob(x: number, y: number): void {
-    const ctx = this.renderer.getContext();
-    
-    // Knob base
-    ctx.fillStyle = this.colors.chassisMidtone;
-    ctx.beginPath();
-    ctx.arc(x, y, 15, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Knob highlight
-    ctx.fillStyle = this.colors.highlightStandard;
-    ctx.beginPath();
-    ctx.arc(x - 3, y - 3, 8, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Position indicator line
-    ctx.strokeStyle = this.colors.accentYellow;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + 10, y - 5);
-    ctx.stroke();
-  }
-
-  private drawCalibrationScrews(x: number, y: number): void {
-    const labels = ['X', 'Y', 'F'];
-    for (let i = 0; i < 3; i++) {
-      const screwY = y + i * 15;
-      
-      // Screw head
-      this.renderer.fillCircle(x, screwY, 5, this.colors.chassisDark);
-      this.renderer.strokeCircle(x, screwY, 5, this.colors.highlightStandard, 1);
-      
-      // Screw slot
-      this.renderer.drawLine(x - 3, screwY, x + 3, screwY, this.colors.chassisAbyss, 1);
-      
-      // Label
-      this.renderer.drawText(labels[i], x + 15, screwY + 3, this.colors.highlightStandard, '6px "Big Apple 3PM", monospace');
-    }
-  }
-
-  private drawPanelBase(x: number, y: number, width: number, height: number): void {
-    const ctx = this.renderer.getContext();
-    
-    // Panel background
-    ctx.fillStyle = this.colors.chassisMidtone;
-    ctx.fillRect(x, y, width, height);
-    
-    // Recessed border effect
-    this.drawHeavyPlateEdge(ctx, { x, y, width, height });
-    
-    // Panel border
-    ctx.strokeStyle = this.colors.chassisDark;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x, y, width, height);
-  }
-
-  private drawExposedCables(x: number, y: number): void {
-    const ctx = this.renderer.getContext();
-    
-    // Cable conduit
-    ctx.fillStyle = this.colors.chassisAbyss;
-    ctx.fillRect(x, y, 100, 8);
-    
-    // Individual cables
-    const cableColors = [this.colors.accentRed, this.colors.accentYellow, this.colors.accentGreen];
-    for (let i = 0; i < 3; i++) {
-      ctx.fillStyle = cableColors[i];
-      ctx.fillRect(x + 5 + i * 15, y + 2, 12, 4);
-    }
-  }
-
-  // Helper functions for color manipulation
-  private lightenColor(color: string, factor: number): string {
-    // Simple color lightening - in real implementation, would parse hex and adjust
-    return color; // Simplified for now
-  }
-
-  private darkenColor(color: string, factor: number): string {
-    // Simple color darkening - in real implementation, would parse hex and adjust  
-    return color; // Simplified for now
+    // Navigation info
+    ctx.fillStyle = this.colors.textSecondary;
+    ctx.font = '6px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('RANGE: 1000U', x + 60, y + 25);
+    ctx.fillText('CONTACTS: 0', x + 60, y + 35);
+    ctx.fillText('THREAT: LOW', x + 60, y + 45);
   }
 }
 

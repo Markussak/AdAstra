@@ -51,7 +51,7 @@ export class CelestialBody implements ICelestialBody {
     this.name = name;
     this.mass = mass;
     this.color = color;
-    this.rotationSpeed = 0.01 + Math.random() * 0.02;
+    this.rotationSpeed = 0.001 + Math.random() * 0.002; // Much slower rotation
 
     // Set atmosphere for planets
     if (type === CelestialBodyType.PLANET && Math.random() < 0.4) {
@@ -73,20 +73,19 @@ export class CelestialBody implements ICelestialBody {
     }
   }
 
-  // Enhanced orbit setting with elliptical orbits
+  // Simple orbit setting with circular orbits only
   public setOrbit(center: Vector2D, distance: number, speed: number, startAngle: number = 0, eccentricity: number = 0): void {
     this.orbitCenter = center;
     this.orbitDistance = distance;
-    this.orbitSpeed = speed;
+    this.orbitSpeed = speed * 0.1; // Reduce speed significantly for smoother movement
     this.orbitAngle = startAngle;
-    this.orbitEccentricity = Math.min(0.8, eccentricity); // Limit eccentricity for stability
     
-    // Calculate periapsis and apoapsis for elliptical orbits
-    this.periapsis = distance * (1 - this.orbitEccentricity);
-    this.apoapsis = distance * (1 + this.orbitEccentricity);
+    // Ignore eccentricity for simple circular orbits
+    this.orbitEccentricity = 0;
     
-    // Set initial position based on orbit
-    this.updateOrbitalPosition();
+    // Set initial position based on circular orbit
+    this.position.x = center.x + Math.cos(startAngle) * distance;
+    this.position.y = center.y + Math.sin(startAngle) * distance;
   }
 
   private updateOrbitalPosition(): void {
@@ -104,35 +103,28 @@ export class CelestialBody implements ICelestialBody {
     this.rotation += this.rotationSpeed * deltaTime;
 
     if (this.orbitCenter && this.orbitDistance > 0) {
-      // Enhanced orbital mechanics with variable speed based on distance (Kepler's laws)
-      const currentDistance = this.orbitDistance * (1 - this.orbitEccentricity * this.orbitEccentricity) / 
-                             (1 + this.orbitEccentricity * Math.cos(this.orbitAngle));
-      
-      // Orbital speed varies: faster at periapsis, slower at apoapsis
-      const speedMultiplier = Math.sqrt(this.orbitDistance / currentDistance);
-      const adjustedSpeed = this.orbitSpeed * speedMultiplier;
-      
-      this.orbitAngle += adjustedSpeed * deltaTime;
+      // Simple, stable orbital motion - no complex elliptical mechanics
+      this.orbitAngle += this.orbitSpeed * deltaTime;
       
       // Keep angle in reasonable range
       if (this.orbitAngle > Math.PI * 2) {
         this.orbitAngle -= Math.PI * 2;
       }
       
-      this.updateOrbitalPosition();
+      // Simple circular orbit
+      this.position.x = this.orbitCenter.x + Math.cos(this.orbitAngle) * this.orbitDistance;
+      this.position.y = this.orbitCenter.y + Math.sin(this.orbitAngle) * this.orbitDistance;
       
-      // Update velocity for orbital motion (for realistic physics interactions)
-      const orbitVelX = -Math.sin(this.orbitAngle) * currentDistance * adjustedSpeed;
-      const orbitVelY = Math.cos(this.orbitAngle) * currentDistance * adjustedSpeed;
-      this.velocity.x = orbitVelX * 0.01; // Scale down for game balance
-      this.velocity.y = orbitVelY * 0.01;
+      // Simple velocity calculation for smooth movement
+      this.velocity.x = -Math.sin(this.orbitAngle) * this.orbitDistance * this.orbitSpeed * 0.01;
+      this.velocity.y = Math.cos(this.orbitAngle) * this.orbitDistance * this.orbitSpeed * 0.01;
     }
 
-    // Apply gravitational effects to other bodies (simplified N-body simulation)
-    if (game.sceneManager?.getCurrentScene()?.getCelestialBodies && this.type !== CelestialBodyType.ASTEROID) {
-      const otherBodies = game.sceneManager.getCurrentScene().getCelestialBodies();
-      this.applyMutualGravity(otherBodies, deltaTime);
-    }
+    // Remove the mutual gravity system that was causing instability
+    // if (game.sceneManager?.getCurrentScene()?.getCelestialBodies && this.type !== CelestialBodyType.ASTEROID) {
+    //   const otherBodies = game.sceneManager.getCurrentScene().getCelestialBodies();
+    //   this.applyMutualGravity(otherBodies, deltaTime);
+    // }
   }
 
   private applyMutualGravity(otherBodies: Array<{ position: Vector2D; mass: number; radius: number }>, deltaTime: number): void {
@@ -220,142 +212,282 @@ export class CelestialBody implements ICelestialBody {
 
   private renderStar(renderer: IRenderer): void {
     const ctx = renderer.getContext();
-
-    // Glow effect
-    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius + 20);
-    gradient.addColorStop(0, this.color);
-    gradient.addColorStop(0.6, this.color + '88');
-    gradient.addColorStop(1, this.color + '00');
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(-this.radius - 20, -this.radius - 20, 
-                (this.radius + 20) * 2, (this.radius + 20) * 2);
-
-    // Main star body
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Surface features (solar flares)
-    ctx.save();
-    ctx.rotate(this.rotation);
-    ctx.fillStyle = 'rgba(255, 140, 0, 0.3)';
-    this.surfaceFeatures.forEach(feature => {
-      const x = Math.cos(feature.angle) * this.radius * 0.7;
-      const y = Math.sin(feature.angle) * this.radius * 0.7;
-      ctx.beginPath();
-      ctx.arc(x, y, this.radius * feature.size, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    ctx.restore();
-
-    // Random solar flares
-    if (Math.random() < 0.1) {
-      ctx.strokeStyle = '#ff8c00';
-      ctx.lineWidth = 2;
-      const flareAngle = Math.random() * Math.PI * 2;
-      const flareLength = this.radius + Math.random() * 30;
-      ctx.beginPath();
-      ctx.moveTo(Math.cos(flareAngle) * this.radius, Math.sin(flareAngle) * this.radius);
-      ctx.lineTo(Math.cos(flareAngle) * flareLength, Math.sin(flareAngle) * flareLength);
-      ctx.stroke();
-    }
+    
+    // 16-bit star with detailed pixelated surface
+    this.draw16BitStar(ctx);
   }
 
   private renderPlanet(renderer: IRenderer): void {
     const ctx = renderer.getContext();
-
-    // Main planet body
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Surface features
-    ctx.save();
-    ctx.rotate(this.rotation);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-    this.surfaceFeatures.forEach(feature => {
-      const x = Math.cos(feature.angle) * this.radius * 0.4;
-      const y = Math.sin(feature.angle) * this.radius * 0.4;
-      ctx.beginPath();
-      ctx.arc(x, y, this.radius * feature.size, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    ctx.restore();
-
-    // Atmosphere
-    if (this.hasAtmosphere && this.atmosphereColor) {
-      ctx.strokeStyle = this.atmosphereColor;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(0, 0, this.radius + 3, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    // Day/night terminator
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-    ctx.beginPath();
-    ctx.arc(0, 0, this.radius, Math.PI * 0.7, Math.PI * 1.3);
-    ctx.fill();
+    
+    // 16-bit planet with detailed surface features
+    this.draw16BitPlanet(ctx);
   }
 
   private renderMoon(renderer: IRenderer): void {
     const ctx = renderer.getContext();
-
-    // Main moon body
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Craters
-    ctx.save();
-    ctx.rotate(this.rotation);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    this.surfaceFeatures.forEach(feature => {
-      const x = Math.cos(feature.angle) * this.radius * 0.6;
-      const y = Math.sin(feature.angle) * this.radius * 0.6;
-      ctx.beginPath();
-      ctx.arc(x, y, this.radius * feature.size * 0.5, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    ctx.restore();
+    
+    // 16-bit moon with detailed craters
+    this.draw16BitMoon(ctx);
   }
 
   private renderAsteroid(renderer: IRenderer): void {
     const ctx = renderer.getContext();
+    
+    // 16-bit asteroid with irregular pixelated shape
+    this.draw16BitAsteroid(ctx);
+  }
 
-    ctx.save();
-    ctx.rotate(this.rotation);
-
-    // Irregular shape
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-
-    const sides = 6 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < sides; i++) {
-      const angle = (i / sides) * Math.PI * 2;
-      const radius = this.radius * (0.7 + Math.random() * 0.6);
-      const x = Math.cos(angle) * radius;
-      const y = Math.sin(angle) * radius;
-      
-      if (i === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
+  private draw16BitStar(ctx: CanvasRenderingContext2D): void {
+    const size = Math.floor(this.radius * 2);
+    const centerX = 0;
+    const centerY = 0;
+    
+    // 16-bit color palette for star
+    const colors = {
+      core: '#ffd700',      // Bright yellow core
+      hot: '#ff8c00',       // Orange hot spots
+      warm: '#ff6347',      // Red-orange
+      surface: '#ffb347',   // Light orange
+      flare: '#fff8dc'      // Near white flares
+    };
+    
+    // Draw pixelated star core
+    for (let x = -size/2; x < size/2; x += 2) {
+      for (let y = -size/2; y < size/2; y += 2) {
+        const distance = Math.sqrt(x*x + y*y);
+        if (distance < this.radius) {
+          let color = colors.surface;
+          
+          // Core region
+          if (distance < this.radius * 0.3) {
+            color = colors.core;
+          } else if (distance < this.radius * 0.6) {
+            color = colors.hot;
+          } else if (distance < this.radius * 0.8) {
+            color = colors.warm;
+          }
+          
+          // Add surface noise for 16-bit effect
+          const noise = (Math.sin(x * 0.3 + this.rotation) + Math.cos(y * 0.3 + this.rotation)) * 0.5;
+          if (noise > 0.2) {
+            color = colors.hot;
+          }
+          
+          ctx.fillStyle = color;
+          ctx.fillRect(centerX + x, centerY + y, 2, 2);
+        }
       }
     }
-    ctx.closePath();
-    ctx.fill();
-
-    // Surface details
-    ctx.fillStyle = 'rgba(140, 140, 140, 0.5)';
-    ctx.fillRect(-this.radius * 0.3, -this.radius * 0.3, 
-                this.radius * 0.2, this.radius * 0.2);
-
+    
+    // Add solar flares as pixelated beams
+    ctx.save();
+    ctx.rotate(this.rotation);
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const flareX = Math.cos(angle) * this.radius * 0.9;
+      const flareY = Math.sin(angle) * this.radius * 0.9;
+      const flareLength = 4 + Math.random() * 8;
+      
+      ctx.fillStyle = colors.flare;
+      for (let j = 0; j < flareLength; j += 2) {
+        const fx = flareX + Math.cos(angle) * j;
+        const fy = flareY + Math.sin(angle) * j;
+        ctx.fillRect(fx, fy, 2, 2);
+      }
+    }
     ctx.restore();
+  }
+
+  private draw16BitPlanet(ctx: CanvasRenderingContext2D): void {
+    const size = Math.floor(this.radius * 2);
+    const centerX = 0;
+    const centerY = 0;
+    
+    // 16-bit planet color palette
+    const colors = {
+      base: this.color,
+      dark: this.darkenColor(this.color, 0.3),
+      darker: this.darkenColor(this.color, 0.6),
+      light: this.lightenColor(this.color, 0.2),
+      feature: '#2d4a5b'
+    };
+    
+    // Draw pixelated planet surface
+    for (let x = -size/2; x < size/2; x += 2) {
+      for (let y = -size/2; y < size/2; y += 2) {
+        const distance = Math.sqrt(x*x + y*y);
+        if (distance < this.radius) {
+          let color = colors.base;
+          
+          // Create 16-bit terrain patterns
+          const terrainPattern = Math.sin(x * 0.2) * Math.cos(y * 0.2);
+          const craterPattern = Math.sin(x * 0.5 + this.rotation) * Math.cos(y * 0.5 + this.rotation);
+          
+          if (terrainPattern > 0.3) {
+            color = colors.light;
+          } else if (terrainPattern < -0.3) {
+            color = colors.dark;
+          }
+          
+          // Add crater-like features
+          if (craterPattern > 0.6) {
+            color = colors.darker;
+          }
+          
+          // Day/night terminator effect
+          const lightAngle = Math.atan2(y, x);
+          if (lightAngle > Math.PI * 0.3 && lightAngle < Math.PI * 0.7) {
+            color = this.darkenColor(color, 0.4);
+          }
+          
+          // Surface details using dithering pattern
+          if ((x + y) % 4 === 0 && Math.random() > 0.8) {
+            color = colors.feature;
+          }
+          
+          ctx.fillStyle = color;
+          ctx.fillRect(centerX + x, centerY + y, 2, 2);
+        }
+      }
+    }
+    
+    // Add atmosphere if present
+    if (this.hasAtmosphere) {
+      ctx.fillStyle = 'rgba(135, 206, 235, 0.3)';
+      for (let x = -size/2; x < size/2; x += 4) {
+        for (let y = -size/2; y < size/2; y += 4) {
+          const distance = Math.sqrt(x*x + y*y);
+          if (distance > this.radius - 4 && distance < this.radius + 6) {
+            if (Math.random() > 0.5) {
+              ctx.fillRect(centerX + x, centerY + y, 2, 2);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private draw16BitMoon(ctx: CanvasRenderingContext2D): void {
+    const size = Math.floor(this.radius * 2);
+    const centerX = 0;
+    const centerY = 0;
+    
+    // 16-bit moon color palette
+    const colors = {
+      base: '#c0c0c0',      // Silver gray
+      dark: '#808080',      // Dark gray
+      darker: '#404040',    // Very dark gray
+      light: '#e0e0e0',     // Light gray
+      crater: '#202020'     // Almost black
+    };
+    
+    // Draw pixelated moon surface
+    for (let x = -size/2; x < size/2; x += 2) {
+      for (let y = -size/2; y < size/2; y += 2) {
+        const distance = Math.sqrt(x*x + y*y);
+        if (distance < this.radius) {
+          let color = colors.base;
+          
+          // Create crater patterns
+          const craterNoise = Math.sin(x * 0.3) * Math.cos(y * 0.3) + 
+                             Math.sin(x * 0.7) * Math.cos(y * 0.7) * 0.5;
+          
+          if (craterNoise > 0.5) {
+            color = colors.light;
+          } else if (craterNoise < -0.5) {
+            color = colors.dark;
+          }
+          
+          // Large crater features
+          const largeCrater = Math.sin(x * 0.1 + this.rotation) * Math.cos(y * 0.1 + this.rotation);
+          if (largeCrater > 0.7) {
+            color = colors.crater;
+          }
+          
+          // Surface texturing with dithering
+          if ((x + y) % 6 === 0) {
+            color = this.darkenColor(color, 0.2);
+          }
+          
+          ctx.fillStyle = color;
+          ctx.fillRect(centerX + x, centerY + y, 2, 2);
+        }
+      }
+    }
+  }
+
+  private draw16BitAsteroid(ctx: CanvasRenderingContext2D): void {
+    const size = Math.floor(this.radius * 2);
+    const centerX = 0;
+    const centerY = 0;
+    
+    // 16-bit asteroid color palette
+    const colors = {
+      base: '#8b7355',      // Brown-gray
+      dark: '#5d4e37',      // Dark brown
+      light: '#a0906b',     // Light brown
+      metal: '#696969'      // Metallic gray
+    };
+    
+    ctx.save();
+    ctx.rotate(this.rotation);
+    
+    // Create irregular pixelated asteroid shape
+    for (let x = -size/2; x < size/2; x += 2) {
+      for (let y = -size/2; y < size/2; y += 2) {
+        const distance = Math.sqrt(x*x + y*y);
+        
+        // Create irregular shape using noise
+        const shapeNoise = Math.sin(x * 0.2) * Math.cos(y * 0.2) * 0.3;
+        const adjustedRadius = this.radius * (0.7 + shapeNoise);
+        
+        if (distance < adjustedRadius) {
+          let color = colors.base;
+          
+          // Surface texture patterns
+          const rockPattern = Math.sin(x * 0.4) * Math.cos(y * 0.4);
+          const metalPattern = Math.sin(x * 0.8) * Math.cos(y * 0.8);
+          
+          if (rockPattern > 0.4) {
+            color = colors.light;
+          } else if (rockPattern < -0.4) {
+            color = colors.dark;
+          }
+          
+          // Metallic veins
+          if (metalPattern > 0.7) {
+            color = colors.metal;
+          }
+          
+          // Random surface details
+          if (Math.random() > 0.9) {
+            color = this.darkenColor(color, 0.3);
+          }
+          
+          ctx.fillStyle = color;
+          ctx.fillRect(centerX + x, centerY + y, 2, 2);
+        }
+      }
+    }
+    
+    ctx.restore();
+  }
+
+  private lightenColor(color: string, factor: number): string {
+    const hex = color.replace('#', '');
+    const r = Math.min(255, parseInt(hex.substr(0, 2), 16) + Math.floor(factor * 255));
+    const g = Math.min(255, parseInt(hex.substr(2, 2), 16) + Math.floor(factor * 255));
+    const b = Math.min(255, parseInt(hex.substr(4, 2), 16) + Math.floor(factor * 255));
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  }
+
+  private darkenColor(color: string, factor: number): string {
+    const hex = color.replace('#', '');
+    const r = Math.max(0, parseInt(hex.substr(0, 2), 16) - Math.floor(factor * 255));
+    const g = Math.max(0, parseInt(hex.substr(2, 2), 16) - Math.floor(factor * 255));
+    const b = Math.max(0, parseInt(hex.substr(4, 2), 16) - Math.floor(factor * 255));
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
   }
 
   private renderGeneric(renderer: IRenderer): void {
