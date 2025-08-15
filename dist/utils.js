@@ -34,14 +34,14 @@ export const gameConfig = {
         maxVelocity: 500
     },
     colors: {
-        bgPrimary: '#1a1a2a',
-        hullPrimary: '#dcd0c0',
-        hullSecondary: '#8c8c8c',
-        accentFriendly: '#5f9e9e',
-        accentHostile: '#b45f5f',
-        accentNeutral: '#a09078',
-        fxGlowPrimary: '#00ffff',
-        fxGlowSecondary: '#ff8c00'
+        bgPrimary: '#1a1a1a',
+        hullPrimary: '#505050',
+        hullSecondary: '#404040',
+        accentFriendly: '#606060',
+        accentHostile: '#404040',
+        accentNeutral: '#404040',
+        fxGlowPrimary: '#505050',
+        fxGlowSecondary: '#404040'
     }
 };
 export class PhysicsEngine {

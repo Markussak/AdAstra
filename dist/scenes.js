@@ -62,14 +62,14 @@ export class StarSystemScene {
     }
     generateStarColor(random) {
         const starTypes = [
-            '#ffff88', '#ff8844', '#ff4444', '#8888ff', '#ffffff'
+            '#606060', '#505050', '#404040', '#505050', '#606060'
         ];
         return random.choose(starTypes);
     }
     generatePlanetColor(random) {
         const planetColors = [
-            '#4a90e2', '#d2691e', '#8c6a3d', '#ff6b35', '#a0522d',
-            '#4169e1', '#ffd700', '#800080'
+            '#505050', '#404040', '#404040', '#505050', '#404040',
+            '#505050', '#606060', '#404040'
         ];
         return random.choose(planetColors);
     }

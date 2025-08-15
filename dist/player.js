@@ -205,17 +205,17 @@ export class PlayerShip {
     }
     getWeaponColor(weaponType) {
         switch (weaponType) {
-            case WeaponType.LASER: return '#ff0000';
-            case WeaponType.PULSE_LASER: return '#ff6600';
-            case WeaponType.BEAM_LASER: return '#ffff00';
-            case WeaponType.PLASMA_CANNON: return '#00ff88';
-            case WeaponType.ION_BEAM: return '#0088ff';
-            case WeaponType.MISSILES: return '#ff8800';
-            case WeaponType.TORPEDO: return '#ff4400';
-            case WeaponType.RAILGUN: return '#ffffff';
-            case WeaponType.EMP_WEAPON: return '#8800ff';
-            case WeaponType.FLAK_CANNON: return '#ffaa00';
-            default: return '#ffffff';
+            case WeaponType.LASER: return '#505050';
+            case WeaponType.PULSE_LASER: return '#505050';
+            case WeaponType.BEAM_LASER: return '#606060';
+            case WeaponType.PLASMA_CANNON: return '#505050';
+            case WeaponType.ION_BEAM: return '#505050';
+            case WeaponType.MISSILES: return '#505050';
+            case WeaponType.TORPEDO: return '#505050';
+            case WeaponType.RAILGUN: return '#606060';
+            case WeaponType.EMP_WEAPON: return '#505050';
+            case WeaponType.FLAK_CANNON: return '#505050';
+            default: return '#606060';
         }
     }
     createEngineParticleEffects() {
@@ -255,8 +255,8 @@ export class PlayerShip {
     }
     renderHull(renderer) {
         const ctx = renderer.getContext();
-        ctx.fillStyle = '#dcd0c0';
-        ctx.strokeStyle = '#8c8c8c';
+        ctx.fillStyle = '#505050';
+        ctx.strokeStyle = '#404040';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(15, 0);
@@ -269,13 +269,13 @@ export class PlayerShip {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
-        ctx.fillStyle = '#5f9e9e';
+        ctx.fillStyle = '#606060';
         ctx.fillRect(8, -2, 4, 1);
         ctx.fillRect(8, 1, 4, 1);
         ctx.fillRect(-6, -1, 3, 2);
-        ctx.fillStyle = '#8c8c8c';
+        ctx.fillStyle = '#404040';
         ctx.fillRect(12, -1, 3, 2);
-        ctx.strokeStyle = '#5f9e9e';
+        ctx.strokeStyle = '#606060';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(-8, -6);
@@ -287,8 +287,8 @@ export class PlayerShip {
     renderEngineEffects(renderer) {
         const ctx = renderer.getContext();
         const intensity = this.thrust;
-        ctx.fillStyle = '#ff8c00';
-        ctx.globalAlpha = intensity * 0.8;
+        ctx.fillStyle = '#404040';
+        ctx.globalAlpha = intensity * 0.4;
         ctx.beginPath();
         ctx.moveTo(-12, -3);
         ctx.lineTo(-12 - (8 * intensity), -1);
@@ -297,7 +297,7 @@ export class PlayerShip {
         ctx.lineTo(-12, 3);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = '#00ffff';
+        ctx.fillStyle = '#505050';
         for (let i = 0; i < 5; i++) {
             const particleX = -15 - Math.random() * 10 * intensity;
             const particleY = (Math.random() - 0.5) * 6;
@@ -308,9 +308,9 @@ export class PlayerShip {
     renderShieldEffects(renderer) {
         const ctx = renderer.getContext();
         const shieldStrength = this.shields / this.maxShields;
-        ctx.strokeStyle = '#00ffff';
+        ctx.strokeStyle = '#505050';
         ctx.lineWidth = 1;
-        ctx.globalAlpha = shieldStrength * 0.4;
+        ctx.globalAlpha = shieldStrength * 0.2;
         ctx.beginPath();
         ctx.arc(0, 0, 20, 0, Math.PI * 2);
         ctx.stroke();
