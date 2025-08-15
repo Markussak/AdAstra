@@ -1,0 +1,33 @@
+import { ICelestialBody, IRenderer, ICamera, Vector2D, CelestialBodyType, SurfaceFeature } from './types';
+export declare class CelestialBody implements ICelestialBody {
+    position: Vector2D;
+    velocity: Vector2D;
+    angle: number;
+    radius: number;
+    active: boolean;
+    type: CelestialBodyType;
+    name: string;
+    mass: number;
+    color: string;
+    rotationSpeed: number;
+    rotation: number;
+    orbitDistance: number;
+    orbitSpeed: number;
+    orbitAngle: number;
+    orbitCenter: Vector2D | null;
+    hasAtmosphere: boolean;
+    atmosphereColor: string | null;
+    surfaceFeatures: SurfaceFeature[];
+    constructor(x: number, y: number, radius: number, type: CelestialBodyType, name: string, mass?: number, color?: string);
+    private generateSurfaceFeatures;
+    update(deltaTime: number, game: any): void;
+    render(renderer: IRenderer, camera: ICamera): void;
+    private renderOrbitPath;
+    private renderStar;
+    private renderPlanet;
+    private renderMoon;
+    private renderAsteroid;
+    private renderGeneric;
+    setOrbit(center: Vector2D, distance: number, speed: number, startAngle?: number): void;
+    isVisible(camera: ICamera, screenWidth: number, screenHeight: number): boolean;
+}

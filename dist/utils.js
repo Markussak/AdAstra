@@ -1,0 +1,192 @@
+export const Vector2DUtils = {
+    create: (x = 0, y = 0) => ({ x, y }),
+    add: (a, b) => ({
+        x: a.x + b.x,
+        y: a.y + b.y
+    }),
+    subtract: (a, b) => ({
+        x: a.x - b.x,
+        y: a.y - b.y
+    }),
+    multiply: (v, scalar) => ({
+        x: v.x * scalar,
+        y: v.y * scalar
+    }),
+    magnitude: (v) => Math.sqrt(v.x * v.x + v.y * v.y),
+    normalize: (v) => {
+        const mag = Vector2DUtils.magnitude(v);
+        return mag === 0 ? { x: 0, y: 0 } : { x: v.x / mag, y: v.y / mag };
+    },
+    distance: (a, b) => Vector2DUtils.magnitude(Vector2DUtils.subtract(b, a))
+};
+export const gameConfig = {
+    canvas: {
+        width: 1920,
+        height: 1080,
+        pixelRatio: 1
+    },
+    ui: {
+        statusBarHeight: 0.15
+    },
+    physics: {
+        gravityStrength: 0.001,
+        frictionFactor: 0.999,
+        maxVelocity: 500
+    },
+    colors: {
+        bgPrimary: '#1a1a2a',
+        hullPrimary: '#dcd0c0',
+        hullSecondary: '#8c8c8c',
+        accentFriendly: '#5f9e9e',
+        accentHostile: '#b45f5f',
+        accentNeutral: '#a09078',
+        fxGlowPrimary: '#00ffff',
+        fxGlowSecondary: '#ff8c00'
+    }
+};
+export class PhysicsEngine {
+    static applyNewtonianMotion(object, deltaTime, friction = 0.999) {
+        object.position.x += object.velocity.x * deltaTime;
+        object.position.y += object.velocity.y * deltaTime;
+        const frictionFactor = Math.pow(friction, deltaTime);
+        object.velocity.x *= frictionFactor;
+        object.velocity.y *= frictionFactor;
+    }
+    static applyGravity(object, gravitySources, deltaTime, gravityStrength = 0.001) {
+        gravitySources.forEach(source => {
+            const dx = source.position.x - object.position.x;
+            const dy = source.position.y - object.position.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance > source.radius * 2) {
+                const force = (source.mass * gravityStrength) / (distance * distance);
+                const angle = Math.atan2(dy, dx);
+                object.velocity.x += Math.cos(angle) * force * deltaTime;
+                object.velocity.y += Math.sin(angle) * force * deltaTime;
+            }
+        });
+    }
+    static checkCollision(obj1, obj2) {
+        const dx = obj2.position.x - obj1.position.x;
+        const dy = obj2.position.y - obj1.position.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < (obj1.radius + obj2.radius);
+    }
+    static calculateDistance(pos1, pos2) {
+        const dx = pos2.x - pos1.x;
+        const dy = pos2.y - pos1.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    static normalizeVector(vector) {
+        const magnitude = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
+        if (magnitude === 0)
+            return { x: 0, y: 0 };
+        return { x: vector.x / magnitude, y: vector.y / magnitude };
+    }
+}
+export class SeededRandom {
+    constructor(seed) {
+        this.seed = seed;
+    }
+    next() {
+        this.seed = (this.seed * 9301 + 49297) % 233280;
+        return this.seed / 233280;
+    }
+    nextInt(min, max) {
+        return Math.floor(this.next() * (max - min + 1)) + min;
+    }
+    nextFloat(min, max) {
+        return this.next() * (max - min) + min;
+    }
+    choose(array) {
+        return array[Math.floor(this.next() * array.length)];
+    }
+}
+export class MathUtils {
+    static clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+    static lerp(a, b, t) {
+        return a + (b - a) * t;
+    }
+    static smoothstep(edge0, edge1, x) {
+        const t = MathUtils.clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+        return t * t * (3.0 - 2.0 * t);
+    }
+    static radToDeg(radians) {
+        return radians * (180 / Math.PI);
+    }
+    static degToRad(degrees) {
+        return degrees * (Math.PI / 180);
+    }
+    static angleToVector(angle) {
+        return {
+            x: Math.cos(angle),
+            y: Math.sin(angle)
+        };
+    }
+    static vectorToAngle(vector) {
+        return Math.atan2(vector.y, vector.x);
+    }
+    static wrap(value, min, max) {
+        const range = max - min;
+        if (range <= 0)
+            return min;
+        let result = value;
+        while (result < min)
+            result += range;
+        while (result >= max)
+            result -= range;
+        return result;
+    }
+}
+export class TimeUtils {
+    static getTime() {
+        return Date.now();
+    }
+    static getGameTime() {
+        return (Date.now() - TimeUtils.startTime) / 1000;
+    }
+    static formatTime(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+    static sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+TimeUtils.startTime = Date.now();
+export class ColorUtils {
+    static hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+    }
+    static rgbToHex(r, g, b) {
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+    static interpolateColor(color1, color2, factor) {
+        const rgb1 = ColorUtils.hexToRgb(color1);
+        const rgb2 = ColorUtils.hexToRgb(color2);
+        if (!rgb1 || !rgb2)
+            return color1;
+        const r = Math.round(rgb1.r + (rgb2.r - rgb1.r) * factor);
+        const g = Math.round(rgb1.g + (rgb2.g - rgb1.g) * factor);
+        const b = Math.round(rgb1.b + (rgb2.b - rgb1.b) * factor);
+        return ColorUtils.rgbToHex(r, g, b);
+    }
+    static addAlpha(color, alpha) {
+        const rgb = ColorUtils.hexToRgb(color);
+        if (!rgb)
+            return color;
+        return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+    }
+}
+//# sourceMappingURL=utils.js.map
