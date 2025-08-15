@@ -55,7 +55,7 @@ export class StarSystemScene implements IScene {
       
       // Add some orbital eccentricity for realism
       const eccentricity = Math.random() * 0.3; // 0-0.3 eccentricity
-      planet.setOrbit({ x: 0, y: 0 }, currentDistance, orbitSpeed, startAngle, eccentricity);
+      planet.setOrbit({ x: 0, y: 0 }, currentDistance, starMass, startAngle, eccentricity);
       
       if (random.next() < 0.4) {
         planet.hasAtmosphere = true;
@@ -81,7 +81,7 @@ export class StarSystemScene implements IScene {
             `${planet.name}-M${j + 1}`, moonMass, moonColor
           );
           
-          moon.setOrbit(planet.position, moonDistance, moonOrbitSpeed, random.next() * Math.PI * 2, moonEccentricity);
+          moon.setOrbit(planet.position, moonDistance, planetMass, random.next() * Math.PI * 2, moonEccentricity);
           this.celestialBodies.push(moon);
         }
       }
@@ -105,7 +105,7 @@ export class StarSystemScene implements IScene {
           `Asteroid-${i}`, asteroidMass, this.generateAsteroidColor(random) // Use new method
         );
         
-        asteroid.setOrbit({ x: 0, y: 0 }, distance, orbitSpeed, random.next() * Math.PI * 2, asteroidEccentricity);
+        asteroid.setOrbit({ x: 0, y: 0 }, distance, starMass, random.next() * Math.PI * 2, asteroidEccentricity);
         this.celestialBodies.push(asteroid);
       }
     }
