@@ -1,4 +1,4 @@
-import { Vector2D, GameConfig, CharacterRace } from './types';
+import { Vector2D, CharacterRace } from './types';
 export declare const Vector2DUtils: {
     create: (x?: number, y?: number) => Vector2D;
     add: (a: Vector2D, b: Vector2D) => Vector2D;
@@ -8,7 +8,108 @@ export declare const Vector2DUtils: {
     normalize: (v: Vector2D) => Vector2D;
     distance: (a: Vector2D, b: Vector2D) => number;
 };
-export declare const gameConfig: GameConfig;
+export declare const gameConfig: {
+    canvas: {
+        width: number;
+        height: number;
+    };
+    physics: {
+        gravityStrength: number;
+        frictionFactor: number;
+        maxVelocity: number;
+    };
+    colors: {
+        bgPrimary: string;
+        bgSecondary: string;
+        hullPrimary: string;
+        hullSecondary: string;
+        hullDamaged: string;
+        accentFriendly: string;
+        accentHostile: string;
+        accentNeutral: string;
+        accentInfo: string;
+        accentWarning: string;
+        textPrimary: string;
+        textSecondary: string;
+        textDim: string;
+        textAmber: string;
+        textGreen: string;
+        textRed: string;
+        panelDark: string;
+        panelMid: string;
+        panelLight: string;
+        panelBorder: string;
+        panelShadow: string;
+        hudOverlay: string;
+        hudBorder: string;
+        hudBackground: string;
+        starDim: string;
+        starMid: string;
+        starBright: string;
+        nebulaBase: string;
+        nebulaAccent: string;
+        statusOk: string;
+        statusWarning: string;
+        statusError: string;
+        statusInfo: string;
+        statusInactive: string;
+        planetRocky: string;
+        planetOcean: string;
+        planetDesert: string;
+        planetIce: string;
+        planetGas: string;
+        starYellow: string;
+        starOrange: string;
+        starRed: string;
+        starBlue: string;
+        starWhite: string;
+    };
+    ui: {
+        statusBarHeight: number;
+        fontSize: {
+            small: string;
+            normal: string;
+            large: string;
+            title: string;
+        };
+        fontFamily: string;
+        borderRadius: number;
+        lineHeight: number;
+        padding: {
+            small: number;
+            normal: number;
+            large: number;
+        };
+    };
+    audio: {
+        enabled: boolean;
+        volume: number;
+        sfxVolume: number;
+        musicVolume: number;
+    };
+    graphics: {
+        pixelArt: boolean;
+        smoothing: boolean;
+        pixelScale: number;
+        dithering: boolean;
+        scanlines: boolean;
+        bloom: boolean;
+        glowEffects: boolean;
+        particleCount: number;
+        maxStars: number;
+        renderDistance: number;
+        lodLevels: number;
+    };
+    gameplay: {
+        startingSystem: string;
+        startingCredits: number;
+        startingFuel: number;
+        warpCost: number;
+        baseSpeed: number;
+        turnSpeed: number;
+        thrustPower: number;
+    };
+};
 export declare class PhysicsEngine {
     static applyNewtonianMotion(object: {
         position: Vector2D;
@@ -41,6 +142,20 @@ export declare class PhysicsEngine {
     }): boolean;
     static calculateDistance(pos1: Vector2D, pos2: Vector2D): number;
     static normalizeVector(vector: Vector2D): Vector2D;
+    static updateAngularPhysics(object: {
+        angle: number;
+        angularVelocity?: number;
+    }, targetAngularVelocity: number, deltaTime: number, inertia?: number): void;
+    static applyThrustWithInertia(object: {
+        position: Vector2D;
+        velocity: Vector2D;
+        angle: number;
+    }, thrustMagnitude: number, mass: number, deltaTime: number): void;
+    static applyGyroscopicEffects(object: {
+        velocity: Vector2D;
+        angle: number;
+        angularVelocity?: number;
+    }, deltaTime: number): void;
 }
 export declare class SeededRandom {
     private seed;

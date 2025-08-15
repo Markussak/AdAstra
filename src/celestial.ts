@@ -42,12 +42,12 @@ export class CelestialBody implements ICelestialBody {
   public atmosphereRadius: number = 0;
   public surfaceFeatures: SurfaceFeature[] = [];
   
-  // 16-bit surface data
-  private pixelData: Array<Array<{r: number, g: number, b: number}>> = [];
-  private surfaceNoise: Array<Array<number>> = [];
-  private detailFeatures: Array<{x: number, y: number, size: number, type: string, color: string}> = [];
-  private craterData: Array<{x: number, y: number, size: number, depth: number}> = [];
-  private elevationMap: Array<Array<number>> = [];
+  // Enhanced 16-bit surface data for realistic spheres
+  private surfaceMap: Array<Array<{r: number, g: number, b: number, elevation: number}>> = [];
+  private normalMap: Array<Array<{x: number, y: number, z: number}>> = [];
+  private shadowMap: Array<Array<number>> = [];
+  private uniqueFeatures: Array<{x: number, y: number, size: number, type: string, intensity: number}> = [];
+  private textureResolution: number = 64;
 
   constructor(
     x: number,
@@ -64,329 +64,284 @@ export class CelestialBody implements ICelestialBody {
     this.name = name;
     this.mass = mass;
     this.color = color;
-    this.rotationSpeed = 0.0005 + Math.random() * 0.001; // Slower, smoother rotation
+    this.rotationSpeed = 0.0002 + Math.random() * 0.0008; // Even slower rotation
     
-    // Generate 16-bit surface texture
-    this.generate16BitSurface();
+    // Generate realistic 16-bit sphere surface
+    this.generateRealisticSphere();
     
     // Set atmosphere for planets
     if (type === CelestialBodyType.PLANET && Math.random() < 0.6) {
       this.hasAtmosphere = true;
-      this.atmosphereRadius = radius * (1.15 + Math.random() * 0.3);
+      this.atmosphereRadius = radius * (1.1 + Math.random() * 0.2);
       this.generateAtmosphereColor();
     }
   }
 
-  private generate16BitSurface(): void {
-    const texSize = Math.floor(this.radius * 2);
-    const random = new SeededRandom(this.name.charCodeAt(0) * 1337);
+  private generateRealisticSphere(): void {
+    const random = new SeededRandom(this.name.charCodeAt(0) * 1337 + this.name.length * 777);
     
-    // Initialize arrays
-    this.pixelData = [];
-    this.surfaceNoise = [];
-    this.elevationMap = [];
-    this.detailFeatures = [];
-    this.craterData = [];
+    // Initialize arrays for high-quality sphere rendering
+    this.surfaceMap = [];
+    this.normalMap = [];
+    this.shadowMap = [];
+    this.uniqueFeatures = [];
     
-    for (let x = 0; x < texSize; x++) {
-      this.pixelData[x] = [];
-      this.surfaceNoise[x] = [];
-      this.elevationMap[x] = [];
-      for (let y = 0; y < texSize; y++) {
-        this.pixelData[x][y] = {r: 0, g: 0, b: 0};
-        this.surfaceNoise[x][y] = 0;
-        this.elevationMap[x][y] = 0;
+    // Create surface and normal maps
+    for (let x = 0; x < this.textureResolution; x++) {
+      this.surfaceMap[x] = [];
+      this.normalMap[x] = [];
+      this.shadowMap[x] = [];
+      
+      for (let y = 0; y < this.textureResolution; y++) {
+        this.surfaceMap[x][y] = {r: 0, g: 0, b: 0, elevation: 0};
+        this.normalMap[x][y] = {x: 0, y: 0, z: 1};
+        this.shadowMap[x][y] = 1.0;
       }
     }
     
-    this.generateBaseTexture(texSize, random);
-    this.generateSurfaceFeatures(texSize, random);
-    this.generateCraters(texSize, random);
-    this.applyLighting(texSize);
+    // Generate unique surface patterns
+    this.generateUniqueSurface(random);
+    
+    // Generate surface features
+    this.generateSurfaceFeatures(random);
+    
+    // Calculate sphere normals and lighting
+    this.calculateSphereGeometry();
+    
+    // Apply realistic lighting with shadows
+    this.applyRealisticLighting();
   }
 
-  private generateBaseTexture(size: number, random: SeededRandom): void {
+  private generateUniqueSurface(random: SeededRandom): void {
     const baseColors = this.getBaseColorPalette();
+    const centerX = this.textureResolution / 2;
+    const centerY = this.textureResolution / 2;
+    const maxRadius = this.textureResolution / 2;
     
-    // Generate noise-based terrain
-    for (let x = 0; x < size; x++) {
-      for (let y = 0; y < size; y++) {
-        const centerX = size / 2;
-        const centerY = size / 2;
-        const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+    // Generate multi-octave noise for varied terrain
+    for (let x = 0; x < this.textureResolution; x++) {
+      for (let y = 0; y < this.textureResolution; y++) {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distFromCenter = Math.sqrt(dx * dx + dy * dy);
         
-        if (dist <= this.radius) {
-          // Multi-octave noise for realistic terrain
-          let noise = 0;
-          let amplitude = 1;
-          let frequency = 0.02;
+        if (distFromCenter <= maxRadius) {
+          // Generate unique surface patterns using multiple noise layers
+          const scale1 = 0.1;
+          const scale2 = 0.05;
+          const scale3 = 0.02;
           
-          for (let octave = 0; octave < 4; octave++) {
-            noise += this.perlinNoise(x * frequency, y * frequency, random) * amplitude;
-            amplitude *= 0.5;
-            frequency *= 2;
-          }
+          const noise1 = this.perlinNoise(x * scale1, y * scale1, random.next() * 1000) * 0.5;
+          const noise2 = this.perlinNoise(x * scale2, y * scale2, random.next() * 2000) * 0.3;
+          const noise3 = this.perlinNoise(x * scale3, y * scale3, random.next() * 3000) * 0.2;
           
-          this.surfaceNoise[x][y] = noise;
-          this.elevationMap[x][y] = noise;
+          const combinedNoise = noise1 + noise2 + noise3;
+          const normalizedNoise = (combinedNoise + 1) / 2; // Normalize to 0-1
           
-          // Choose base color based on noise and body type
-          const colorIndex = Math.floor((noise + 1) * 0.5 * (baseColors.length - 1));
-          const baseColor = baseColors[Math.max(0, Math.min(colorIndex, baseColors.length - 1))];
+          // Select base color based on noise and celestial type
+          const colorIndex = Math.floor(normalizedNoise * (baseColors.length - 1));
+          const baseColor = baseColors[colorIndex];
           
-          // Add variation and dithering
-          const variation = random.next() * 40 - 20;
-          this.pixelData[x][y] = {
-            r: Math.max(0, Math.min(255, baseColor.r + variation)),
-            g: Math.max(0, Math.min(255, baseColor.g + variation)),
-            b: Math.max(0, Math.min(255, baseColor.b + variation))
-          };
+          // Add elevation variation
+          this.surfaceMap[x][y].elevation = normalizedNoise * 0.3;
+          
+          // Apply color variation
+          const variation = (random.next() - 0.5) * 0.2;
+          this.surfaceMap[x][y].r = Math.max(0, Math.min(255, baseColor.r + variation * 255));
+          this.surfaceMap[x][y].g = Math.max(0, Math.min(255, baseColor.g + variation * 255));
+          this.surfaceMap[x][y].b = Math.max(0, Math.min(255, baseColor.b + variation * 255));
         }
       }
     }
   }
 
-  private generateSurfaceFeatures(size: number, random: SeededRandom): void {
-    const featureCount = 8 + Math.floor(random.next() * 15);
+  private generateSurfaceFeatures(random: SeededRandom): void {
+    const featureCount = 5 + Math.floor(random.next() * 15);
     
     for (let i = 0; i < featureCount; i++) {
-      const x = random.next() * size;
-      const y = random.next() * size;
-      const featureSize = 5 + random.next() * 20;
+      const x = Math.floor(random.next() * this.textureResolution);
+      const y = Math.floor(random.next() * this.textureResolution);
+      const size = 3 + random.next() * 12;
+      const intensity = 0.3 + random.next() * 0.7;
       
-      let featureType = 'mountain';
-      let featureColor = '#8B7765';
-      
+      let featureType = 'crater';
       switch (this.type) {
         case CelestialBodyType.PLANET:
-          const planetFeatureTypes = ['mountain', 'ocean', 'desert', 'forest', 'ice', 'volcanic'];
-          featureType = planetFeatureTypes[Math.floor(random.next() * planetFeatureTypes.length)];
-          featureColor = this.getPlanetFeatureColor(featureType);
+          featureType = random.choose(['mountain', 'crater', 'valley', 'plateau', 'rift']);
           break;
         case CelestialBodyType.MOON:
-          const moonFeatureTypes = ['crater', 'highland', 'maria', 'ridge'];
-          featureType = moonFeatureTypes[Math.floor(random.next() * moonFeatureTypes.length)];
-          featureColor = this.getMoonFeatureColor(featureType);
+          featureType = random.choose(['crater', 'mountain', 'ridge', 'basin']);
           break;
         case CelestialBodyType.STAR:
-          const starFeatureTypes = ['sunspot', 'flare', 'prominence', 'granule'];
-          featureType = starFeatureTypes[Math.floor(random.next() * starFeatureTypes.length)];
-          featureColor = this.getStarFeatureColor(featureType);
+          featureType = random.choose(['sunspot', 'flare', 'granule', 'prominence']);
           break;
         case CelestialBodyType.ASTEROID:
-          const asteroidFeatureTypes = ['metal_vein', 'rock_formation', 'impact_site'];
-          featureType = asteroidFeatureTypes[Math.floor(random.next() * asteroidFeatureTypes.length)];
-          featureColor = this.getAsteroidFeatureColor(featureType);
+          featureType = random.choose(['crater', 'boulder', 'fracture', 'metal_deposit']);
           break;
       }
       
-      this.detailFeatures.push({
-        x: x,
-        y: y,
-        size: featureSize,
-        type: featureType,
-        color: featureColor
-      });
-    }
-  }
-
-  private generateCraters(size: number, random: SeededRandom): void {
-    if (this.type === CelestialBodyType.STAR) return;
-    
-    const craterCount = this.type === CelestialBodyType.MOON ? 8 + Math.floor(random.next() * 12) : 
-                       this.type === CelestialBodyType.PLANET ? 3 + Math.floor(random.next() * 6) :
-                       this.type === CelestialBodyType.ASTEROID ? 5 + Math.floor(random.next() * 8) : 0;
-    
-    for (let i = 0; i < craterCount; i++) {
-      const x = random.next() * size;
-      const y = random.next() * size;
-      const craterSize = 3 + random.next() * 15;
-      const depth = 0.2 + random.next() * 0.8;
+      this.uniqueFeatures.push({x, y, size, type: featureType, intensity});
       
-      this.craterData.push({
-        x: x,
-        y: y,
-        size: craterSize,
-        depth: depth
-      });
+      // Apply feature to surface map
+      this.applyFeatureToSurface(x, y, size, featureType, intensity);
     }
   }
 
-  private applyLighting(size: number): void {
-    const lightDirection = { x: 1, y: -1 }; // Light from top-right
-    const lightIntensity = 1.0;
+  private applyFeatureToSurface(centerX: number, centerY: number, size: number, type: string, intensity: number): void {
+    const radius = size / 2;
     
-    for (let x = 0; x < size; x++) {
-      for (let y = 0; y < size; y++) {
-        const centerX = size / 2;
-        const centerY = size / 2;
-        const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+    for (let x = Math.max(0, centerX - radius); x < Math.min(this.textureResolution, centerX + radius); x++) {
+      for (let y = Math.max(0, centerY - radius); y < Math.min(this.textureResolution, centerY + radius); y++) {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
         
-        if (dist <= this.radius) {
-          // Calculate surface normal from elevation
-          const elevation = this.elevationMap[x][y];
-          let normalX = 0, normalY = 0;
+        if (distance <= radius) {
+          const falloff = 1 - (distance / radius);
+          const effect = intensity * falloff;
           
-          if (x > 0 && x < size - 1) {
-            normalX = this.elevationMap[x - 1][y] - this.elevationMap[x + 1][y];
+          switch (type) {
+            case 'crater':
+              this.surfaceMap[x][y].elevation -= effect * 0.5;
+              this.surfaceMap[x][y].r = Math.max(0, this.surfaceMap[x][y].r - effect * 50);
+              this.surfaceMap[x][y].g = Math.max(0, this.surfaceMap[x][y].g - effect * 50);
+              this.surfaceMap[x][y].b = Math.max(0, this.surfaceMap[x][y].b - effect * 50);
+              break;
+            case 'mountain':
+              this.surfaceMap[x][y].elevation += effect * 0.4;
+              this.surfaceMap[x][y].r = Math.min(255, this.surfaceMap[x][y].r + effect * 30);
+              this.surfaceMap[x][y].g = Math.min(255, this.surfaceMap[x][y].g + effect * 30);
+              this.surfaceMap[x][y].b = Math.min(255, this.surfaceMap[x][y].b + effect * 30);
+              break;
+            case 'sunspot':
+              this.surfaceMap[x][y].r = Math.max(0, this.surfaceMap[x][y].r - effect * 100);
+              this.surfaceMap[x][y].g = Math.max(0, this.surfaceMap[x][y].g - effect * 80);
+              this.surfaceMap[x][y].b = Math.max(0, this.surfaceMap[x][y].b - effect * 60);
+              break;
           }
-          if (y > 0 && y < size - 1) {
-            normalY = this.elevationMap[x][y - 1] - this.elevationMap[x][y + 1];
-          }
-          
-          // Spherical lighting
-          const sphereNormalX = (x - centerX) / this.radius;
-          const sphereNormalY = (y - centerY) / this.radius;
-          const sphereNormalZ = Math.sqrt(Math.max(0, 1 - sphereNormalX ** 2 - sphereNormalY ** 2));
-          
-          // Combine surface and sphere normals
-          const finalNormalX = sphereNormalX + normalX * 0.3;
-          const finalNormalY = sphereNormalY + normalY * 0.3;
-          const finalNormalZ = sphereNormalZ;
-          
-          // Calculate lighting
-          const lightDot = Math.max(0, finalNormalX * lightDirection.x + finalNormalY * lightDirection.y + finalNormalZ * 0.5);
-          const lightFactor = 0.3 + lightDot * 0.7; // Ambient + diffuse
-          
-          // Apply terminator (day/night) for realistic lighting
-          const terminatorFactor = Math.max(0, Math.min(1, (sphereNormalX + 0.3) * 2));
-          const finalLightFactor = lightFactor * terminatorFactor;
-          
-          // Apply lighting to pixel
-          this.pixelData[x][y].r = Math.floor(this.pixelData[x][y].r * finalLightFactor);
-          this.pixelData[x][y].g = Math.floor(this.pixelData[x][y].g * finalLightFactor);
-          this.pixelData[x][y].b = Math.floor(this.pixelData[x][y].b * finalLightFactor);
         }
       }
     }
   }
 
-  private getBaseColorPalette(): Array<{r: number, g: number, b: number}> {
-    switch (this.type) {
-      case CelestialBodyType.STAR:
-        return [
-          {r: 255, g: 255, b: 200}, // White hot
-          {r: 255, g: 220, b: 150}, // Yellow
-          {r: 255, g: 180, b: 100}, // Orange
-          {r: 255, g: 140, b: 80},  // Red-orange
-          {r: 255, g: 100, b: 60}   // Deep red
-        ];
-      case CelestialBodyType.PLANET:
-        return [
-          {r: 100, g: 150, b: 200}, // Ocean blue
-          {r: 120, g: 180, b: 120}, // Forest green  
-          {r: 180, g: 140, b: 100}, // Desert tan
-          {r: 140, g: 120, b: 100}, // Rocky brown
-          {r: 200, g: 200, b: 200}, // Ice white
-          {r: 150, g: 100, b: 80},  // Mountain gray-brown
-          {r: 200, g: 120, b: 80}   // Volcanic red-orange
-        ];
-      case CelestialBodyType.MOON:
-        return [
-          {r: 180, g: 180, b: 170}, // Light gray
-          {r: 150, g: 150, b: 140}, // Medium gray
-          {r: 120, g: 120, b: 110}, // Dark gray
-          {r: 100, g: 100, b: 90},  // Very dark gray
-          {r: 140, g: 130, b: 120}  // Brownish gray
-        ];
-      case CelestialBodyType.ASTEROID:
-        return [
-          {r: 80, g: 70, b: 60},    // Dark rock
-          {r: 120, g: 110, b: 100}, // Light rock
-          {r: 150, g: 130, b: 100}, // Iron-rich
-          {r: 100, g: 90, b: 80},   // Carbon-rich
-          {r: 160, g: 140, b: 120}  // Silicate
-        ];
-      default:
-        return [{r: 128, g: 128, b: 128}];
+  private calculateSphereGeometry(): void {
+    const centerX = this.textureResolution / 2;
+    const centerY = this.textureResolution / 2;
+    const maxRadius = this.textureResolution / 2;
+    
+    for (let x = 0; x < this.textureResolution; x++) {
+      for (let y = 0; y < this.textureResolution; y++) {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distFromCenter <= maxRadius) {
+          // Calculate sphere normal
+          const normalizedX = dx / maxRadius;
+          const normalizedY = dy / maxRadius;
+          const z = Math.sqrt(Math.max(0, 1 - normalizedX * normalizedX - normalizedY * normalizedY));
+          
+          // Combine sphere normal with surface elevation
+          const elevation = this.surfaceMap[x][y].elevation;
+          const surfaceNormalX = 0;
+          const surfaceNormalY = 0;
+          const surfaceNormalZ = 1;
+          
+          // Calculate surface gradient if not on edge
+          if (x > 0 && x < this.textureResolution - 1 && y > 0 && y < this.textureResolution - 1) {
+            const gradientX = this.surfaceMap[x + 1][y].elevation - this.surfaceMap[x - 1][y].elevation;
+            const gradientY = this.surfaceMap[x][y + 1].elevation - this.surfaceMap[x][y - 1].elevation;
+            
+            this.normalMap[x][y].x = normalizedX + gradientX * 0.1;
+            this.normalMap[x][y].y = normalizedY + gradientY * 0.1;
+            this.normalMap[x][y].z = z;
+          } else {
+            this.normalMap[x][y].x = normalizedX;
+            this.normalMap[x][y].y = normalizedY;
+            this.normalMap[x][y].z = z;
+          }
+        }
+      }
     }
   }
 
-  private getPlanetFeatureColor(featureType: string): string {
-    switch (featureType) {
-      case 'mountain': return '#8B7765';
-      case 'ocean': return '#4682B4';
-      case 'desert': return '#DEB887';
-      case 'forest': return '#228B22';
-      case 'ice': return '#F0F8FF';
-      case 'volcanic': return '#DC143C';
-      default: return '#808080';
+  private applyRealisticLighting(): void {
+    const lightDirection = { x: 0.7, y: -0.5, z: 0.5 }; // Light from upper right
+    const ambientLight = 0.2;
+    const diffuseStrength = 0.8;
+    
+    const centerX = this.textureResolution / 2;
+    const centerY = this.textureResolution / 2;
+    const maxRadius = this.textureResolution / 2;
+    
+    for (let x = 0; x < this.textureResolution; x++) {
+      for (let y = 0; y < this.textureResolution; y++) {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distFromCenter <= maxRadius) {
+          const normal = this.normalMap[x][y];
+          
+          // Calculate diffuse lighting
+          const diffuse = Math.max(0, 
+            normal.x * lightDirection.x + 
+            normal.y * lightDirection.y + 
+            normal.z * lightDirection.z
+          );
+          
+          // Calculate terminator effect (day/night)
+          const terminatorFactor = Math.max(0, (normal.x * 0.7 + 0.3));
+          
+          // Calculate sphere edge darkening
+          const edgeFactor = Math.max(0.3, normal.z);
+          
+          // Combine lighting factors
+          const finalLighting = (ambientLight + diffuse * diffuseStrength) * terminatorFactor * edgeFactor;
+          
+          // Apply lighting to surface color
+          const pixel = this.surfaceMap[x][y];
+          pixel.r = Math.floor(pixel.r * finalLighting);
+          pixel.g = Math.floor(pixel.g * finalLighting);
+          pixel.b = Math.floor(pixel.b * finalLighting);
+          
+          // Store shadow value for later use
+          this.shadowMap[x][y] = finalLighting;
+        }
+      }
     }
   }
 
-  private getMoonFeatureColor(featureType: string): string {
-    switch (featureType) {
-      case 'crater': return '#696969';
-      case 'highland': return '#C0C0C0';
-      case 'maria': return '#2F4F4F';
-      case 'ridge': return '#A9A9A9';
-      default: return '#808080';
-    }
-  }
-
-  private getStarFeatureColor(featureType: string): string {
-    switch (featureType) {
-      case 'sunspot': return '#8B0000';
-      case 'flare': return '#FFD700';
-      case 'prominence': return '#FF4500';
-      case 'granule': return '#FFA500';
-      default: return '#FFFF00';
-    }
-  }
-
-  private getAsteroidFeatureColor(featureType: string): string {
-    switch (featureType) {
-      case 'metal_vein': return '#C0C0C0';
-      case 'rock_formation': return '#8B4513';
-      case 'impact_site': return '#2F2F2F';
-      default: return '#696969';
-    }
-  }
-
-  private generateAtmosphereColor(): void {
-    switch (this.type) {
-      case CelestialBodyType.PLANET:
-        const atmosphereTypes = [
-          'rgba(135, 206, 235, 0.3)', // Earth-like blue
-          'rgba(255, 165, 0, 0.2)',   // Mars-like orange
-          'rgba(255, 255, 224, 0.25)', // Venus-like yellow
-          'rgba(138, 43, 226, 0.2)',  // Exotic purple
-          'rgba(0, 255, 127, 0.2)'    // Alien green
-        ];
-        this.atmosphereColor = atmosphereTypes[Math.floor(Math.random() * atmosphereTypes.length)];
-        break;
-      default:
-        this.atmosphereColor = 'rgba(255, 255, 255, 0.1)';
-    }
-  }
-
-  private perlinNoise(x: number, y: number, random: SeededRandom): number {
+  private perlinNoise(x: number, y: number, seed: number): number {
     // Simple Perlin-like noise implementation
-    const xi = Math.floor(x);
-    const yi = Math.floor(y);
-    const xf = x - xi;
-    const yf = y - yi;
+    const X = Math.floor(x) & 255;
+    const Y = Math.floor(y) & 255;
     
-    const u = this.fade(xf);
-    const v = this.fade(yf);
+    x -= Math.floor(x);
+    y -= Math.floor(y);
     
-    const a = this.grad(random.nextInt() % 256, xf, yf);
-    const b = this.grad(random.nextInt() % 256, xf - 1, yf);
-    const c = this.grad(random.nextInt() % 256, xf, yf - 1);
-    const d = this.grad(random.nextInt() % 256, xf - 1, yf - 1);
+    const u = this.fade(x);
+    const v = this.fade(y);
     
-    const i1 = this.lerp(a, b, u);
-    const i2 = this.lerp(c, d, u);
+    const a = this.grad(this.hash(X + this.hash(Y + seed)), x, y);
+    const b = this.grad(this.hash(X + 1 + this.hash(Y + seed)), x - 1, y);
+    const c = this.grad(this.hash(X + this.hash(Y + 1 + seed)), x, y - 1);
+    const d = this.grad(this.hash(X + 1 + this.hash(Y + 1 + seed)), x - 1, y - 1);
     
-    return this.lerp(i1, i2, v);
+    return this.lerp(v, this.lerp(u, a, b), this.lerp(u, c, d));
   }
 
   private fade(t: number): number {
     return t * t * t * (t * (t * 6 - 15) + 10);
   }
 
-  private lerp(a: number, b: number, t: number): number {
+  private lerp(t: number, a: number, b: number): number {
     return a + t * (b - a);
+  }
+
+  private hash(n: number): number {
+    n = (n << 13) ^ n;
+    return (n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff;
   }
 
   private grad(hash: number, x: number, y: number): number {
@@ -394,6 +349,62 @@ export class CelestialBody implements ICelestialBody {
     const u = h < 8 ? x : y;
     const v = h < 4 ? y : h === 12 || h === 14 ? x : 0;
     return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+  }
+
+  private getBaseColorPalette(): Array<{r: number, g: number, b: number}> {
+    switch (this.type) {
+      case CelestialBodyType.STAR:
+        return [
+          {r: 255, g: 255, b: 220}, // White hot core
+          {r: 255, g: 240, b: 180}, // Yellow hot
+          {r: 255, g: 200, b: 120}, // Orange
+          {r: 255, g: 160, b: 100}, // Red-orange
+          {r: 255, g: 120, b: 80}   // Deep red
+        ];
+      case CelestialBodyType.PLANET:
+        return [
+          {r: 80, g: 120, b: 180},   // Deep ocean blue
+          {r: 100, g: 160, b: 100},  // Forest green  
+          {r: 160, g: 120, b: 80},   // Desert tan
+          {r: 120, g: 100, b: 80},   // Rocky brown
+          {r: 180, g: 180, b: 190},  // Ice white
+          {r: 130, g: 90, b: 70},    // Mountain gray-brown
+          {r: 180, g: 100, b: 60}    // Volcanic red-orange
+        ];
+      case CelestialBodyType.MOON:
+        return [
+          {r: 160, g: 160, b: 150}, // Light gray
+          {r: 130, g: 130, b: 120}, // Medium gray
+          {r: 100, g: 100, b: 90},  // Dark gray
+          {r: 80, g: 80, b: 70},    // Very dark gray
+          {r: 120, g: 110, b: 100}  // Brownish gray
+        ];
+      case CelestialBodyType.ASTEROID:
+        return [
+          {r: 70, g: 60, b: 50},    // Dark rock
+          {r: 100, g: 90, b: 80},   // Light rock
+          {r: 130, g: 110, b: 80},  // Iron-rich
+          {r: 80, g: 70, b: 60},    // Carbon-rich
+          {r: 140, g: 120, b: 100}  // Silicate
+        ];
+      default:
+        return [{r: 128, g: 128, b: 128}];
+    }
+  }
+
+  private generateAtmosphereColor(): void {
+    switch (this.type) {
+      case CelestialBodyType.PLANET:
+        const atmosphereTypes = [
+          'rgba(135, 206, 235, 0.25)', // Earth-like blue
+          'rgba(255, 165, 0, 0.2)',    // Mars-like orange
+          'rgba(255, 255, 255, 0.3)',  // Venus-like white
+          'rgba(128, 0, 128, 0.25)',   // Purple exotic
+          'rgba(0, 255, 127, 0.2)'     // Green exotic
+        ];
+        this.atmosphereColor = atmosphereTypes[Math.floor(Math.random() * atmosphereTypes.length)];
+        break;
+    }
   }
 
   // Realistic orbit setting with proper Kepler mechanics
@@ -464,11 +475,11 @@ export class CelestialBody implements ICelestialBody {
 
     // Update surface features rotation for stars (solar activity)
     if (this.type === CelestialBodyType.STAR) {
-      this.detailFeatures.forEach(feature => {
-        if (feature.type === 'flare' || feature.type === 'prominence') {
-          // Animate solar flares
-          const time = Date.now() * 0.001;
-          feature.size = Math.max(5, feature.size + Math.sin(time + feature.x) * 2);
+      // Animate sunspots and surface features
+      const time = Date.now() * 0.0001;
+      this.uniqueFeatures.forEach((feature, index) => {
+        if (feature.type === 'sunspot' || feature.type === 'flare') {
+          feature.intensity = 0.5 + Math.sin(time + index) * 0.3;
         }
       });
     }
@@ -476,12 +487,16 @@ export class CelestialBody implements ICelestialBody {
 
   public isVisible(camera: ICamera, screenWidth: number, screenHeight: number): boolean {
     const screenPos = camera.worldToScreen(this.position.x, this.position.y);
-    const margin = this.radius * camera.zoom + 100;
+    const screenRadius = this.radius * camera.zoom;
     
-    return screenPos.x > -margin && 
-           screenPos.x < screenWidth + margin && 
-           screenPos.y > -margin && 
-           screenPos.y < screenHeight + margin;
+    // Extended frustum culling with margin for better performance
+    const margin = Math.max(50, screenRadius);
+    return (
+      screenPos.x + screenRadius > -margin &&
+      screenPos.x - screenRadius < screenWidth + margin &&
+      screenPos.y + screenRadius > -margin &&
+      screenPos.y - screenRadius < screenHeight + margin
+    );
   }
 
   public render(renderer: IRenderer, camera: ICamera): void {
@@ -490,21 +505,48 @@ export class CelestialBody implements ICelestialBody {
     }
 
     const screenPos = camera.worldToScreen(this.position.x, this.position.y);
+    const scaledRadius = this.radius * camera.zoom;
+
+    // Level of Detail (LOD) system for performance
+    const distanceToCamera = Math.sqrt(
+      (camera.x - this.position.x) ** 2 + 
+      (camera.y - this.position.y) ** 2
+    );
+    
+    // Very distant objects - render as simple colored pixels
+    if (scaledRadius < 3 || distanceToCamera > 5000) {
+      const ctx = renderer.getContext();
+      ctx.fillStyle = this.color;
+      ctx.fillRect(screenPos.x - 1, screenPos.y - 1, 2, 2);
+      return;
+    }
+    
+    // Distant objects - simplified rendering
+    if (scaledRadius < 8 || distanceToCamera > 2500) {
+      const ctx = renderer.getContext();
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(screenPos.x, screenPos.y, Math.max(2, scaledRadius), 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
 
     renderer.save();
     renderer.translate(screenPos.x, screenPos.y);
 
-    if (this.orbitCenter && this.type !== CelestialBodyType.STAR) {
+    // Only render orbit paths for nearby objects to save performance
+    if (this.orbitCenter && this.type !== CelestialBodyType.STAR && distanceToCamera < 3000) {
       this.renderOrbitPath(renderer, camera);
     }
 
-    // Render 16-bit celestial body
-    this.render16BitBody(renderer, camera);
+    // Enhanced 16-bit rendering for close objects
+    this.renderRealistic16BitSphere(renderer, camera);
 
     renderer.restore();
 
-    // Draw name for large objects
+    // Only render names for large, close objects
     if ((this.type === CelestialBodyType.STAR || this.type === CelestialBodyType.PLANET) && 
+        distanceToCamera < 1500 &&
         Math.abs(screenPos.x - renderer.getWidth()/2) < 200 && 
         Math.abs(screenPos.y - renderer.getHeight()/2) < 200) {
       renderer.drawText(this.name, screenPos.x, screenPos.y + this.radius * camera.zoom + 25, '#e0e3e6', '10px "Big Apple 3PM", monospace');
@@ -516,9 +558,18 @@ export class CelestialBody implements ICelestialBody {
 
     const ctx = renderer.getContext();
     const centerScreen = camera.worldToScreen(this.orbitCenter.x, this.orbitCenter.y);
-    const currentScreen = camera.worldToScreen(this.position.x, this.position.y);
 
-    ctx.strokeStyle = 'rgba(162, 170, 178, 0.2)';
+    // Only render orbit if center is roughly on screen
+    const screenWidth = renderer.getWidth();
+    const screenHeight = renderer.getHeight();
+    const orbitRadius = this.semiMajorAxis * camera.zoom;
+    
+    if (centerScreen.x + orbitRadius < -100 || centerScreen.x - orbitRadius > screenWidth + 100 ||
+        centerScreen.y + orbitRadius < -100 || centerScreen.y - orbitRadius > screenHeight + 100) {
+      return;
+    }
+
+    ctx.strokeStyle = 'rgba(162, 170, 178, 0.15)';
     ctx.lineWidth = 1;
     ctx.setLineDash([3, 3]);
     
@@ -532,59 +583,76 @@ export class CelestialBody implements ICelestialBody {
     ctx.setLineDash([]);
   }
 
-  private render16BitBody(renderer: IRenderer, camera: ICamera): void {
+  private renderRealistic16BitSphere(renderer: IRenderer, camera: ICamera): void {
     const ctx = renderer.getContext();
     const scaledRadius = this.radius * camera.zoom;
     
     // Don't render if too small
-    if (scaledRadius < 8) {
-      // Render as simple pixel for distant objects
+    if (scaledRadius < 6) {
+      // Render as simple colored pixel for distant objects
       ctx.fillStyle = this.color;
-      ctx.fillRect(-2, -2, 4, 4);
+      ctx.fillRect(-1, -1, 2, 2);
       return;
     }
 
     // Turn off smoothing for pixel art
     ctx.imageSmoothingEnabled = false;
     
-    const pixelSize = Math.max(1, Math.floor(scaledRadius / this.radius));
-    const size = Math.floor(scaledRadius * 2);
-    
-    // Render atmosphere first if present
-    if (this.hasAtmosphere && this.atmosphereColor) {
-      ctx.fillStyle = this.atmosphereColor;
+    // Render atmosphere first if present and large enough
+    if (this.hasAtmosphere && this.atmosphereColor && scaledRadius > 12) {
+      const gradient = ctx.createRadialGradient(0, 0, scaledRadius * 0.8, 0, 0, this.atmosphereRadius * camera.zoom);
+      gradient.addColorStop(0, 'rgba(0,0,0,0)');
+      gradient.addColorStop(0.7, this.atmosphereColor);
+      gradient.addColorStop(1, 'rgba(0,0,0,0)');
+      
+      ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(0, 0, this.atmosphereRadius * camera.zoom, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Render 16-bit surface texture
+    // Render the realistic sphere surface with LOD
     ctx.save();
     ctx.rotate(this.rotation);
     
-    const textureSize = this.pixelData.length;
-    for (let x = 0; x < textureSize; x++) {
-      for (let y = 0; y < textureSize; y++) {
-        const centerX = textureSize / 2;
-        const centerY = textureSize / 2;
-        const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+    const pixelSize = Math.max(1, Math.floor(scaledRadius / 32));
+    const textureScale = scaledRadius / (this.textureResolution / 2);
+    
+    // Adaptive rendering based on size
+    const renderStep = scaledRadius > 50 ? 1 : Math.max(1, Math.floor(3 - scaledRadius / 25));
+    
+    // Render surface pixels with proper sphere mapping and LOD
+    for (let x = 0; x < this.textureResolution; x += renderStep) {
+      for (let y = 0; y < this.textureResolution; y += renderStep) {
+        const centerX = this.textureResolution / 2;
+        const centerY = this.textureResolution / 2;
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distFromCenter = Math.sqrt(dx * dx + dy * dy);
         
-        if (dist <= this.radius) {
-          const pixel = this.pixelData[x][y];
-          const screenX = (x - centerX) * pixelSize;
-          const screenY = (y - centerY) * pixelSize;
+        if (distFromCenter <= this.textureResolution / 2) {
+          const pixel = this.surfaceMap[x][y];
+          const screenX = dx * textureScale;
+          const screenY = dy * textureScale;
           
-          ctx.fillStyle = `rgb(${pixel.r}, ${pixel.g}, ${pixel.b})`;
-          ctx.fillRect(screenX, screenY, pixelSize, pixelSize);
+          // Only render pixels that are on the visible hemisphere
+          const normal = this.normalMap[x][y];
+          if (normal.z > 0.1) { // Only render front-facing pixels
+            ctx.fillStyle = `rgb(${pixel.r}, ${pixel.g}, ${pixel.b})`;
+            const renderSize = Math.max(renderStep, pixelSize);
+            ctx.fillRect(
+              screenX - renderSize/2, 
+              screenY - renderSize/2, 
+              renderSize, 
+              renderSize
+            );
+          }
         }
       }
     }
 
-    // Render surface features
-    this.renderSurfaceDetails(ctx, camera);
-    
-    // Add stellar corona for stars
-    if (this.type === CelestialBodyType.STAR) {
+    // Add stellar corona for stars (only for large, close stars)
+    if (this.type === CelestialBodyType.STAR && scaledRadius > 20) {
       this.renderStellarCorona(ctx, camera);
     }
     
@@ -594,119 +662,35 @@ export class CelestialBody implements ICelestialBody {
     ctx.imageSmoothingEnabled = true;
   }
 
-  private renderSurfaceDetails(ctx: CanvasRenderingContext2D, camera: ICamera): void {
-    const pixelSize = Math.max(1, Math.floor((this.radius * camera.zoom) / this.radius));
-    
-    // Render detail features
-    this.detailFeatures.forEach(feature => {
-      const featureX = (feature.x - this.radius) * pixelSize;
-      const featureY = (feature.y - this.radius) * pixelSize;
-      const dist = Math.sqrt(featureX ** 2 + featureY ** 2);
-      
-      if (dist <= this.radius * pixelSize) {
-        ctx.fillStyle = feature.color;
-        const featureSize = Math.max(2, feature.size * pixelSize / 8);
-        
-        // Different shapes for different feature types
-        if (feature.type === 'crater') {
-          ctx.beginPath();
-          ctx.arc(featureX, featureY, featureSize, 0, Math.PI * 2);
-          ctx.fill();
-          // Dark center for crater
-          ctx.fillStyle = '#2F2F2F';
-          ctx.beginPath();
-          ctx.arc(featureX, featureY, featureSize * 0.3, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          ctx.fillRect(featureX - featureSize/2, featureY - featureSize/2, featureSize, featureSize);
-        }
-      }
-    });
-
-    // Render craters
-    this.craterData.forEach(crater => {
-      const craterX = (crater.x - this.radius) * pixelSize;
-      const craterY = (crater.y - this.radius) * pixelSize;
-      const dist = Math.sqrt(craterX ** 2 + craterY ** 2);
-      
-      if (dist <= this.radius * pixelSize) {
-        const craterSize = Math.max(3, crater.size * pixelSize / 4);
-        
-        // Crater rim (lighter)
-        ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
-        ctx.beginPath();
-        ctx.arc(craterX, craterY, craterSize, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Crater interior (darker)
-        ctx.fillStyle = 'rgba(50, 50, 50, 0.9)';
-        ctx.beginPath();
-        ctx.arc(craterX, craterY, craterSize * 0.6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    });
-  }
-
   private renderStellarCorona(ctx: CanvasRenderingContext2D, camera: ICamera): void {
-    const coronaRadius = this.radius * camera.zoom * 1.2;
+    const coronaRadius = this.radius * camera.zoom * 1.15;
     
     // Create radial gradient for corona
     const gradient = ctx.createRadialGradient(0, 0, this.radius * camera.zoom, 0, 0, coronaRadius);
     gradient.addColorStop(0, 'rgba(255, 255, 200, 0.0)');
-    gradient.addColorStop(0.7, 'rgba(255, 200, 100, 0.3)');
-    gradient.addColorStop(1, 'rgba(255, 150, 50, 0.1)');
+    gradient.addColorStop(0.7, 'rgba(255, 200, 100, 0.2)');
+    gradient.addColorStop(1, 'rgba(255, 150, 50, 0.05)');
     
     ctx.fillStyle = gradient;
     ctx.beginPath();
     ctx.arc(0, 0, coronaRadius, 0, Math.PI * 2);
     ctx.fill();
     
-    // Add solar flares
+    // Add subtle solar flares
     const time = Date.now() * 0.001;
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2 + time * 0.1;
-      const flareLength = (20 + Math.sin(time + i) * 10) * camera.zoom;
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2 + time * 0.1;
+      const flareLength = (15 + Math.sin(time + i) * 8) * camera.zoom;
       const flareX = Math.cos(angle) * this.radius * camera.zoom;
       const flareY = Math.sin(angle) * this.radius * camera.zoom;
       
-      ctx.strokeStyle = `rgba(255, 255, 200, ${0.3 + Math.sin(time + i) * 0.2})`;
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = `rgba(255, 240, 180, ${0.2 + Math.sin(time + i) * 0.1})`;
+      ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(flareX, flareY);
       ctx.lineTo(flareX + Math.cos(angle) * flareLength, flareY + Math.sin(angle) * flareLength);
       ctx.stroke();
     }
-  }
-
-  private lightenColor(color: string, factor: number): string {
-    const hex = color.replace('#', '');
-    const r = Math.min(255, parseInt(hex.substr(0, 2), 16) + Math.floor(factor * 255));
-    const g = Math.min(255, parseInt(hex.substr(2, 2), 16) + Math.floor(factor * 255));
-    const b = Math.min(255, parseInt(hex.substr(4, 2), 16) + Math.floor(factor * 255));
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-  }
-
-  private darkenColor(color: string, factor: number): string {
-    const hex = color.replace('#', '');
-    const r = Math.max(0, parseInt(hex.substr(0, 2), 16) - Math.floor(factor * 255));
-    const g = Math.max(0, parseInt(hex.substr(2, 2), 16) - Math.floor(factor * 255));
-    const b = Math.max(0, parseInt(hex.substr(4, 2), 16) - Math.floor(factor * 255));
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-  }
-
-  private adjustBrightness(color: string, intensity: number): string {
-    if (color.includes('rgba')) return color; // Skip rgba colors
-    const hex = color.replace('#', '');
-    const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) * intensity));
-    const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) * intensity));
-    const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) * intensity));
-    return `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
-  }
-
-  // Simple noise function for terrain generation
-  private noise(x: number, y: number, seed: number): number {
-    const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 37.719) * 43758.5453;
-    return (n - Math.floor(n)) * 2 - 1; // Return value between -1 and 1
   }
 
   private renderGeneric(renderer: IRenderer): void {

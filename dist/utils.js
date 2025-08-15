@@ -22,12 +22,8 @@ export const Vector2DUtils = {
 };
 export const gameConfig = {
     canvas: {
-        width: 1920,
-        height: 1080,
-        pixelRatio: 1
-    },
-    ui: {
-        statusBarHeight: 0.15
+        width: 1200,
+        height: 800
     },
     physics: {
         gravityStrength: 0.005,
@@ -35,14 +31,95 @@ export const gameConfig = {
         maxVelocity: 500
     },
     colors: {
-        bgPrimary: '#1a1a1a',
-        hullPrimary: '#505050',
-        hullSecondary: '#404040',
-        accentFriendly: '#606060',
-        accentHostile: '#404040',
-        accentNeutral: '#404040',
-        fxGlowPrimary: '#505050',
-        fxGlowSecondary: '#404040'
+        bgPrimary: '#000000',
+        bgSecondary: '#0a0a0a',
+        hullPrimary: '#5a6978',
+        hullSecondary: '#434c55',
+        hullDamaged: '#6d4c4c',
+        accentFriendly: '#4a8a44',
+        accentHostile: '#8a4444',
+        accentNeutral: '#8a7a44',
+        accentInfo: '#44708a',
+        accentWarning: '#8a6a44',
+        textPrimary: '#e8e8e8',
+        textSecondary: '#b8b8b8',
+        textDim: '#888888',
+        textAmber: '#d4a574',
+        textGreen: '#74a574',
+        textRed: '#a57474',
+        panelDark: '#1a1a1a',
+        panelMid: '#2a2a2a',
+        panelLight: '#3a3a3a',
+        panelBorder: '#404040',
+        panelShadow: '#0f0f0f',
+        hudOverlay: 'rgba(0,0,0,0.7)',
+        hudBorder: '#505050',
+        hudBackground: '#1a1a1a',
+        starDim: '#a8a8a8',
+        starMid: '#c8c8c8',
+        starBright: '#e8e8e8',
+        nebulaBase: '#2a1a2a',
+        nebulaAccent: '#3a2a3a',
+        statusOk: '#60a060',
+        statusWarning: '#a0a060',
+        statusError: '#a06060',
+        statusInfo: '#6080a0',
+        statusInactive: '#404040',
+        planetRocky: '#8a7a6a',
+        planetOcean: '#5a7a8a',
+        planetDesert: '#8a8a6a',
+        planetIce: '#7a8a8a',
+        planetGas: '#7a7a8a',
+        starYellow: '#e8d8a8',
+        starOrange: '#e8c8a8',
+        starRed: '#e8a8a8',
+        starBlue: '#a8c8e8',
+        starWhite: '#e8e8e8'
+    },
+    ui: {
+        statusBarHeight: 0.15,
+        fontSize: {
+            small: '8px',
+            normal: '10px',
+            large: '12px',
+            title: '16px'
+        },
+        fontFamily: '"Big Apple 3PM", monospace',
+        borderRadius: 0,
+        lineHeight: 1.2,
+        padding: {
+            small: 4,
+            normal: 8,
+            large: 16
+        }
+    },
+    audio: {
+        enabled: true,
+        volume: 0.7,
+        sfxVolume: 0.5,
+        musicVolume: 0.3
+    },
+    graphics: {
+        pixelArt: true,
+        smoothing: false,
+        pixelScale: 1,
+        dithering: true,
+        scanlines: false,
+        bloom: false,
+        glowEffects: false,
+        particleCount: 50,
+        maxStars: 1000,
+        renderDistance: 5000,
+        lodLevels: 3
+    },
+    gameplay: {
+        startingSystem: 'Sol',
+        startingCredits: 1000,
+        startingFuel: 100,
+        warpCost: 10,
+        baseSpeed: 100,
+        turnSpeed: 3.0,
+        thrustPower: 200
     }
 };
 export class PhysicsEngine {
@@ -54,9 +131,17 @@ export class PhysicsEngine {
         object.velocity.y *= frictionFactor;
         const speed = Math.sqrt(object.velocity.x ** 2 + object.velocity.y ** 2);
         if (speed > gameConfig.physics.maxVelocity) {
-            const factor = gameConfig.physics.maxVelocity / speed;
+            const overspeed = speed - gameConfig.physics.maxVelocity;
+            const dampingFactor = Math.exp(-overspeed * 0.01);
+            const targetSpeed = gameConfig.physics.maxVelocity * dampingFactor + gameConfig.physics.maxVelocity * (1 - dampingFactor);
+            const factor = targetSpeed / speed;
             object.velocity.x *= factor;
             object.velocity.y *= factor;
+        }
+        if (speed > 10) {
+            const turbulence = speed * 0.0001;
+            object.velocity.x += (Math.random() - 0.5) * turbulence * deltaTime;
+            object.velocity.y += (Math.random() - 0.5) * turbulence * deltaTime;
         }
     }
     static applyGravity(object, gravitySources, deltaTime, gravityStrength = 0.005) {
@@ -118,6 +203,37 @@ export class PhysicsEngine {
         if (magnitude === 0)
             return { x: 0, y: 0 };
         return { x: vector.x / magnitude, y: vector.y / magnitude };
+    }
+    static updateAngularPhysics(object, targetAngularVelocity, deltaTime, inertia = 1.0) {
+        if (object.angularVelocity === undefined) {
+            object.angularVelocity = 0;
+        }
+        const angularAccel = (targetAngularVelocity - object.angularVelocity) / inertia;
+        object.angularVelocity += angularAccel * deltaTime;
+        object.angularVelocity *= Math.pow(0.995, deltaTime);
+        object.angle += object.angularVelocity * deltaTime;
+    }
+    static applyThrustWithInertia(object, thrustMagnitude, mass, deltaTime) {
+        const acceleration = thrustMagnitude / mass;
+        const thrustX = Math.cos(object.angle) * acceleration;
+        const thrustY = Math.sin(object.angle) * acceleration;
+        object.velocity.x += thrustX * deltaTime;
+        object.velocity.y += thrustY * deltaTime;
+    }
+    static applyGyroscopicEffects(object, deltaTime) {
+        const speed = Math.sqrt(object.velocity.x ** 2 + object.velocity.y ** 2);
+        if (speed > 50 && object.angularVelocity !== undefined) {
+            const gyroscopicFactor = Math.min(0.5, speed / 200);
+            const velocityAngle = Math.atan2(object.velocity.y, object.velocity.x);
+            const angleDiff = velocityAngle - object.angle;
+            let normalizedDiff = angleDiff;
+            while (normalizedDiff > Math.PI)
+                normalizedDiff -= Math.PI * 2;
+            while (normalizedDiff < -Math.PI)
+                normalizedDiff += Math.PI * 2;
+            const gyroscopicTorque = normalizedDiff * gyroscopicFactor * deltaTime;
+            object.angularVelocity += gyroscopicTorque * 0.1;
+        }
     }
 }
 export class SeededRandom {

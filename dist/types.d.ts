@@ -415,9 +415,12 @@ export interface ShieldEffect extends VisualEffect {
     impactIntensity: number;
 }
 export interface WarpEffect extends VisualEffect {
-    phase: 'charging' | 'bubble' | 'distortion' | 'collapse' | 'accretion';
+    phase: 'charging' | 'blackhole' | 'distortion' | 'collapse';
     bubbleRadius: number;
     distortionLevel: number;
+    accretionDiskRadius: number;
+    gravitationalLensing: number;
+    spacetimeDistortion: number;
 }
 export interface EngineEffect extends VisualEffect {
     thrustVector: Vector2D;
@@ -482,6 +485,10 @@ export interface IInputManager {
     getBrakeInput(): number;
     getRotationInput(): number;
     getFireInput(): boolean;
+    getJoystickDirection(): {
+        x: number;
+        y: number;
+    };
     getTouchMenuInput(): {
         up: boolean;
         down: boolean;
@@ -518,7 +525,7 @@ export interface ICelestialBody extends IGameObject {
     hasAtmosphere: boolean;
     atmosphereColor: string | null;
     surfaceFeatures: SurfaceFeature[];
-    setOrbit(center: Vector2D, distance: number, speed: number, startAngle?: number): void;
+    setOrbit(center: Vector2D, distance: number, centralMass: number, startAngle?: number, eccentricity?: number): void;
     isVisible(camera: ICamera, screenWidth: number, screenHeight: number): boolean;
 }
 export interface IPlayerShip extends IGameObject {

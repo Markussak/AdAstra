@@ -1,10 +1,10 @@
-import { EffectType, Vector2D, IRenderer } from './types';
+import { EffectType, Vector2D, IRenderer, ICamera } from './types';
 export declare class EffectSystem {
     private effects;
     private nextEffectId;
     createEffect(type: EffectType, position: Vector2D, options?: any): string;
     update(deltaTime: number): void;
-    render(renderer: IRenderer): void;
+    render(renderer: IRenderer, camera: ICamera): void;
     removeEffect(id: string): void;
     clearAllEffects(): void;
     private createShieldHitEffect;
@@ -28,9 +28,13 @@ export declare class EffectSystem {
     private renderEngineEffect;
     private renderWarpEffect;
     private renderWarpCharging;
-    private renderWarpBubble;
-    private renderWarpDistortion;
-    private renderWarpCollapse;
+    private renderBlackHole;
+    private renderBlackHoleDistortion;
+    private renderBlackHoleCollapse;
+    private renderAccretionDisk;
+    private renderEventHorizon;
+    private renderGravitationalLensing;
+    private renderSpacetimeDistortion;
     private renderWeaponImpact;
     private renderBasicEffect;
 }
