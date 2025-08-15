@@ -47,14 +47,14 @@ export const gameConfig: GameConfig = {
     maxVelocity: 500
   },
   colors: {
-    bgPrimary: '#1a1a2a',
-    hullPrimary: '#dcd0c0',
-    hullSecondary: '#8c8c8c',
-    accentFriendly: '#5f9e9e',
-    accentHostile: '#b45f5f',
-    accentNeutral: '#a09078',
-    fxGlowPrimary: '#00ffff',
-    fxGlowSecondary: '#ff8c00'
+    bgPrimary: '#1a1a1a',        // Darker background
+    hullPrimary: '#505050',      // Muted grey for hull
+    hullSecondary: '#404040',    // Darker grey secondary
+    accentFriendly: '#606060',   // Muted grey instead of cyan
+    accentHostile: '#404040',    // Dark grey instead of red
+    accentNeutral: '#404040',    // Dark grey neutral
+    fxGlowPrimary: '#505050',    // No glow, just muted grey
+    fxGlowSecondary: '#404040'   // No glow, just dark grey
   }
 };
 
