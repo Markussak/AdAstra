@@ -9,6 +9,7 @@ export class InputManager {
             justReleased: false
         };
         this.touches = new Map();
+        this.touchControlsEnabled = true;
         this.virtualJoystick = {
             active: false,
             centerX: 0,
@@ -17,12 +18,43 @@ export class InputManager {
             y: 0,
             radius: 50
         };
+        this.touchButtons = {
+            fire: { x: 0, y: 0, radius: 40, pressed: false, justPressed: false },
+            pause: { x: 0, y: 0, radius: 30, pressed: false, justPressed: false },
+            warp: { x: 0, y: 0, radius: 35, pressed: false, justPressed: false }
+        };
+        this.joystickTouchId = null;
+        this.canvas = null;
         this.isMobile = this.detectMobile();
         this.setupEventListeners();
+        this.initializeTouchControls();
     }
     detectMobile() {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
             'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    }
+    initializeTouchControls() {
+        if (this.isMobile) {
+            this.canvas = document.getElementById('gameCanvas');
+            if (this.canvas) {
+                this.updateTouchButtonPositions();
+                this.touchControlsEnabled = true;
+                this.virtualJoystick.centerX = 120;
+                this.virtualJoystick.centerY = this.canvas.height - 120;
+            }
+        }
+    }
+    updateTouchButtonPositions() {
+        if (!this.canvas)
+            return;
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        this.touchButtons.fire.x = width - 80;
+        this.touchButtons.fire.y = height - 120;
+        this.touchButtons.warp.x = width - 80;
+        this.touchButtons.warp.y = height - 200;
+        this.touchButtons.pause.x = width - 50;
+        this.touchButtons.pause.y = 50;
     }
     setupEventListeners() {
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
@@ -31,9 +63,9 @@ export class InputManager {
         document.addEventListener('mousedown', (e) => this.handleMouseDown(e));
         document.addEventListener('mouseup', (e) => this.handleMouseUp(e));
         if (this.isMobile) {
-            document.addEventListener('touchstart', (e) => this.handleTouchStart(e));
-            document.addEventListener('touchmove', (e) => this.handleTouchMove(e));
-            document.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+            document.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+            document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+            document.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
         }
     }
     handleKeyDown(event) {
@@ -77,13 +109,24 @@ export class InputManager {
         event.preventDefault();
         for (let i = 0; i < event.changedTouches.length; i++) {
             const touch = event.changedTouches[i];
+            const rect = this.canvas?.getBoundingClientRect();
+            if (!rect)
+                continue;
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
             this.touches.set(touch.identifier, {
                 id: touch.identifier,
-                x: touch.clientX,
-                y: touch.clientY,
-                startX: touch.clientX,
-                startY: touch.clientY
+                x: touchX,
+                y: touchY,
+                startX: touchX,
+                startY: touchY
             });
+            if (this.touchControlsEnabled && this.isPointInCircle(touchX, touchY, this.virtualJoystick.centerX, this.virtualJoystick.centerY, this.virtualJoystick.radius * 2)) {
+                this.virtualJoystick.active = true;
+                this.joystickTouchId = touch.identifier;
+                this.updateJoystick(touchX, touchY);
+            }
+            this.checkTouchButtons(touchX, touchY, true);
         }
     }
     handleTouchMove(event) {
@@ -91,9 +134,15 @@ export class InputManager {
         for (let i = 0; i < event.changedTouches.length; i++) {
             const touch = event.changedTouches[i];
             const touchData = this.touches.get(touch.identifier);
-            if (touchData) {
-                touchData.x = touch.clientX;
-                touchData.y = touch.clientY;
+            const rect = this.canvas?.getBoundingClientRect();
+            if (!touchData || !rect)
+                continue;
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+            touchData.x = touchX;
+            touchData.y = touchY;
+            if (touch.identifier === this.joystickTouchId) {
+                this.updateJoystick(touchX, touchY);
             }
         }
     }
@@ -101,13 +150,71 @@ export class InputManager {
         event.preventDefault();
         for (let i = 0; i < event.changedTouches.length; i++) {
             const touch = event.changedTouches[i];
+            if (touch.identifier === this.joystickTouchId) {
+                this.virtualJoystick.active = false;
+                this.virtualJoystick.x = 0;
+                this.virtualJoystick.y = 0;
+                this.joystickTouchId = null;
+            }
+            this.releaseTouchButtons();
             this.touches.delete(touch.identifier);
         }
+    }
+    updateJoystick(touchX, touchY) {
+        const deltaX = touchX - this.virtualJoystick.centerX;
+        const deltaY = touchY - this.virtualJoystick.centerY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        if (distance <= this.virtualJoystick.radius) {
+            this.virtualJoystick.x = deltaX / this.virtualJoystick.radius;
+            this.virtualJoystick.y = deltaY / this.virtualJoystick.radius;
+        }
+        else {
+            const angle = Math.atan2(deltaY, deltaX);
+            this.virtualJoystick.x = Math.cos(angle);
+            this.virtualJoystick.y = Math.sin(angle);
+        }
+    }
+    checkTouchButtons(x, y, pressed) {
+        if (!this.touchControlsEnabled)
+            return;
+        if (this.isPointInCircle(x, y, this.touchButtons.fire.x, this.touchButtons.fire.y, this.touchButtons.fire.radius)) {
+            this.touchButtons.fire.pressed = pressed;
+            if (pressed)
+                this.touchButtons.fire.justPressed = true;
+        }
+        if (this.isPointInCircle(x, y, this.touchButtons.warp.x, this.touchButtons.warp.y, this.touchButtons.warp.radius)) {
+            this.touchButtons.warp.pressed = pressed;
+            if (pressed)
+                this.touchButtons.warp.justPressed = true;
+        }
+        if (this.isPointInCircle(x, y, this.touchButtons.pause.x, this.touchButtons.pause.y, this.touchButtons.pause.radius)) {
+            this.touchButtons.pause.pressed = pressed;
+            if (pressed)
+                this.touchButtons.pause.justPressed = true;
+        }
+    }
+    releaseTouchButtons() {
+        this.touchButtons.fire.pressed = false;
+        this.touchButtons.warp.pressed = false;
+        this.touchButtons.pause.pressed = false;
+    }
+    isPointInCircle(px, py, cx, cy, radius) {
+        const dx = px - cx;
+        const dy = py - cy;
+        return dx * dx + dy * dy <= radius * radius;
     }
     isKeyPressed(key) {
         return this.keys.get(key.toLowerCase())?.pressed || false;
     }
     wasKeyJustPressed(key) {
+        if (this.touchControlsEnabled) {
+            switch (key.toLowerCase()) {
+                case 'escape':
+                    return this.touchButtons.pause.justPressed || this.keys.get(key.toLowerCase())?.justPressed || false;
+                case 'j':
+                    return this.touchButtons.warp.justPressed || this.keys.get(key.toLowerCase())?.justPressed || false;
+            }
+        }
         return this.keys.get(key.toLowerCase())?.justPressed || false;
     }
     wasKeyJustReleased(key) {
@@ -120,19 +227,19 @@ export class InputManager {
         return this.mouse.pressed;
     }
     getThrustInput() {
-        if (this.isMobile && this.virtualJoystick.active) {
+        if (this.touchControlsEnabled && this.virtualJoystick.active) {
             return Math.max(0, -this.virtualJoystick.y);
         }
         return (this.isKeyPressed('w') || this.isKeyPressed('arrowup')) ? 1 : 0;
     }
     getBrakeInput() {
-        if (this.isMobile && this.virtualJoystick.active) {
+        if (this.touchControlsEnabled && this.virtualJoystick.active) {
             return Math.max(0, this.virtualJoystick.y);
         }
         return (this.isKeyPressed('s') || this.isKeyPressed('arrowdown')) ? 1 : 0;
     }
     getRotationInput() {
-        if (this.isMobile && this.virtualJoystick.active) {
+        if (this.touchControlsEnabled && this.virtualJoystick.active) {
             return this.virtualJoystick.x;
         }
         let rotation = 0;
@@ -143,10 +250,63 @@ export class InputManager {
         return rotation;
     }
     getFireInput() {
-        if (this.isMobile) {
-            return false;
+        if (this.touchControlsEnabled && this.touchButtons.fire.pressed) {
+            return true;
         }
         return this.isKeyPressed(' ') || this.mouse.pressed;
+    }
+    getTouchMenuInput() {
+        if (!this.touchControlsEnabled) {
+            return { up: false, down: false, select: false, back: false };
+        }
+        let up = false, down = false, select = false, back = false;
+        this.touches.forEach(touch => {
+            const deltaY = touch.y - touch.startY;
+            const deltaX = touch.x - touch.startX;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            if (distance > 40 && Math.abs(deltaX) < 60) {
+                if (deltaY < -40)
+                    up = true;
+                if (deltaY > 40)
+                    down = true;
+            }
+            if (distance < 10) {
+                select = true;
+            }
+        });
+        back = this.touchButtons.pause.justPressed;
+        return { up, down, select, back };
+    }
+    setTouchControlsEnabled(enabled) {
+        this.touchControlsEnabled = enabled;
+        if (!enabled) {
+            this.virtualJoystick.active = false;
+            this.releaseTouchButtons();
+        }
+    }
+    renderTouchControls(renderer) {
+        if (!this.touchControlsEnabled || !this.isMobile)
+            return;
+        this.updateTouchButtonPositions();
+        if (this.virtualJoystick.active || this.touches.size === 0) {
+            renderer.getContext().globalAlpha = 0.3;
+            renderer.drawCircle(this.virtualJoystick.centerX, this.virtualJoystick.centerY, this.virtualJoystick.radius, 'rgba(255, 255, 255, 0.2)');
+            const knobX = this.virtualJoystick.centerX + this.virtualJoystick.x * (this.virtualJoystick.radius * 0.7);
+            const knobY = this.virtualJoystick.centerY + this.virtualJoystick.y * (this.virtualJoystick.radius * 0.7);
+            renderer.drawCircle(knobX, knobY, 15, 'rgba(255, 255, 255, 0.6)');
+            renderer.getContext().globalAlpha = 1.0;
+        }
+        renderer.getContext().globalAlpha = 0.4;
+        const fireColor = this.touchButtons.fire.pressed ? 'rgba(255, 100, 100, 0.8)' : 'rgba(255, 255, 255, 0.3)';
+        renderer.drawCircle(this.touchButtons.fire.x, this.touchButtons.fire.y, this.touchButtons.fire.radius, fireColor);
+        renderer.drawText('FIRE', this.touchButtons.fire.x, this.touchButtons.fire.y, '#ffffff', '12px "Big Apple 3PM", monospace');
+        const warpColor = this.touchButtons.warp.pressed ? 'rgba(100, 100, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)';
+        renderer.drawCircle(this.touchButtons.warp.x, this.touchButtons.warp.y, this.touchButtons.warp.radius, warpColor);
+        renderer.drawText('WARP', this.touchButtons.warp.x, this.touchButtons.warp.y, '#ffffff', '10px "Big Apple 3PM", monospace');
+        const pauseColor = this.touchButtons.pause.pressed ? 'rgba(255, 255, 100, 0.8)' : 'rgba(255, 255, 255, 0.3)';
+        renderer.drawCircle(this.touchButtons.pause.x, this.touchButtons.pause.y, this.touchButtons.pause.radius, pauseColor);
+        renderer.drawText('⏸', this.touchButtons.pause.x, this.touchButtons.pause.y, '#ffffff', '16px "Big Apple 3PM", monospace');
+        renderer.getContext().globalAlpha = 1.0;
     }
     update() {
         this.keys.forEach((keyState, key) => {
@@ -155,6 +315,9 @@ export class InputManager {
         });
         this.mouse.justPressed = false;
         this.mouse.justReleased = false;
+        Object.values(this.touchButtons).forEach(button => {
+            button.justPressed = false;
+        });
     }
 }
 //# sourceMappingURL=input.js.map

@@ -4,9 +4,37 @@ export declare class InputManager implements IInputManager {
     mouse: MouseState;
     touches: Map<number, TouchData>;
     isMobile: boolean;
+    touchControlsEnabled: boolean;
     virtualJoystick: VirtualJoystick;
+    touchButtons: {
+        fire: {
+            x: number;
+            y: number;
+            radius: number;
+            pressed: boolean;
+            justPressed: boolean;
+        };
+        pause: {
+            x: number;
+            y: number;
+            radius: number;
+            pressed: boolean;
+            justPressed: boolean;
+        };
+        warp: {
+            x: number;
+            y: number;
+            radius: number;
+            pressed: boolean;
+            justPressed: boolean;
+        };
+    };
+    private joystickTouchId;
+    private canvas;
     constructor();
     private detectMobile;
+    private initializeTouchControls;
+    private updateTouchButtonPositions;
     private setupEventListeners;
     private handleKeyDown;
     private handleKeyUp;
@@ -16,6 +44,10 @@ export declare class InputManager implements IInputManager {
     private handleTouchStart;
     private handleTouchMove;
     private handleTouchEnd;
+    private updateJoystick;
+    private checkTouchButtons;
+    private releaseTouchButtons;
+    private isPointInCircle;
     isKeyPressed(key: string): boolean;
     wasKeyJustPressed(key: string): boolean;
     wasKeyJustReleased(key: string): boolean;
@@ -25,5 +57,13 @@ export declare class InputManager implements IInputManager {
     getBrakeInput(): number;
     getRotationInput(): number;
     getFireInput(): boolean;
+    getTouchMenuInput(): {
+        up: boolean;
+        down: boolean;
+        select: boolean;
+        back: boolean;
+    };
+    setTouchControlsEnabled(enabled: boolean): void;
+    renderTouchControls(renderer: any): void;
     update(): void;
 }

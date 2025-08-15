@@ -321,6 +321,7 @@ export interface GameSettings {
   };
   controls: {
     mouseInvert: boolean;
+    touchControlsEnabled: boolean;
     keyBindings: Record<string, string>;
   };
   gameplay: {
@@ -425,6 +426,7 @@ export interface IInputManager {
   mouse: MouseState;
   touches: Map<number, TouchData>;
   isMobile: boolean;
+  touchControlsEnabled: boolean;
   virtualJoystick: VirtualJoystick;
 
   isKeyPressed(key: string): boolean;
@@ -436,6 +438,9 @@ export interface IInputManager {
   getBrakeInput(): number;
   getRotationInput(): number;
   getFireInput(): boolean;
+  getTouchMenuInput(): { up: boolean, down: boolean, select: boolean, back: boolean };
+  setTouchControlsEnabled(enabled: boolean): void;
+  renderTouchControls(renderer: any): void;
   update(): void;
 }
 
