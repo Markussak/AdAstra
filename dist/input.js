@@ -30,22 +30,23 @@ export class InputManager {
         this.textInputActive = false;
         this.isMobile = this.detectMobile();
         this.setupEventListeners();
-        this.initializeTouchControls();
         this.setupMobileTextInput();
+    }
+    setCanvas(canvas) {
+        this.canvas = canvas;
+        this.initializeTouchControls();
+        this.setupCanvasEventListeners();
     }
     detectMobile() {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
             'ontouchstart' in window || navigator.maxTouchPoints > 0;
     }
     initializeTouchControls() {
-        if (this.isMobile) {
-            this.canvas = document.getElementById('gameCanvas');
-            if (this.canvas) {
-                this.updateTouchButtonPositions();
-                this.touchControlsEnabled = true;
-                this.virtualJoystick.centerX = 150;
-                this.virtualJoystick.centerY = this.canvas.height - 160;
-            }
+        if (this.isMobile && this.canvas) {
+            this.updateTouchButtonPositions();
+            this.touchControlsEnabled = true;
+            this.virtualJoystick.centerX = 150;
+            this.virtualJoystick.centerY = this.canvas.height - 160;
         }
     }
     updateTouchButtonPositions() {
@@ -72,6 +73,33 @@ export class InputManager {
             document.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
             document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
             document.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+        }
+    }
+    setupCanvasEventListeners() {
+        if (!this.canvas)
+            return;
+        this.canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const rect = this.canvas.getBoundingClientRect();
+            this.mouse.x = e.clientX - rect.left;
+            this.mouse.y = e.clientY - rect.top;
+            this.mouse.justPressed = true;
+            this.mouse.pressed = true;
+        });
+        this.canvas.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            this.mouse.pressed = false;
+            this.mouse.justReleased = true;
+        });
+        if (this.isMobile) {
+            this.canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.handleTouchStart(e);
+            }, { passive: false });
+            this.canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                this.handleTouchEnd(e);
+            }, { passive: false });
         }
     }
     setupMobileTextInput() {
@@ -157,10 +185,26 @@ export class InputManager {
         this.keys.set(key, keyState);
     }
     handleMouseMove(event) {
-        this.mouse.x = event.clientX;
-        this.mouse.y = event.clientY;
+        if (this.canvas) {
+            const rect = this.canvas.getBoundingClientRect();
+            this.mouse.x = event.clientX - rect.left;
+            this.mouse.y = event.clientY - rect.top;
+        }
+        else {
+            this.mouse.x = event.clientX;
+            this.mouse.y = event.clientY;
+        }
     }
     handleMouseDown(event) {
+        if (this.canvas) {
+            const rect = this.canvas.getBoundingClientRect();
+            this.mouse.x = event.clientX - rect.left;
+            this.mouse.y = event.clientY - rect.top;
+        }
+        else {
+            this.mouse.x = event.clientX;
+            this.mouse.y = event.clientY;
+        }
         this.mouse.justPressed = true;
         this.mouse.pressed = true;
     }
@@ -173,8 +217,9 @@ export class InputManager {
         for (let i = 0; i < event.changedTouches.length; i++) {
             const touch = event.changedTouches[i];
             const rect = this.canvas?.getBoundingClientRect();
-            if (!rect)
+            if (!rect) {
                 continue;
+            }
             const touchX = touch.clientX - rect.left;
             const touchY = touch.clientY - rect.top;
             this.touches.set(touch.identifier, {
@@ -213,6 +258,14 @@ export class InputManager {
         event.preventDefault();
         for (let i = 0; i < event.changedTouches.length; i++) {
             const touch = event.changedTouches[i];
+            const touchData = this.touches.get(touch.identifier);
+            if (touchData) {
+                const deltaX = touchData.x - touchData.startX;
+                const deltaY = touchData.y - touchData.startY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                if (distance < 30) {
+                }
+            }
             if (touch.identifier === this.joystickTouchId) {
                 this.virtualJoystick.active = false;
                 this.virtualJoystick.x = 0;
@@ -334,16 +387,19 @@ export class InputManager {
             const deltaY = touch.y - touch.startY;
             const deltaX = touch.x - touch.startX;
             const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            if (distance > 40 && Math.abs(deltaX) < 60) {
-                if (deltaY < -40)
+            if (distance > 30 && Math.abs(deltaX) < 80) {
+                if (deltaY < -30)
                     up = true;
-                if (deltaY > 40)
+                if (deltaY > 30)
                     down = true;
             }
-            if (distance < 10) {
+            if (distance < 30) {
                 select = true;
             }
         });
+        if (this.mouse.justPressed) {
+            select = true;
+        }
         back = this.touchButtons.pause.justPressed;
         return { up, down, select, back };
     }

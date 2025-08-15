@@ -2200,6 +2200,7 @@ export class GameEngine {
         this.stateManager = new StateManager();
         this.sceneManager = new SceneManager();
         this.inputManager = new InputManager();
+        this.inputManager.setCanvas(this.canvas);
         this.camera = new Camera();
         this.statusBar = new StatusBar(this.renderer);
         this.player = new PlayerShip(200, 200);

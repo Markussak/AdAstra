@@ -2912,6 +2912,7 @@ export class GameEngine implements IGameEngine {
     this.stateManager = new StateManager();
     this.sceneManager = new SceneManager();
     this.inputManager = new InputManager();
+    this.inputManager.setCanvas(this.canvas); // Set canvas reference for touch controls
     this.camera = new Camera();
     this.statusBar = new StatusBar(this.renderer);
 
