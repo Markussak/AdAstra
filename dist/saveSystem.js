@@ -251,6 +251,7 @@ SaveSystem.defaultSettings = {
     },
     controls: {
         mouseInvert: false,
+        touchControlsEnabled: true,
         keyBindings: {
             'moveUp': 'w',
             'moveDown': 's',

@@ -218,13 +218,14 @@ class MainMenuState {
         renderer.drawText('↑↓ Navigace | ENTER Výběr | ESC Zpět', width / 2, height - 50, '#505050', '14px "Big Apple 3PM", monospace');
     }
     handleInput(input) {
-        if (input.wasKeyJustPressed('arrowup') || input.wasKeyJustPressed('w')) {
+        const touchInput = input.getTouchMenuInput();
+        if (input.wasKeyJustPressed('arrowup') || input.wasKeyJustPressed('w') || touchInput.up) {
             this.selectedOption = Math.max(0, this.selectedOption - 1);
         }
-        if (input.wasKeyJustPressed('arrowdown') || input.wasKeyJustPressed('s')) {
+        if (input.wasKeyJustPressed('arrowdown') || input.wasKeyJustPressed('s') || touchInput.down) {
             this.selectedOption = Math.min(this.menuOptions.length - 1, this.selectedOption + 1);
         }
-        if (input.wasKeyJustPressed('enter')) {
+        if (input.wasKeyJustPressed('enter') || touchInput.select) {
             this.handleMenuSelection();
         }
     }
@@ -586,20 +587,21 @@ class PausedState {
         });
     }
     handleInput(input) {
-        if (input.wasKeyJustPressed('escape')) {
+        const touchInput = input.getTouchMenuInput();
+        if (input.wasKeyJustPressed('escape') || touchInput.back) {
             const game = window.game;
             if (game) {
                 game.stateManager.setState(GameState.PLAYING);
             }
             return;
         }
-        if (input.wasKeyJustPressed('arrowup') || input.wasKeyJustPressed('w')) {
+        if (input.wasKeyJustPressed('arrowup') || input.wasKeyJustPressed('w') || touchInput.up) {
             this.selectedOption = Math.max(0, this.selectedOption - 1);
         }
-        if (input.wasKeyJustPressed('arrowdown') || input.wasKeyJustPressed('s')) {
+        if (input.wasKeyJustPressed('arrowdown') || input.wasKeyJustPressed('s') || touchInput.down) {
             this.selectedOption = Math.min(this.menuOptions.length - 1, this.selectedOption + 1);
         }
-        if (input.wasKeyJustPressed('enter')) {
+        if (input.wasKeyJustPressed('enter') || touchInput.select) {
             this.handleMenuSelection();
         }
     }
@@ -639,6 +641,10 @@ class SettingsState {
         this.selectedTab = 0;
         this.selectedOption = 0;
         this.settings = SaveSystem.loadSettings();
+        const game = window.game;
+        if (game?.inputManager && this.settings.controls) {
+            game.inputManager.setTouchControlsEnabled(this.settings.controls.touchControlsEnabled);
+        }
     }
     update(deltaTime) {
     }
@@ -722,11 +728,30 @@ class SettingsState {
     }
     renderControlSettings(renderer, startY, spacing) {
         const width = renderer.getWidth();
-        renderer.drawText('OVLÁDÁNÍ - Zatím není implementováno', width / 2, startY + 100, '#888888', '18px "Big Apple 3PM", monospace');
-        renderer.drawText('Plánované funkce:', width / 2, startY + 150, '#dcd0c0', '16px "Big Apple 3PM", monospace');
-        renderer.drawText('• Změna kláves', width / 2, startY + 180, '#5f9e9e', '14px "Big Apple 3PM", monospace');
-        renderer.drawText('• Citlivost myši', width / 2, startY + 200, '#5f9e9e', '14px "Big Apple 3PM", monospace');
-        renderer.drawText('• Gamepad podpora', width / 2, startY + 220, '#5f9e9e', '14px "Big Apple 3PM", monospace');
+        const game = window.game;
+        const options = [
+            { name: 'Touch Controls', value: game?.inputManager?.touchControlsEnabled ? 'ZAPNUTO' : 'VYPNUTO' },
+            { name: 'Auto-detekce mobilního', value: game?.inputManager?.isMobile ? 'ZAPNUTO' : 'VYPNUTO' },
+            { name: 'Citlivost joysticku', value: 'STŘEDNÍ' },
+            { name: 'Gamepad podpora', value: 'VYPNUTO' }
+        ];
+        options.forEach((option, index) => {
+            const y = startY + index * spacing;
+            const isSelected = index === this.selectedOption;
+            const nameColor = isSelected ? '#00ffff' : '#dcd0c0';
+            const valueColor = isSelected ? '#ffff00' : '#5f9e9e';
+            renderer.drawText(option.name, width / 2 - 200, y, nameColor, isSelected ? 'bold 18px "Big Apple 3PM", monospace' : '16px "Big Apple 3PM", monospace');
+            renderer.drawText(option.value, width / 2 + 200, y, valueColor, '16px "Big Apple 3PM", monospace');
+            if (isSelected) {
+                renderer.drawRect(width / 2 - 250, y - 20, 500, 40, 'rgba(0, 255, 255, 0.1)');
+            }
+        });
+        if (game?.inputManager?.isMobile) {
+            renderer.drawText('Mobilní zařízení detekováno', width / 2, startY + 250, '#00ff00', '14px "Big Apple 3PM", monospace');
+        }
+        else {
+            renderer.drawText('Desktop zařízení detekováno', width / 2, startY + 250, '#888888', '14px "Big Apple 3PM", monospace');
+        }
     }
     renderGameplaySettings(renderer, startY, spacing) {
         const width = renderer.getWidth();
@@ -749,7 +774,8 @@ class SettingsState {
         });
     }
     handleInput(input) {
-        if (input.wasKeyJustPressed('escape')) {
+        const touchInput = input.getTouchMenuInput();
+        if (input.wasKeyJustPressed('escape') || touchInput.back) {
             SaveSystem.saveSettings(this.settings);
             const game = window.game;
             if (game) {
@@ -766,13 +792,13 @@ class SettingsState {
             this.selectedOption = 0;
         }
         const maxOptions = this.getMaxOptionsForTab();
-        if (input.wasKeyJustPressed('arrowup') && this.selectedOption > 0) {
+        if ((input.wasKeyJustPressed('arrowup') || touchInput.up) && this.selectedOption > 0) {
             this.selectedOption--;
         }
-        if (input.wasKeyJustPressed('arrowdown') && this.selectedOption < maxOptions - 1) {
+        if ((input.wasKeyJustPressed('arrowdown') || touchInput.down) && this.selectedOption < maxOptions - 1) {
             this.selectedOption++;
         }
-        if (input.wasKeyJustPressed('enter')) {
+        if (input.wasKeyJustPressed('enter') || touchInput.select) {
             this.modifySetting();
         }
     }
@@ -780,12 +806,13 @@ class SettingsState {
         switch (this.selectedTab) {
             case 0: return 4;
             case 1: return 4;
-            case 2: return 0;
+            case 2: return 4;
             case 3: return 4;
             default: return 0;
         }
     }
     modifySetting() {
+        const game = window.game;
         switch (this.selectedTab) {
             case 0:
                 switch (this.selectedOption) {
@@ -825,6 +852,26 @@ class SettingsState {
                         break;
                     case 3:
                         this.settings.audio.muted = !this.settings.audio.muted;
+                        break;
+                }
+                break;
+            case 2:
+                switch (this.selectedOption) {
+                    case 0:
+                        if (game?.inputManager) {
+                            const newValue = !game.inputManager.touchControlsEnabled;
+                            game.inputManager.setTouchControlsEnabled(newValue);
+                            this.settings.controls = this.settings.controls || {};
+                            this.settings.controls.touchControlsEnabled = newValue;
+                        }
+                        break;
+                    case 1:
+                        break;
+                    case 2:
+                        console.log('Joystick sensitivity not implemented yet');
+                        break;
+                    case 3:
+                        console.log('Gamepad support not implemented yet');
                         break;
                 }
                 break;
@@ -926,6 +973,10 @@ export class GameEngine {
         this.questSystem = new QuestSystem();
         this.effectSystem = new EffectSystem();
         console.log('Game engine initialized');
+        const settings = SaveSystem.loadSettings();
+        if (settings.controls && this.inputManager.isMobile) {
+            this.inputManager.setTouchControlsEnabled(settings.controls.touchControlsEnabled);
+        }
         AutoSaveManager.start(this);
         this.startGameLoop();
     }
@@ -966,6 +1017,7 @@ export class GameEngine {
             this.effectSystem.render(this.renderer);
             this.renderHUD();
             this.statusBar.render(this.player);
+            this.inputManager.renderTouchControls(this.renderer);
         }
         else {
             this.stateManager.render(this.renderer);
@@ -989,7 +1041,11 @@ export class GameEngine {
             this.renderer.drawText('WARPING...', 10, 115, '#505050', 'bold 12px "Big Apple 3PM", monospace');
         }
         const statusBarHeight = this.renderer.getHeight() * gameConfig.ui.statusBarHeight;
-        this.renderer.drawText('WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests | J: Warp | H: Test Damage', 10, this.renderer.getHeight() - statusBarHeight - 20, '#505050', '8px "Big Apple 3PM", monospace');
+        const game = window.game;
+        const instructionText = game?.inputManager?.isMobile
+            ? 'Touch: Joystick Move | FIRE Button | WARP Button | PAUSE Menu'
+            : 'WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests | J: Warp | H: Test Damage';
+        this.renderer.drawText(instructionText, 10, this.renderer.getHeight() - statusBarHeight - 20, '#505050', '8px "Big Apple 3PM", monospace');
     }
     renderActiveQuests() {
         const activeQuests = this.questSystem.getActiveQuests();

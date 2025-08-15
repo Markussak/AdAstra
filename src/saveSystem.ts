@@ -24,6 +24,7 @@ export class SaveSystem {
     },
     controls: {
       mouseInvert: false,
+      touchControlsEnabled: true,
       keyBindings: {
         'moveUp': 'w',
         'moveDown': 's',
