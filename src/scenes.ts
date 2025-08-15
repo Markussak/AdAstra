@@ -27,7 +27,7 @@ export class StarSystemScene implements IScene {
     const random = new SeededRandom(this.systemSeed);
 
     const starMass = 800 + random.next() * 400;
-    const starRadius = 60 + random.next() * 40; // Increased from 30+20
+    const starRadius = 120 + random.next() * 80; // Much larger stars for better visibility
     const starColor = this.generateStarColor(random);
 
     const centralStar = new CelestialBody(
@@ -37,12 +37,12 @@ export class StarSystemScene implements IScene {
     this.celestialBodies.push(centralStar);
 
     const planetCount = 2 + Math.floor(random.next() * 6);
-    let currentDistance = 200; // Increased from 120
+    let currentDistance = 400; // Much larger starting distance
 
     for (let i = 0; i < planetCount; i++) {
-      currentDistance += 100 + random.next() * 200; // Increased spacing
+      currentDistance += 200 + random.next() * 400; // Much larger spacing between planets
       
-      const planetRadius = 16 + random.next() * 30; // Increased from 8+15
+      const planetRadius = 32 + random.next() * 60; // Much larger planets for better visibility
       const planetMass = planetRadius * 2;
       const planetColor = this.generatePlanetColor(random);
       const orbitSpeed = 0.01 / Math.sqrt(currentDistance / 100);
@@ -69,8 +69,8 @@ export class StarSystemScene implements IScene {
       if (planetRadius > 20 && random.next() < 0.6) { // Adjusted threshold
         const moonCount = 1 + Math.floor(random.next() * 3);
         for (let j = 0; j < moonCount; j++) {
-          const moonDistance = planetRadius * 4 + j * 40; // Increased spacing
-          const moonRadius = 6 + random.next() * 10; // Increased from 3+5
+          const moonDistance = planetRadius * 6 + j * 80; // Much larger moon orbit distance
+          const moonRadius = 12 + random.next() * 20; // Much larger moons for better visibility
           const moonMass = moonRadius;
           const moonColor = this.generateMoonColor(random); // Use new method
           const moonOrbitSpeed = 0.05 / Math.sqrt(moonDistance / 10);
@@ -89,13 +89,13 @@ export class StarSystemScene implements IScene {
 
     // Generate asteroid belt
     if (random.next() < 0.7) {
-      const beltDistance = currentDistance + 160 + random.next() * 200; // Increased spacing
+      const beltDistance = currentDistance + 300 + random.next() * 400; // Much larger asteroid belt distance
       const asteroidCount = 15 + Math.floor(random.next() * 25);
       
       for (let i = 0; i < asteroidCount; i++) {
         const angle = random.next() * Math.PI * 2;
-        const distance = beltDistance + (random.next() - 0.5) * 120; // Increased spread
-        const asteroidRadius = 4 + random.next() * 8; // Increased from 2+4
+        const distance = beltDistance + (random.next() - 0.5) * 240; // Larger asteroid belt spread
+        const asteroidRadius = 8 + random.next() * 16; // Much larger asteroids for better visibility
         const asteroidMass = asteroidRadius * 0.5;
         const orbitSpeed = 0.008 / Math.sqrt(distance / 100);
         const asteroidEccentricity = Math.random() * 0.5; // More eccentric asteroid orbits
