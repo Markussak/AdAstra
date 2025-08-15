@@ -34,6 +34,13 @@ class StateManager implements IStateManager {
 
   constructor() {
     this.registerStates();
+    
+    // Enter the initial state
+    const initialState = this.states.get(this.currentState);
+    if (initialState?.enter) {
+      console.log(`Entering initial state: ${this.currentState}`);
+      initialState.enter();
+    }
   }
 
   private registerStates(): void {
@@ -59,6 +66,7 @@ class StateManager implements IStateManager {
 
     const newStateObj = this.states.get(this.currentState);
     if (newStateObj?.enter) {
+      console.log(`Entering state: ${this.currentState}`);
       newStateObj.enter();
     }
 
@@ -1182,7 +1190,6 @@ export class GameEngine implements IGameEngine {
     };
 
     console.log('Starting game loop');
-    // Fix: Start with performance.now() instead of 0
     requestAnimationFrame(gameLoop);
   }
 
@@ -1341,5 +1348,9 @@ export function initializeGame(): void {
 
 // Auto-initialize when DOM is ready
 if (typeof window !== 'undefined') {
-  window.addEventListener('DOMContentLoaded', initializeGame);
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', initializeGame);
+  } else {
+    initializeGame();
+  }
 }
