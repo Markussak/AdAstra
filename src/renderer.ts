@@ -190,4 +190,235 @@ export class Renderer implements IRenderer {
   public scale(x: number, y: number): void {
     this.ctx.scale(x, y);
   }
+
+  public drawRacePortrait(race: string, x: number, y: number, size: number, baseColor: string): void {
+    const centerX = x + size / 2;
+    const centerY = y + size / 2;
+    
+    this.ctx.save();
+    
+    // Draw background
+    this.drawRect(x, y, size, size, 'rgba(0, 0, 0, 0.3)');
+    this.drawRect(x, y, size, size, '#505050');
+    
+    // Draw race-specific portrait based on race type
+    switch (race.toLowerCase()) {
+      case 'human':
+      case 'lidé':
+        this.drawHumanPortrait(centerX, centerY, size, baseColor);
+        break;
+      case 'terran':
+      case 'terraňané':
+        this.drawTerranPortrait(centerX, centerY, size, baseColor);
+        break;
+      case 'zephyrian':
+      case 'zefyriáni':
+        this.drawZephyrianPortrait(centerX, centerY, size, baseColor);
+        break;
+      case 'crystalline':
+      case 'krystalové':
+        this.drawCrystallinePortrait(centerX, centerY, size, baseColor);
+        break;
+      case 'vorthan':
+      case 'vorthané':
+        this.drawVorthanPortrait(centerX, centerY, size, baseColor);
+        break;
+      case 'aquarian':
+      case 'akvariáni':
+        this.drawAquarianPortrait(centerX, centerY, size, baseColor);
+        break;
+      case 'mechano':
+      case 'mechanoidové':
+        this.drawMechanoPortrait(centerX, centerY, size, baseColor);
+        break;
+      case 'ethereal':
+      case 'éteriálové':
+        this.drawEtherealPortrait(centerX, centerY, size, baseColor);
+        break;
+      case 'drakonid':
+      case 'drakonidi':
+        this.drawDrakonidPortrait(centerX, centerY, size, baseColor);
+        break;
+      case 'sylvan':
+      case 'sylváni':
+        this.drawSylvanPortrait(centerX, centerY, size, baseColor);
+        break;
+      default:
+        this.drawDefaultPortrait(centerX, centerY, size, baseColor);
+        break;
+    }
+    
+    this.ctx.restore();
+  }
+
+  private drawHumanPortrait(x: number, y: number, size: number, color: string): void {
+    const s = size * 0.3;
+    // Head
+    this.fillCircle(x, y - s * 0.3, s * 0.8, color);
+    // Eyes
+    this.fillCircle(x - s * 0.3, y - s * 0.5, s * 0.15, '#000000');
+    this.fillCircle(x + s * 0.3, y - s * 0.5, s * 0.15, '#000000');
+    // Body
+    this.drawRect(x - s * 0.6, y + s * 0.2, s * 1.2, s * 1.0, color);
+  }
+
+  private drawTerranPortrait(x: number, y: number, size: number, color: string): void {
+    const s = size * 0.3;
+    // Head with tech implants
+    this.fillCircle(x, y - s * 0.3, s * 0.8, color);
+    // Eyes (cybernetic)
+    this.fillCircle(x - s * 0.3, y - s * 0.5, s * 0.15, '#00ffff');
+    this.fillCircle(x + s * 0.3, y - s * 0.5, s * 0.15, '#00ffff');
+    // Tech lines
+    this.drawLine(x - s * 0.5, y - s * 0.2, x + s * 0.5, y - s * 0.2, '#00ffff', 2);
+    // Body
+    this.drawRect(x - s * 0.6, y + s * 0.2, s * 1.2, s * 1.0, color);
+  }
+
+  private drawZephyrianPortrait(x: number, y: number, size: number, color: string): void {
+    const s = size * 0.3;
+    // Head (elongated)
+    this.ctx.fillStyle = color;
+    this.ctx.beginPath();
+    this.ctx.ellipse(x, y - s * 0.3, s * 0.6, s * 1.0, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+    // Large eyes
+    this.fillCircle(x - s * 0.2, y - s * 0.4, s * 0.2, '#ffffff');
+    this.fillCircle(x + s * 0.2, y - s * 0.4, s * 0.2, '#ffffff');
+    this.fillCircle(x - s * 0.2, y - s * 0.4, s * 0.1, '#000088');
+    this.fillCircle(x + s * 0.2, y - s * 0.4, s * 0.1, '#000088');
+    // Body
+    this.drawRect(x - s * 0.5, y + s * 0.3, s * 1.0, s * 0.8, color);
+  }
+
+  private drawCrystallinePortrait(x: number, y: number, size: number, color: string): void {
+    const s = size * 0.3;
+    // Crystalline head (angular)
+    this.ctx.fillStyle = color;
+    this.ctx.beginPath();
+    this.ctx.moveTo(x, y - s * 0.8);
+    this.ctx.lineTo(x + s * 0.6, y - s * 0.2);
+    this.ctx.lineTo(x + s * 0.4, y + s * 0.2);
+    this.ctx.lineTo(x - s * 0.4, y + s * 0.2);
+    this.ctx.lineTo(x - s * 0.6, y - s * 0.2);
+    this.ctx.closePath();
+    this.ctx.fill();
+    // Crystal eyes
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.fillRect(x - s * 0.2, y - s * 0.4, s * 0.1, s * 0.2);
+    this.ctx.fillRect(x + s * 0.1, y - s * 0.4, s * 0.1, s * 0.2);
+    // Body (angular)
+    this.ctx.fillStyle = color;
+    this.ctx.fillRect(x - s * 0.5, y + s * 0.3, s * 1.0, s * 0.8);
+  }
+
+  private drawVorthanPortrait(x: number, y: number, size: number, color: string): void {
+    const s = size * 0.3;
+    // Large head
+    this.fillCircle(x, y - s * 0.2, s * 0.9, color);
+    // Red eyes
+    this.fillCircle(x - s * 0.3, y - s * 0.4, s * 0.15, '#ff0000');
+    this.fillCircle(x + s * 0.3, y - s * 0.4, s * 0.15, '#ff0000');
+    // Scars
+    this.drawLine(x - s * 0.1, y - s * 0.7, x + s * 0.2, y - s * 0.2, '#800000', 2);
+    // Muscular body
+    this.drawRect(x - s * 0.7, y + s * 0.2, s * 1.4, s * 1.0, color);
+  }
+
+  private drawAquarianPortrait(x: number, y: number, size: number, color: string): void {
+    const s = size * 0.3;
+    // Smooth head
+    this.fillCircle(x, y - s * 0.3, s * 0.8, color);
+    // Large, gentle eyes
+    this.fillCircle(x - s * 0.3, y - s * 0.5, s * 0.2, '#0088ff');
+    this.fillCircle(x + s * 0.3, y - s * 0.5, s * 0.2, '#0088ff');
+    // Gills
+    this.drawLine(x - s * 0.6, y - s * 0.1, x - s * 0.4, y + s * 0.1, '#0066cc', 2);
+    this.drawLine(x + s * 0.4, y - s * 0.1, x + s * 0.6, y + s * 0.1, '#0066cc', 2);
+    // Body
+    this.drawRect(x - s * 0.6, y + s * 0.2, s * 1.2, s * 1.0, color);
+  }
+
+  private drawMechanoPortrait(x: number, y: number, size: number, color: string): void {
+    const s = size * 0.3;
+    // Mechanical head
+    this.drawRect(x - s * 0.6, y - s * 0.8, s * 1.2, s * 1.0, color);
+    // LED eyes
+    this.fillCircle(x - s * 0.3, y - s * 0.5, s * 0.1, '#ff0000');
+    this.fillCircle(x + s * 0.3, y - s * 0.5, s * 0.1, '#ff0000');
+    // Mechanical details
+    this.drawRect(x - s * 0.5, y - s * 0.2, s * 1.0, s * 0.1, '#666666');
+    this.drawRect(x - s * 0.2, y - s * 0.6, s * 0.4, s * 0.1, '#666666');
+    // Body
+    this.drawRect(x - s * 0.6, y + s * 0.2, s * 1.2, s * 1.0, color);
+  }
+
+  private drawEtherealPortrait(x: number, y: number, size: number, color: string): void {
+    const s = size * 0.3;
+    // Translucent head
+    this.ctx.globalAlpha = 0.7;
+    this.fillCircle(x, y - s * 0.3, s * 0.8, color);
+    // Glowing eyes
+    this.ctx.globalAlpha = 1.0;
+    this.fillCircle(x - s * 0.3, y - s * 0.5, s * 0.15, '#ffffff');
+    this.fillCircle(x + s * 0.3, y - s * 0.5, s * 0.15, '#ffffff');
+    // Energy wisps
+    this.ctx.globalAlpha = 0.5;
+    this.fillCircle(x - s * 0.8, y - s * 0.6, s * 0.2, color);
+    this.fillCircle(x + s * 0.8, y - s * 0.4, s * 0.15, color);
+    // Body
+    this.ctx.globalAlpha = 0.7;
+    this.drawRect(x - s * 0.6, y + s * 0.2, s * 1.2, s * 1.0, color);
+    this.ctx.globalAlpha = 1.0;
+  }
+
+  private drawDrakonidPortrait(x: number, y: number, size: number, color: string): void {
+    const s = size * 0.3;
+    // Reptilian head
+    this.ctx.fillStyle = color;
+    this.ctx.beginPath();
+    this.ctx.ellipse(x, y - s * 0.3, s * 0.7, s * 0.9, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+    // Reptilian eyes
+    this.fillCircle(x - s * 0.2, y - s * 0.5, s * 0.12, '#ffff00');
+    this.fillCircle(x + s * 0.2, y - s * 0.5, s * 0.12, '#ffff00');
+    this.fillCircle(x - s * 0.2, y - s * 0.5, s * 0.06, '#000000');
+    this.fillCircle(x + s * 0.2, y - s * 0.5, s * 0.06, '#000000');
+    // Scales
+    for (let i = 0; i < 3; i++) {
+      this.drawRect(x - s * 0.3 + i * s * 0.3, y - s * 0.1, s * 0.2, s * 0.1, '#333333');
+    }
+    // Body
+    this.drawRect(x - s * 0.6, y + s * 0.2, s * 1.2, s * 1.0, color);
+  }
+
+  private drawSylvanPortrait(x: number, y: number, size: number, color: string): void {
+    const s = size * 0.3;
+    // Plant-like head
+    this.fillCircle(x, y - s * 0.3, s * 0.8, color);
+    // Nature eyes
+    this.fillCircle(x - s * 0.3, y - s * 0.5, s * 0.15, '#00ff00');
+    this.fillCircle(x + s * 0.3, y - s * 0.5, s * 0.15, '#00ff00');
+    // Leaf patterns
+    this.ctx.fillStyle = '#228B22';
+    this.ctx.beginPath();
+    this.ctx.ellipse(x - s * 0.4, y - s * 0.8, s * 0.2, s * 0.4, -0.5, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.beginPath();
+    this.ctx.ellipse(x + s * 0.4, y - s * 0.8, s * 0.2, s * 0.4, 0.5, 0, Math.PI * 2);
+    this.ctx.fill();
+    // Body
+    this.drawRect(x - s * 0.6, y + s * 0.2, s * 1.2, s * 1.0, color);
+  }
+
+  private drawDefaultPortrait(x: number, y: number, size: number, color: string): void {
+    const s = size * 0.3;
+    // Generic head
+    this.fillCircle(x, y - s * 0.3, s * 0.8, color);
+    // Eyes
+    this.fillCircle(x - s * 0.3, y - s * 0.5, s * 0.15, '#000000');
+    this.fillCircle(x + s * 0.3, y - s * 0.5, s * 0.15, '#000000');
+    // Body
+    this.drawRect(x - s * 0.6, y + s * 0.2, s * 1.2, s * 1.0, color);
+  }
 }

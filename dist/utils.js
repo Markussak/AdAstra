@@ -1,3 +1,4 @@
+import { CharacterRace } from './types';
 export const Vector2DUtils = {
     create: (x = 0, y = 0) => ({ x, y }),
     add: (a, b) => ({
@@ -189,4 +190,56 @@ export class ColorUtils {
         return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
     }
 }
+export class NameGenerator {
+    static generateRandomName(race) {
+        const data = this.nameData[race];
+        if (!data)
+            return 'Unnamed';
+        const prefix = data.prefixes[Math.floor(Math.random() * data.prefixes.length)];
+        const suffix = data.suffixes[Math.floor(Math.random() * data.suffixes.length)];
+        return prefix + suffix;
+    }
+}
+NameGenerator.nameData = {
+    [CharacterRace.HUMAN]: {
+        prefixes: ['Jan', 'Anna', 'Petr', 'Marie', 'Tom', 'Eva', 'Alex', 'Sara', 'Mike', 'Lisa'],
+        suffixes: ['ová', 'ek', 'ský', 'son', 'ington', 'berg', 'feld', 'stone', 'wood', 'nova']
+    },
+    [CharacterRace.TERRAN]: {
+        prefixes: ['Neo', 'Cyber', 'Tech', 'Quantum', 'Matrix', 'Prime', 'Core', 'Vox', 'Zero', 'Flux'],
+        suffixes: ['X1', 'Alpha', 'Beta', 'Prime', 'Core', 'Tech', 'Link', 'Node', 'Grid', 'Sync']
+    },
+    [CharacterRace.ZEPHYRIAN]: {
+        prefixes: ['Aer', 'Zeph', 'Gale', 'Storm', 'Wind', 'Sky', 'Cloud', 'Breeze', 'Tempest', 'Vento'],
+        suffixes: ['ian', 'ara', 'iel', 'yn', 'os', 'eira', 'wyn', 'an', 'el', 'or']
+    },
+    [CharacterRace.CRYSTALLINE]: {
+        prefixes: ['Crys', 'Shard', 'Prism', 'Quartz', 'Gem', 'Crystal', 'Facet', 'Gleam', 'Shine', 'Spark'],
+        suffixes: ['ine', 'tal', 'ion', 'ite', 'ium', 'yl', 'as', 'en', 'or', 'is']
+    },
+    [CharacterRace.VORTHAN]: {
+        prefixes: ['Vor', 'Grak', 'Thul', 'Brak', 'Krog', 'Thar', 'Grok', 'Zul', 'Mor', 'Drak'],
+        suffixes: ['than', 'gul', 'rok', 'tar', 'gor', 'nul', 'var', 'kul', 'dar', 'mul']
+    },
+    [CharacterRace.AQUARIAN]: {
+        prefixes: ['Aqua', 'Mari', 'Ocean', 'Coral', 'Pearl', 'Wave', 'Tide', 'Flow', 'Stream', 'Bay'],
+        suffixes: ['ina', 'ian', 'elle', 'ara', 'iel', 'yn', 'ena', 'lia', 'ana', 'ira']
+    },
+    [CharacterRace.MECHANO]: {
+        prefixes: ['Mech', 'Gear', 'Steel', 'Iron', 'Bolt', 'Circuit', 'Wire', 'Motor', 'Engine', 'Servo'],
+        suffixes: ['ano', 'oid', 'tron', 'mech', 'gear', 'tech', 'bot', 'droid', 'unit', 'core']
+    },
+    [CharacterRace.ETHEREAL]: {
+        prefixes: ['Ether', 'Spirit', 'Ghost', 'Phantom', 'Mystic', 'Astral', 'Void', 'Echo', 'Mist', 'Shade'],
+        suffixes: ['eal', 'iel', 'ara', 'yn', 'os', 'an', 'el', 'or', 'is', 'as']
+    },
+    [CharacterRace.DRAKONID]: {
+        prefixes: ['Drax', 'Scal', 'Fang', 'Claw', 'Fire', 'Flame', 'Ember', 'Scale', 'Wing', 'Talon'],
+        suffixes: ['id', 'on', 'ar', 'or', 'ul', 'ak', 'ix', 'ax', 'ex', 'ok']
+    },
+    [CharacterRace.SYLVAN]: {
+        prefixes: ['Syl', 'Leaf', 'Branch', 'Root', 'Moss', 'Fern', 'Oak', 'Pine', 'Willow', 'Birch'],
+        suffixes: ['van', 'iel', 'ara', 'wyn', 'en', 'or', 'an', 'el', 'yn', 'is']
+    }
+};
 //# sourceMappingURL=utils.js.map

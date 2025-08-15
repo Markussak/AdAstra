@@ -26,4 +26,16 @@ export declare class Renderer implements IRenderer {
     translate(x: number, y: number): void;
     rotate(angle: number): void;
     scale(x: number, y: number): void;
+    drawRacePortrait(race: string, x: number, y: number, size: number, baseColor: string): void;
+    private drawHumanPortrait;
+    private drawTerranPortrait;
+    private drawZephyrianPortrait;
+    private drawCrystallinePortrait;
+    private drawVorthanPortrait;
+    private drawAquarianPortrait;
+    private drawMechanoPortrait;
+    private drawEtherealPortrait;
+    private drawDrakonidPortrait;
+    private drawSylvanPortrait;
+    private drawDefaultPortrait;
 }

@@ -498,6 +498,7 @@ export interface IRenderer {
   rotate(angle: number): void;
   scale(x: number, y: number): void;
   resize(): void;
+  drawRacePortrait(race: string, x: number, y: number, size: number, baseColor: string): void;
 }
 
 export interface ICamera {
