@@ -3173,6 +3173,9 @@ export function initializeGame(): void {
 
     const game = new GameEngine('gameCanvas');
     (window as any).game = game;
+    
+    // Start the game loop to enable state updates and rendering
+    game.startGameLoop();
 
     console.log('✅ Game initialized successfully');
     console.log('🎮 Controls: WASD/Arrow keys for movement, SPACE for fire, ESC for menu');
