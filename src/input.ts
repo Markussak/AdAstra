@@ -48,8 +48,15 @@ export class InputManager implements IInputManager {
   constructor() {
     this.isMobile = this.detectMobile();
     this.setupEventListeners();
-    this.initializeTouchControls();
     this.setupMobileTextInput();
+    // Don't initialize touch controls here - wait for canvas to be set
+  }
+
+  // Add method to set canvas reference after construction
+  public setCanvas(canvas: HTMLCanvasElement): void {
+    this.canvas = canvas;
+    this.initializeTouchControls();
+    this.setupCanvasEventListeners();
   }
 
   private detectMobile(): boolean {
@@ -58,20 +65,15 @@ export class InputManager implements IInputManager {
   }
 
   private initializeTouchControls(): void {
-    if (this.isMobile) {
-      // Get canvas reference for positioning
-      this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+    if (this.isMobile && this.canvas) {
+      this.updateTouchButtonPositions();
       
-      if (this.canvas) {
-        this.updateTouchButtonPositions();
-        
-        // Auto-enable touch controls on mobile
-        this.touchControlsEnabled = true;
-        
-        // Set joystick position (left side of screen)
-        this.virtualJoystick.centerX = 150;
-        this.virtualJoystick.centerY = this.canvas.height - 160;
-      }
+      // Auto-enable touch controls on mobile
+      this.touchControlsEnabled = true;
+      
+      // Set joystick position (left side of screen)
+      this.virtualJoystick.centerX = 150;
+      this.virtualJoystick.centerY = this.canvas.height - 160;
     }
   }
 
@@ -108,6 +110,43 @@ export class InputManager implements IInputManager {
       document.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
       document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
       document.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+    }
+  }
+
+  // Set up additional event listeners on the canvas for better touch handling
+  private setupCanvasEventListeners(): void {
+    if (!this.canvas) return;
+
+    // Add mouse event listeners directly to canvas for better coordinate handling
+    this.canvas.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const rect = this.canvas!.getBoundingClientRect();
+      this.mouse.x = e.clientX - rect.left;
+      this.mouse.y = e.clientY - rect.top;
+      this.mouse.justPressed = true;
+      this.mouse.pressed = true;
+      // console.log('Canvas mouse click at:', this.mouse.x, this.mouse.y);
+    });
+
+    this.canvas.addEventListener('mouseup', (e) => {
+      e.preventDefault();
+      this.mouse.pressed = false;
+      this.mouse.justReleased = true;
+    });
+
+    // Add touch event listeners directly to canvas
+    if (this.isMobile) {
+      this.canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+                 // console.log('Canvas touch start detected');
+        this.handleTouchStart(e);
+      }, { passive: false });
+
+      this.canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+                 // console.log('Canvas touch end detected');
+        this.handleTouchEnd(e);
+      }, { passive: false });
     }
   }
 
@@ -214,13 +253,30 @@ export class InputManager implements IInputManager {
   }
 
   private handleMouseMove(event: MouseEvent): void {
-    this.mouse.x = event.clientX;
-    this.mouse.y = event.clientY;
+    // Convert to canvas coordinates if canvas is available
+    if (this.canvas) {
+      const rect = this.canvas.getBoundingClientRect();
+      this.mouse.x = event.clientX - rect.left;
+      this.mouse.y = event.clientY - rect.top;
+    } else {
+      this.mouse.x = event.clientX;
+      this.mouse.y = event.clientY;
+    }
   }
 
   private handleMouseDown(event: MouseEvent): void {
+    // Convert to canvas coordinates if canvas is available
+    if (this.canvas) {
+      const rect = this.canvas.getBoundingClientRect();
+      this.mouse.x = event.clientX - rect.left;
+      this.mouse.y = event.clientY - rect.top;
+    } else {
+      this.mouse.x = event.clientX;
+      this.mouse.y = event.clientY;
+    }
     this.mouse.justPressed = true;
     this.mouse.pressed = true;
+         // console.log('Mouse down at:', this.mouse.x, this.mouse.y);
   }
 
   private handleMouseUp(event: MouseEvent): void {
@@ -234,10 +290,15 @@ export class InputManager implements IInputManager {
     for (let i = 0; i < event.changedTouches.length; i++) {
       const touch = event.changedTouches[i];
       const rect = this.canvas?.getBoundingClientRect();
-      if (!rect) continue;
+      if (!rect) {
+        // console.warn('Touch event: Canvas not found or no bounding rect');
+        continue;
+      }
       
       const touchX = touch.clientX - rect.left;
       const touchY = touch.clientY - rect.top;
+      
+             // console.log('Touch start at:', touchX, touchY, 'Canvas rect:', rect);
       
       this.touches.set(touch.identifier, {
         id: touch.identifier,
@@ -286,6 +347,21 @@ export class InputManager implements IInputManager {
     
     for (let i = 0; i < event.changedTouches.length; i++) {
       const touch = event.changedTouches[i];
+      const touchData = this.touches.get(touch.identifier);
+      
+      if (touchData) {
+        const deltaX = touchData.x - touchData.startX;
+        const deltaY = touchData.y - touchData.startY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        // console.log('Touch end - distance moved:', distance);
+        
+        // If it was a tap (small movement), ensure it's registered as a selection
+        if (distance < 30) {
+          // console.log('Touch tap detected for menu selection');
+          // This will be picked up by getTouchMenuInput on the next frame
+        }
+      }
       
       // Release joystick if this was the joystick touch
       if (touch.identifier === this.joystickTouchId) {
@@ -436,17 +512,22 @@ export class InputManager implements IInputManager {
       const deltaX = touch.x - touch.startX;
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
       
-      // Swipe gestures (for menu navigation)
-      if (distance > 40 && Math.abs(deltaX) < 60) {
-        if (deltaY < -40) up = true;
-        if (deltaY > 40) down = true;
+      // Swipe gestures (for menu navigation) - made more sensitive
+      if (distance > 30 && Math.abs(deltaX) < 80) {
+        if (deltaY < -30) up = true;
+        if (deltaY > 30) down = true;
       }
       
-      // Tap detection (small movement, short duration)
-      if (distance < 10) {
+      // Tap detection (increased tolerance for small movements)
+      if (distance < 30) {
         select = true;
       }
     });
+
+    // Also check for simple mouse clicks as tap equivalent
+    if (this.mouse.justPressed) {
+      select = true;
+    }
 
     // Special button for back
     back = this.touchButtons.pause.justPressed;

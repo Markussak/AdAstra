@@ -35,10 +35,12 @@ export declare class InputManager implements IInputManager {
     private textInputCallback;
     private textInputActive;
     constructor();
+    setCanvas(canvas: HTMLCanvasElement): void;
     private detectMobile;
     private initializeTouchControls;
     private updateTouchButtonPositions;
     private setupEventListeners;
+    private setupCanvasEventListeners;
     private setupMobileTextInput;
     activateMobileTextInput(currentText: string, callback: (text: string) => void): void;
     deactivateMobileTextInput(): void;

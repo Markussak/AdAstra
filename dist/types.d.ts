@@ -498,6 +498,7 @@ export interface IInputManager {
     setTouchControlsEnabled(enabled: boolean): void;
     renderTouchControls(renderer: any): void;
     update(): void;
+    setCanvas(canvas: HTMLCanvasElement): void;
     activateMobileTextInput(currentText: string, callback: (text: string) => void): void;
     deactivateMobileTextInput(): void;
     isMobileTextInputActive(): boolean;
