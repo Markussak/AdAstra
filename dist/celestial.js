@@ -9,8 +9,12 @@ export class CelestialBody {
         this.orbitSpeed = 0;
         this.orbitAngle = 0;
         this.orbitCenter = null;
+        this.orbitEccentricity = 0;
+        this.periapsis = 0;
+        this.apoapsis = 0;
         this.hasAtmosphere = false;
         this.atmosphereColor = null;
+        this.atmosphereRadius = 0;
         this.surfaceFeatures = [];
         this.position = { x, y };
         this.radius = radius;
@@ -19,6 +23,10 @@ export class CelestialBody {
         this.mass = mass;
         this.color = color;
         this.rotationSpeed = 0.01 + Math.random() * 0.02;
+        if (type === CelestialBodyType.PLANET && Math.random() < 0.4) {
+            this.hasAtmosphere = true;
+            this.atmosphereRadius = radius * (1.2 + Math.random() * 0.5);
+        }
         this.generateSurfaceFeatures();
     }
     generateSurfaceFeatures() {
@@ -31,13 +39,62 @@ export class CelestialBody {
             });
         }
     }
+    setOrbit(center, distance, speed, startAngle = 0, eccentricity = 0) {
+        this.orbitCenter = center;
+        this.orbitDistance = distance;
+        this.orbitSpeed = speed;
+        this.orbitAngle = startAngle;
+        this.orbitEccentricity = Math.min(0.8, eccentricity);
+        this.periapsis = distance * (1 - this.orbitEccentricity);
+        this.apoapsis = distance * (1 + this.orbitEccentricity);
+        this.updateOrbitalPosition();
+    }
+    updateOrbitalPosition() {
+        if (!this.orbitCenter)
+            return;
+        const currentDistance = this.orbitDistance * (1 - this.orbitEccentricity * this.orbitEccentricity) /
+            (1 + this.orbitEccentricity * Math.cos(this.orbitAngle));
+        this.position.x = this.orbitCenter.x + Math.cos(this.orbitAngle) * currentDistance;
+        this.position.y = this.orbitCenter.y + Math.sin(this.orbitAngle) * currentDistance;
+    }
     update(deltaTime, game) {
         this.rotation += this.rotationSpeed * deltaTime;
         if (this.orbitCenter && this.orbitDistance > 0) {
-            this.orbitAngle += this.orbitSpeed * deltaTime;
-            this.position.x = this.orbitCenter.x + Math.cos(this.orbitAngle) * this.orbitDistance;
-            this.position.y = this.orbitCenter.y + Math.sin(this.orbitAngle) * this.orbitDistance;
+            const currentDistance = this.orbitDistance * (1 - this.orbitEccentricity * this.orbitEccentricity) /
+                (1 + this.orbitEccentricity * Math.cos(this.orbitAngle));
+            const speedMultiplier = Math.sqrt(this.orbitDistance / currentDistance);
+            const adjustedSpeed = this.orbitSpeed * speedMultiplier;
+            this.orbitAngle += adjustedSpeed * deltaTime;
+            if (this.orbitAngle > Math.PI * 2) {
+                this.orbitAngle -= Math.PI * 2;
+            }
+            this.updateOrbitalPosition();
+            const orbitVelX = -Math.sin(this.orbitAngle) * currentDistance * adjustedSpeed;
+            const orbitVelY = Math.cos(this.orbitAngle) * currentDistance * adjustedSpeed;
+            this.velocity.x = orbitVelX * 0.01;
+            this.velocity.y = orbitVelY * 0.01;
         }
+        if (game.sceneManager?.getCurrentScene()?.getCelestialBodies && this.type !== CelestialBodyType.ASTEROID) {
+            const otherBodies = game.sceneManager.getCurrentScene().getCelestialBodies();
+            this.applyMutualGravity(otherBodies, deltaTime);
+        }
+    }
+    applyMutualGravity(otherBodies, deltaTime) {
+        otherBodies.forEach(other => {
+            if (other === this)
+                return;
+            const dx = other.position.x - this.position.x;
+            const dy = other.position.y - this.position.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance > (this.radius + other.radius) * 2 && other.mass > this.mass * 0.1) {
+                const force = (other.mass * 0.0001) / (distance * distance);
+                const angle = Math.atan2(dy, dx);
+                if (this.orbitCenter) {
+                    this.orbitAngle += force * Math.sin(angle - this.orbitAngle) * deltaTime * 0.001;
+                    this.orbitSpeed *= (1 + force * deltaTime * 0.0001);
+                }
+            }
+        });
     }
     render(renderer, camera) {
         if (!this.isVisible(camera, renderer.getWidth(), renderer.getHeight())) {
@@ -191,12 +248,6 @@ export class CelestialBody {
     }
     renderGeneric(renderer) {
         renderer.drawCircle(0, 0, this.radius, this.color, true);
-    }
-    setOrbit(center, distance, speed, startAngle = 0) {
-        this.orbitCenter = center;
-        this.orbitDistance = distance;
-        this.orbitSpeed = speed;
-        this.orbitAngle = startAngle;
     }
     isVisible(camera, screenWidth, screenHeight) {
         const screenPos = camera.worldToScreen(this.position.x, this.position.y);

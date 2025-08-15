@@ -1672,20 +1672,70 @@ class StatusBar {
         const screenWidth = this.renderer.getWidth();
         const screenHeight = this.renderer.getHeight();
         const statusY = screenHeight - this.height;
-        this.renderer.drawRect(0, statusY, screenWidth, this.height, '#2a2a2a');
-        this.renderer.drawRect(0, screenHeight - 5, screenWidth, 5, '#404040');
-        this.renderer.drawText(`HULL: ${Math.round(player.hull)}%`, 20, statusY + 20, '#606060', '10px "Big Apple 3PM", monospace');
-        this.renderer.drawText(`SHIELDS: ${Math.round(player.shields)}%`, 20, statusY + 35, '#606060', '10px "Big Apple 3PM", monospace');
-        this.renderer.drawText(`FUEL: ${Math.round(player.fuel)}%`, 20, statusY + 50, '#606060', '10px "Big Apple 3PM", monospace');
-        this.renderer.drawText(`ENERGY: ${Math.round(player.energy)}%`, 20, statusY + 65, '#606060', '10px "Big Apple 3PM", monospace');
+        this.renderer.drawRect(0, statusY, screenWidth, this.height, '#1a1a2a');
+        this.renderer.drawRect(0, statusY, screenWidth, 3, '#4a5568');
+        this.renderer.drawRect(0, screenHeight - 3, screenWidth, 3, '#2d3748');
+        this.drawStatusSection("SHIP STATUS", 20, statusY + 15, '#00d4ff');
+        const hullColor = player.hull > 75 ? '#00ff41' : player.hull > 50 ? '#ffaa00' : player.hull > 25 ? '#ff6600' : '#ff0040';
+        this.drawStatusBar("HULL", player.hull, player.maxHull, 20, statusY + 35, hullColor);
+        const shieldColor = player.shields > 75 ? '#00aaff' : player.shields > 50 ? '#0088dd' : player.shields > 25 ? '#0066bb' : '#004499';
+        this.drawStatusBar("SHIELDS", player.shields, player.maxShields, 20, statusY + 50, shieldColor);
+        const energyColor = player.energy > 75 ? '#ffff00' : player.energy > 50 ? '#ffcc00' : player.energy > 25 ? '#ff9900' : '#ff6600';
+        this.drawStatusBar("ENERGY", player.energy, player.maxEnergy, 20, statusY + 65, energyColor);
+        const fuelColor = player.fuel > 75 ? '#00ff88' : player.fuel > 50 ? '#00cc66' : player.fuel > 25 ? '#ff9900' : '#ff4400';
+        this.drawStatusBar("FUEL", player.fuel, player.maxFuel, 20, statusY + 80, fuelColor);
+        const centerX = screenWidth / 2 - 100;
+        this.drawStatusSection("NAVIGATION", centerX, statusY + 15, '#ff9500');
+        const speed = Math.sqrt(player.velocity.x ** 2 + player.velocity.y ** 2);
+        this.renderer.drawText(`VELOCITY: ${(speed * 100).toFixed(1)} m/s`, centerX, statusY + 35, '#ffffff', '10px "Big Apple 3PM", monospace');
+        this.renderer.drawText(`HEADING: ${Math.round((player.angle * 180 / Math.PI) % 360)}°`, centerX, statusY + 50, '#ffffff', '10px "Big Apple 3PM", monospace');
+        const warpPercent = Math.round((player.warpCharge / player.maxWarpCharge) * 100);
+        const warpColor = player.canWarp() ? '#00ff88' : '#666666';
+        this.drawStatusBar("WARP", player.warpCharge, player.maxWarpCharge, centerX, statusY + 65, warpColor);
+        if (player.isWarping) {
+            this.renderer.drawText('⚡ WARPING...', centerX, statusY + 85, '#00ffff', 'bold 10px "Big Apple 3PM", monospace');
+        }
+        const rightX = screenWidth - 250;
+        this.drawStatusSection("WEAPONS", rightX, statusY + 15, '#ff4081');
         const weapon = player.getWeaponStatus(player.selectedWeapon);
         if (weapon) {
-            this.renderer.drawText(`WEAPON: ${weapon.type.toUpperCase()}`, screenWidth - 200, statusY + 20, '#505050', '10px "Big Apple 3PM", monospace');
-            this.renderer.drawText(`HEAT: ${Math.round(weapon.heat)}%`, screenWidth - 200, statusY + 35, '#505050', '10px "Big Apple 3PM", monospace');
+            this.renderer.drawText(`TYPE: ${weapon.type.toUpperCase()}`, rightX, statusY + 35, '#ffffff', '10px "Big Apple 3PM", monospace');
+            const heatColor = weapon.heat > 75 ? '#ff0040' : weapon.heat > 50 ? '#ff6600' : weapon.heat > 25 ? '#ffaa00' : '#00ff41';
+            this.drawStatusBar("HEAT", weapon.heat, weapon.maxHeat || 100, rightX, statusY + 50, heatColor);
             if (weapon.ammo !== undefined) {
-                this.renderer.drawText(`AMMO: ${weapon.ammo}/${weapon.maxAmmo}`, screenWidth - 200, statusY + 50, '#505050', '10px "Big Apple 3PM", monospace');
+                const ammoPercent = weapon.maxAmmo ? (weapon.ammo / weapon.maxAmmo) * 100 : 0;
+                const ammoColor = ammoPercent > 75 ? '#00ff41' : ammoPercent > 50 ? '#ffaa00' : ammoPercent > 25 ? '#ff6600' : '#ff0040';
+                this.renderer.drawText(`AMMO: ${weapon.ammo}/${weapon.maxAmmo || 'INF'}`, rightX, statusY + 70, ammoColor, '10px "Big Apple 3PM", monospace');
             }
         }
+        const systemX = screenWidth - 80;
+        this.drawStatusSection("SYS", systemX, statusY + 15, '#9c27b0');
+        const systems = ['REACTOR', 'ENGINES', 'SHIELDS', 'WEAPONS'];
+        systems.forEach((sys, i) => {
+            const system = player.systems.get(sys);
+            if (system) {
+                const color = system.active && system.health > 75 ? '#00ff41' :
+                    system.active && system.health > 50 ? '#ffaa00' :
+                        system.active ? '#ff6600' : '#333333';
+                const status = system.active ? '●' : '○';
+                this.renderer.drawText(`${sys.charAt(0)}${status}`, systemX, statusY + 35 + i * 12, color, '8px "Big Apple 3PM", monospace');
+            }
+        });
+    }
+    drawStatusSection(title, x, y, color) {
+        this.renderer.drawText(title, x, y, color, 'bold 10px "Big Apple 3PM", monospace');
+        this.renderer.drawRect(x, y + 2, title.length * 6, 1, color);
+    }
+    drawStatusBar(label, current, max, x, y, color) {
+        const barWidth = 120;
+        const barHeight = 8;
+        const percent = Math.max(0, Math.min(100, (current / max) * 100));
+        this.renderer.drawRect(x + 50, y - 4, barWidth, barHeight, '#222222');
+        const fillWidth = (barWidth * percent) / 100;
+        this.renderer.drawRect(x + 50, y - 4, fillWidth, barHeight, color);
+        this.renderer.strokeRect(x + 50, y - 4, barWidth, barHeight, '#555555', 1);
+        this.renderer.drawText(`${label}:`, x, y, '#cccccc', '10px "Big Apple 3PM", monospace');
+        this.renderer.drawText(`${Math.round(current)}%`, x + 175, y, color, '10px "Big Apple 3PM", monospace');
     }
 }
 export class GameEngine {

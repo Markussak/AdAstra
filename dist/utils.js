@@ -30,8 +30,8 @@ export const gameConfig = {
         statusBarHeight: 0.15
     },
     physics: {
-        gravityStrength: 0.001,
-        frictionFactor: 0.999,
+        gravityStrength: 0.005,
+        frictionFactor: 0.9995,
         maxVelocity: 500
     },
     colors: {
@@ -46,25 +46,61 @@ export const gameConfig = {
     }
 };
 export class PhysicsEngine {
-    static applyNewtonianMotion(object, deltaTime, friction = 0.999) {
+    static applyNewtonianMotion(object, deltaTime, friction = 0.9995) {
         object.position.x += object.velocity.x * deltaTime;
         object.position.y += object.velocity.y * deltaTime;
         const frictionFactor = Math.pow(friction, deltaTime);
         object.velocity.x *= frictionFactor;
         object.velocity.y *= frictionFactor;
+        const speed = Math.sqrt(object.velocity.x ** 2 + object.velocity.y ** 2);
+        if (speed > gameConfig.physics.maxVelocity) {
+            const factor = gameConfig.physics.maxVelocity / speed;
+            object.velocity.x *= factor;
+            object.velocity.y *= factor;
+        }
     }
-    static applyGravity(object, gravitySources, deltaTime, gravityStrength = 0.001) {
+    static applyGravity(object, gravitySources, deltaTime, gravityStrength = 0.005) {
         gravitySources.forEach(source => {
             const dx = source.position.x - object.position.x;
             const dy = source.position.y - object.position.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance > source.radius * 2) {
+            if (distance > source.radius) {
                 const force = (source.mass * gravityStrength) / (distance * distance);
                 const angle = Math.atan2(dy, dx);
-                object.velocity.x += Math.cos(angle) * force * deltaTime;
-                object.velocity.y += Math.sin(angle) * force * deltaTime;
+                const accelX = Math.cos(angle) * force;
+                const accelY = Math.sin(angle) * force;
+                object.velocity.x += accelX * deltaTime;
+                object.velocity.y += accelY * deltaTime;
+                if (distance < source.radius * 3) {
+                    const tidalStrength = 1.0 - (distance / (source.radius * 3));
+                    const dampening = 1.0 - (tidalStrength * 0.02 * deltaTime);
+                    object.velocity.x *= dampening;
+                    object.velocity.y *= dampening;
+                }
             }
         });
+    }
+    static applyAtmosphericDrag(object, atmosphere, deltaTime) {
+        const dx = object.position.x - atmosphere.position.x;
+        const dy = object.position.y - atmosphere.position.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < atmosphere.radius) {
+            const altitudeRatio = distance / atmosphere.radius;
+            const dragStrength = atmosphere.density * (1 - altitudeRatio);
+            const speed = Math.sqrt(object.velocity.x ** 2 + object.velocity.y ** 2);
+            if (speed > 0) {
+                const dragFactor = 1.0 - (dragStrength * speed * deltaTime * 0.1);
+                const clampedFactor = Math.max(0.9, dragFactor);
+                object.velocity.x *= clampedFactor;
+                object.velocity.y *= clampedFactor;
+            }
+        }
+    }
+    static calculateEscapeVelocity(mass, radius) {
+        return Math.sqrt(2 * gameConfig.physics.gravityStrength * mass / radius);
+    }
+    static calculateOrbitalVelocity(mass, distance) {
+        return Math.sqrt(gameConfig.physics.gravityStrength * mass / distance);
     }
     static checkCollision(obj1, obj2) {
         const dx = obj2.position.x - obj1.position.x;

@@ -15,12 +15,19 @@ export declare class CelestialBody implements ICelestialBody {
     orbitSpeed: number;
     orbitAngle: number;
     orbitCenter: Vector2D | null;
+    orbitEccentricity: number;
+    periapsis: number;
+    apoapsis: number;
     hasAtmosphere: boolean;
     atmosphereColor: string | null;
+    atmosphereRadius: number;
     surfaceFeatures: SurfaceFeature[];
     constructor(x: number, y: number, radius: number, type: CelestialBodyType, name: string, mass?: number, color?: string);
     private generateSurfaceFeatures;
+    setOrbit(center: Vector2D, distance: number, speed: number, startAngle?: number, eccentricity?: number): void;
+    private updateOrbitalPosition;
     update(deltaTime: number, game: any): void;
+    private applyMutualGravity;
     render(renderer: IRenderer, camera: ICamera): void;
     private renderOrbitPath;
     private renderStar;
@@ -28,6 +35,5 @@ export declare class CelestialBody implements ICelestialBody {
     private renderMoon;
     private renderAsteroid;
     private renderGeneric;
-    setOrbit(center: Vector2D, distance: number, speed: number, startAngle?: number): void;
     isVisible(camera: ICamera, screenWidth: number, screenHeight: number): boolean;
 }

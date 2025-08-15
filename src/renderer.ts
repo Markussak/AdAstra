@@ -57,6 +57,12 @@ export class Renderer implements IRenderer {
     this.ctx.fillRect(x, y, width, height);
   }
 
+  public strokeRect(x: number, y: number, width: number, height: number, color: string, lineWidth: number = 1): void {
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = lineWidth;
+    this.ctx.strokeRect(x, y, width, height);
+  }
+
   public drawCircle(x: number, y: number, radius: number, color: string, filled: boolean = true): void {
     this.ctx.beginPath();
     this.ctx.arc(x, y, radius, 0, Math.PI * 2);

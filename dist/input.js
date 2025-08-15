@@ -346,27 +346,30 @@ export class InputManager {
         }
     }
     renderTouchControls(renderer) {
-        if (!this.touchControlsEnabled || !this.isMobile)
+        if (!this.touchControlsEnabled)
             return;
         this.updateTouchButtonPositions();
-        if (this.virtualJoystick.active || this.touches.size === 0) {
-            renderer.getContext().globalAlpha = 0.3;
-            renderer.drawCircle(this.virtualJoystick.centerX, this.virtualJoystick.centerY, this.virtualJoystick.radius, 'rgba(255, 255, 255, 0.2)');
-            const knobX = this.virtualJoystick.centerX + this.virtualJoystick.x * (this.virtualJoystick.radius * 0.7);
-            const knobY = this.virtualJoystick.centerY + this.virtualJoystick.y * (this.virtualJoystick.radius * 0.7);
-            renderer.drawCircle(knobX, knobY, 15, 'rgba(255, 255, 255, 0.6)');
-            renderer.getContext().globalAlpha = 1.0;
-        }
-        renderer.getContext().globalAlpha = 0.4;
-        const fireColor = this.touchButtons.fire.pressed ? 'rgba(255, 100, 100, 0.8)' : 'rgba(255, 255, 255, 0.3)';
+        renderer.getContext().globalAlpha = 0.5;
+        renderer.drawCircle(this.virtualJoystick.centerX, this.virtualJoystick.centerY, this.virtualJoystick.radius, 'rgba(0, 200, 255, 0.3)');
+        renderer.strokeCircle(this.virtualJoystick.centerX, this.virtualJoystick.centerY, this.virtualJoystick.radius, 'rgba(0, 200, 255, 0.6)', 2);
+        const knobX = this.virtualJoystick.centerX + this.virtualJoystick.x * (this.virtualJoystick.radius * 0.7);
+        const knobY = this.virtualJoystick.centerY + this.virtualJoystick.y * (this.virtualJoystick.radius * 0.7);
+        renderer.drawCircle(knobX, knobY, 15, 'rgba(255, 255, 255, 0.8)');
+        renderer.strokeCircle(knobX, knobY, 15, 'rgba(0, 200, 255, 0.8)', 2);
+        renderer.getContext().globalAlpha = 1.0;
+        renderer.getContext().globalAlpha = 0.6;
+        const fireColor = this.touchButtons.fire.pressed ? 'rgba(255, 100, 100, 0.9)' : 'rgba(255, 80, 80, 0.6)';
         renderer.drawCircle(this.touchButtons.fire.x, this.touchButtons.fire.y, this.touchButtons.fire.radius, fireColor);
-        renderer.drawText('FIRE', this.touchButtons.fire.x, this.touchButtons.fire.y, '#ffffff', '12px "Big Apple 3PM", monospace');
-        const warpColor = this.touchButtons.warp.pressed ? 'rgba(100, 100, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)';
+        renderer.strokeCircle(this.touchButtons.fire.x, this.touchButtons.fire.y, this.touchButtons.fire.radius, 'rgba(255, 255, 255, 0.8)', 2);
+        renderer.drawText('FIRE', this.touchButtons.fire.x, this.touchButtons.fire.y, '#ffffff', 'bold 12px "Big Apple 3PM", monospace');
+        const warpColor = this.touchButtons.warp.pressed ? 'rgba(100, 100, 255, 0.9)' : 'rgba(100, 150, 255, 0.6)';
         renderer.drawCircle(this.touchButtons.warp.x, this.touchButtons.warp.y, this.touchButtons.warp.radius, warpColor);
-        renderer.drawText('WARP', this.touchButtons.warp.x, this.touchButtons.warp.y, '#ffffff', '10px "Big Apple 3PM", monospace');
-        const pauseColor = this.touchButtons.pause.pressed ? 'rgba(255, 255, 100, 0.8)' : 'rgba(255, 255, 255, 0.3)';
+        renderer.strokeCircle(this.touchButtons.warp.x, this.touchButtons.warp.y, this.touchButtons.warp.radius, 'rgba(255, 255, 255, 0.8)', 2);
+        renderer.drawText('WARP', this.touchButtons.warp.x, this.touchButtons.warp.y, '#ffffff', 'bold 10px "Big Apple 3PM", monospace');
+        const pauseColor = this.touchButtons.pause.pressed ? 'rgba(255, 255, 100, 0.9)' : 'rgba(255, 200, 100, 0.6)';
         renderer.drawCircle(this.touchButtons.pause.x, this.touchButtons.pause.y, this.touchButtons.pause.radius, pauseColor);
-        renderer.drawText('⏸', this.touchButtons.pause.x, this.touchButtons.pause.y, '#ffffff', '16px "Big Apple 3PM", monospace');
+        renderer.strokeCircle(this.touchButtons.pause.x, this.touchButtons.pause.y, this.touchButtons.pause.radius, 'rgba(255, 255, 255, 0.8)', 2);
+        renderer.drawText('⏸', this.touchButtons.pause.x, this.touchButtons.pause.y, '#ffffff', 'bold 16px "Big Apple 3PM", monospace');
         renderer.getContext().globalAlpha = 1.0;
     }
     update() {

@@ -7,6 +7,8 @@ export declare class StarSystemScene implements IScene {
     private generateSolarSystem;
     private generateStarColor;
     private generatePlanetColor;
+    private generateMoonColor;
+    private generateAsteroidColor;
     update(deltaTime: number, game: any): void;
     render(renderer: IRenderer, camera: ICamera): void;
     getSceneType(): SceneType;
