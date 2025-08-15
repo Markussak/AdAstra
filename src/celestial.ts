@@ -195,7 +195,7 @@ export class CelestialBody implements ICelestialBody {
     if ((this.type === CelestialBodyType.STAR || this.type === CelestialBodyType.PLANET) && 
         Math.abs(screenPos.x - renderer.getWidth()/2) < 150 && 
         Math.abs(screenPos.y - renderer.getHeight()/2) < 150) {
-      renderer.drawText(this.name, screenPos.x, screenPos.y + this.radius + 20, '#dcd0c0', '8px "Big Apple 3PM", monospace');
+      renderer.drawText(this.name, screenPos.x, screenPos.y + this.radius + 20, '#e0e3e6', '8px "Big Apple 3PM", monospace');
     }
   }
 
@@ -205,7 +205,7 @@ export class CelestialBody implements ICelestialBody {
     const ctx = renderer.getContext();
     const centerScreen = camera.worldToScreen(this.orbitCenter.x, this.orbitCenter.y);
 
-    ctx.strokeStyle = 'rgba(95, 158, 158, 0.15)';
+    ctx.strokeStyle = 'rgba(162, 170, 178, 0.15)'; // 16-bit highlight standard with low opacity
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(

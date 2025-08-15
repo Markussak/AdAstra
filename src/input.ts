@@ -27,14 +27,14 @@ export class InputManager implements IInputManager {
     centerY: 0,
     x: 0,
     y: 0,
-    radius: 50
+    radius: 80  // Larger radius for better visibility and touch area
   };
 
-  // Touch buttons for mobile
+  // Touch buttons for mobile - larger and more visible
   public touchButtons = {
-    fire: { x: 0, y: 0, radius: 40, pressed: false, justPressed: false },
-    pause: { x: 0, y: 0, radius: 30, pressed: false, justPressed: false },
-    warp: { x: 0, y: 0, radius: 35, pressed: false, justPressed: false }
+    fire: { x: 0, y: 0, radius: 60, pressed: false, justPressed: false },
+    pause: { x: 0, y: 0, radius: 45, pressed: false, justPressed: false },
+    warp: { x: 0, y: 0, radius: 55, pressed: false, justPressed: false }
   };
 
   private joystickTouchId: number | null = null;
@@ -69,8 +69,8 @@ export class InputManager implements IInputManager {
         this.touchControlsEnabled = true;
         
         // Set joystick position (left side of screen)
-        this.virtualJoystick.centerX = 120;
-        this.virtualJoystick.centerY = this.canvas.height - 120;
+        this.virtualJoystick.centerX = 150;
+        this.virtualJoystick.centerY = this.canvas.height - 160;
       }
     }
   }
@@ -81,15 +81,15 @@ export class InputManager implements IInputManager {
     const width = this.canvas.width;
     const height = this.canvas.height;
     
-    // Position touch buttons (right side of screen)
-    this.touchButtons.fire.x = width - 80;
-    this.touchButtons.fire.y = height - 120;
+    // Position touch buttons (right side of screen) - adjusted for larger buttons
+    this.touchButtons.fire.x = width - 120;
+    this.touchButtons.fire.y = height - 160;
     
-    this.touchButtons.warp.x = width - 80;
-    this.touchButtons.warp.y = height - 200;
+    this.touchButtons.warp.x = width - 120;
+    this.touchButtons.warp.y = height - 280;
     
-    this.touchButtons.pause.x = width - 50;
-    this.touchButtons.pause.y = 50;
+    this.touchButtons.pause.x = width - 70;
+    this.touchButtons.pause.y = 70;
   }
 
   private setupEventListeners(): void {
@@ -453,55 +453,158 @@ export class InputManager implements IInputManager {
     // Update button positions based on current canvas size
     this.updateTouchButtonPositions();
 
+    // 16-bit color palette for touch controls
+    const colors = {
+      chassisPrimary: '#5a6978',
+      chassisMidtone: '#434c55', 
+      chassisDark: '#2b323a',
+      highlightSpecular: '#e0e3e6',
+      highlightStandard: '#a2aab2',
+      accentYellow: '#ffc357',
+      accentOrange: '#e8732c',
+      accentRed: '#d43d3d',
+      accentGreen: '#52de44'
+    };
+
+    const ctx = renderer.getContext();
+
     // Always render virtual joystick when touch controls are enabled
-    // Joystick base
-    renderer.getContext().globalAlpha = 0.5;
-    renderer.drawCircle(
-      this.virtualJoystick.centerX, 
-      this.virtualJoystick.centerY, 
-      this.virtualJoystick.radius, 
-      'rgba(0, 200, 255, 0.3)'
-    );
-    
-    // Joystick border
-    renderer.strokeCircle(
-      this.virtualJoystick.centerX, 
-      this.virtualJoystick.centerY, 
-      this.virtualJoystick.radius, 
-      'rgba(0, 200, 255, 0.6)', 
-      2
-    );
-    
-    // Joystick knob
-    const knobX = this.virtualJoystick.centerX + this.virtualJoystick.x * (this.virtualJoystick.radius * 0.7);
-    const knobY = this.virtualJoystick.centerY + this.virtualJoystick.y * (this.virtualJoystick.radius * 0.7);
-    
-    renderer.drawCircle(knobX, knobY, 15, 'rgba(255, 255, 255, 0.8)');
-    renderer.strokeCircle(knobX, knobY, 15, 'rgba(0, 200, 255, 0.8)', 2);
-    renderer.getContext().globalAlpha = 1.0;
+    // Joystick housing (industrial look)
+    ctx.fillStyle = colors.chassisDark;
+    ctx.beginPath();
+    ctx.arc(this.virtualJoystick.centerX, this.virtualJoystick.centerY, this.virtualJoystick.radius + 5, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Render touch buttons with better visibility
-    renderer.getContext().globalAlpha = 0.6;
+    // Joystick base with 16-bit dithered pattern
+    ctx.fillStyle = colors.chassisMidtone;
+    ctx.beginPath();
+    ctx.arc(this.virtualJoystick.centerX, this.virtualJoystick.centerY, this.virtualJoystick.radius, 0, Math.PI * 2);
+    ctx.fill();
     
-    // Fire button
-    const fireColor = this.touchButtons.fire.pressed ? 'rgba(255, 100, 100, 0.9)' : 'rgba(255, 80, 80, 0.6)';
-    renderer.drawCircle(this.touchButtons.fire.x, this.touchButtons.fire.y, this.touchButtons.fire.radius, fireColor);
-    renderer.strokeCircle(this.touchButtons.fire.x, this.touchButtons.fire.y, this.touchButtons.fire.radius, 'rgba(255, 255, 255, 0.8)', 2);
-    renderer.drawText('FIRE', this.touchButtons.fire.x, this.touchButtons.fire.y, '#ffffff', 'bold 12px "Big Apple 3PM", monospace');
+    // Directional indicators (cross pattern)
+    ctx.strokeStyle = colors.highlightStandard;
+    ctx.lineWidth = 2;
+    const centerX = this.virtualJoystick.centerX;
+    const centerY = this.virtualJoystick.centerY;
+    const radius = this.virtualJoystick.radius;
+    
+    // Cross lines
+    ctx.beginPath();
+    ctx.moveTo(centerX - radius * 0.8, centerY);
+    ctx.lineTo(centerX + radius * 0.8, centerY);
+    ctx.moveTo(centerX, centerY - radius * 0.8);
+    ctx.lineTo(centerX, centerY + radius * 0.8);
+    ctx.stroke();
+    
+    // Corner markers
+    for (let i = 0; i < 4; i++) {
+      const angle = (i * Math.PI) / 2 + Math.PI / 4;
+      const x = centerX + Math.cos(angle) * radius * 0.7;
+      const y = centerY + Math.sin(angle) * radius * 0.7;
+      ctx.fillStyle = colors.highlightStandard;
+      ctx.fillRect(x - 2, y - 2, 4, 4);
+    }
+    
+    // Joystick border with industrial styling
+    ctx.strokeStyle = colors.highlightSpecular;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Joystick knob with heavy industrial look
+    const knobX = centerX + this.virtualJoystick.x * (radius * 0.6);
+    const knobY = centerY + this.virtualJoystick.y * (radius * 0.6);
+    
+    // Knob shadow
+    ctx.fillStyle = colors.chassisDark;
+    ctx.beginPath();
+    ctx.arc(knobX + 2, knobY + 2, 20, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Knob base
+    ctx.fillStyle = colors.chassisPrimary;
+    ctx.beginPath();
+    ctx.arc(knobX, knobY, 20, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Knob highlight
+    ctx.fillStyle = colors.highlightSpecular;
+    ctx.beginPath();
+    ctx.arc(knobX - 3, knobY - 3, 12, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Knob grip pattern
+    for (let i = 0; i < 8; i++) {
+      const angle = (i * Math.PI) / 4;
+      const gx = knobX + Math.cos(angle) * 8;
+      const gy = knobY + Math.sin(angle) * 8;
+      ctx.fillStyle = colors.chassisDark;
+      ctx.fillRect(gx - 1, gy - 1, 2, 2);
+    }
 
-    // Warp button
-    const warpColor = this.touchButtons.warp.pressed ? 'rgba(100, 100, 255, 0.9)' : 'rgba(100, 150, 255, 0.6)';
-    renderer.drawCircle(this.touchButtons.warp.x, this.touchButtons.warp.y, this.touchButtons.warp.radius, warpColor);
-    renderer.strokeCircle(this.touchButtons.warp.x, this.touchButtons.warp.y, this.touchButtons.warp.radius, 'rgba(255, 255, 255, 0.8)', 2);
-    renderer.drawText('WARP', this.touchButtons.warp.x, this.touchButtons.warp.y, '#ffffff', 'bold 10px "Big Apple 3PM", monospace');
+    // Render touch buttons with 16-bit industrial styling
+    this.draw16BitButton(renderer, this.touchButtons.fire, 'FIRE', colors.accentRed, colors);
+    this.draw16BitButton(renderer, this.touchButtons.warp, 'WARP', colors.accentYellow, colors);
+    this.draw16BitButton(renderer, this.touchButtons.pause, 'MENU', colors.accentOrange, colors);
+  }
 
-    // Pause button
-    const pauseColor = this.touchButtons.pause.pressed ? 'rgba(255, 255, 100, 0.9)' : 'rgba(255, 200, 100, 0.6)';
-    renderer.drawCircle(this.touchButtons.pause.x, this.touchButtons.pause.y, this.touchButtons.pause.radius, pauseColor);
-    renderer.strokeCircle(this.touchButtons.pause.x, this.touchButtons.pause.y, this.touchButtons.pause.radius, 'rgba(255, 255, 255, 0.8)', 2);
-    renderer.drawText('⏸', this.touchButtons.pause.x, this.touchButtons.pause.y, '#ffffff', 'bold 16px "Big Apple 3PM", monospace');
-
-    renderer.getContext().globalAlpha = 1.0;
+  private draw16BitButton(renderer: any, button: any, label: string, accentColor: string, colors: any): void {
+    const ctx = renderer.getContext();
+    
+    // Button housing (recessed when pressed)
+    const offset = button.pressed ? 2 : 0;
+    
+    // Outer ring
+    ctx.fillStyle = colors.chassisDark;
+    ctx.beginPath();
+    ctx.arc(button.x + offset, button.y + offset, button.radius + 5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Main button
+    ctx.fillStyle = button.pressed ? colors.chassisMidtone : colors.chassisPrimary;
+    ctx.beginPath();
+    ctx.arc(button.x + offset, button.y + offset, button.radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Button highlight ring
+    ctx.strokeStyle = button.pressed ? colors.chassisMidtone : colors.highlightStandard;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(button.x + offset, button.y + offset, button.radius - 5, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Button center with accent color
+    ctx.fillStyle = button.pressed ? accentColor : colors.highlightSpecular;
+    ctx.beginPath();
+    ctx.arc(button.x + offset, button.y + offset, button.radius - 15, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Industrial corner screws
+    for (let i = 0; i < 4; i++) {
+      const angle = (i * Math.PI) / 2;
+      const sx = button.x + offset + Math.cos(angle) * (button.radius - 8);
+      const sy = button.y + offset + Math.sin(angle) * (button.radius - 8);
+      
+      ctx.fillStyle = colors.chassisDark;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Screw slot
+      ctx.strokeStyle = colors.highlightStandard;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(sx - 2, sy);
+      ctx.lineTo(sx + 2, sy);
+      ctx.stroke();
+    }
+    
+    // Button label with 16-bit font
+    ctx.fillStyle = button.pressed ? colors.chassisDark : colors.highlightSpecular;
+    ctx.font = 'bold 14px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, button.x + offset, button.y + offset + 4);
   }
 
   public update(): void {

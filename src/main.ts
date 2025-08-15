@@ -220,7 +220,7 @@ class LoadingState implements IGameState {
 
     // Title
     renderer.drawText('STAR DUST VOYAGER', width/2, height/2 - 150, '#606060', 'bold 48px "Big Apple 3PM", monospace');
-    renderer.drawText('GALAXY WANDERER', width/2, height/2 - 100, '#505050', '24px "Big Apple 3PM", monospace');
+    renderer.drawText('GALAXY WANDERER', width/2, height/2 - 100, '#e0e3e6', '24px "Big Apple 3PM", monospace');
 
     // Loading bar background
     const barWidth = 400;
@@ -242,7 +242,7 @@ class LoadingState implements IGameState {
 
     // Loading text
     renderer.drawText(this.loadingTexts[this.currentTextIndex], width/2, height/2 + 100, '#606060', '14px "Big Apple 3PM", monospace');
-    renderer.drawText(`${Math.round(this.progress)}%`, width/2, height/2 + 130, '#505050', '12px "Big Apple 3PM", monospace');
+    renderer.drawText(`${Math.round(this.progress)}%`, width/2, height/2 + 130, '#a2aab2', '12px "Big Apple 3PM", monospace');
   }
 
   public handleInput(input: IInputManager): void {
@@ -295,7 +295,7 @@ class MainMenuState implements IGameState {
     renderer.getContext().shadowColor = '#404040';
     renderer.getContext().shadowBlur = 0;
     renderer.drawText('STAR DUST VOYAGER', width/2, height/4, '#606060', 'bold 64px "Big Apple 3PM", monospace');
-    renderer.drawText('GALAXY WANDERER', width/2, height/4 + 60, '#505050', '32px "Big Apple 3PM", monospace');
+    renderer.drawText('GALAXY WANDERER', width/2, height/4 + 60, '#e0e3e6', '32px "Big Apple 3PM", monospace');
     renderer.getContext().shadowBlur = 0;
 
     // Menu options
@@ -1806,7 +1806,7 @@ class SettingsState implements IGameState {
     renderer.clear('#0a0a0f');
     
     // Title
-    renderer.drawText('NASTAVENÍ', width/2, 80, '#00ffff', 'bold 36px "Big Apple 3PM", monospace');
+    renderer.drawText('NASTAVENÍ', width/2, 80, '#52de44', 'bold 36px "Big Apple 3PM", monospace');
 
     // Tab navigation
     const tabY = 150;
@@ -2136,11 +2136,25 @@ class SceneManager implements ISceneManager {
   }
 }
 
-// Simple Status Bar (simplified for now)
+// Enhanced 16-bit Retro-Futuristic Status Bar
 class StatusBar implements IStatusBar {
   public height: number = 0;
   public panels: any[] = [];
   private renderer: IRenderer;
+  
+  // 16-bit color palette (based on the detailed specification)
+  private colors = {
+    chassisPrimary: '#5a6978',
+    chassisMidtone: '#434c55', 
+    chassisDark: '#2b323a',
+    chassisAbyss: '#181c20',
+    highlightSpecular: '#e0e3e6',
+    highlightStandard: '#a2aab2',
+    accentYellow: '#ffc357',
+    accentOrange: '#e8732c',
+    accentRed: '#d43d3d',
+    accentGreen: '#52de44'
+  };
 
   constructor(renderer: IRenderer) {
     this.renderer = renderer;
@@ -2148,7 +2162,7 @@ class StatusBar implements IStatusBar {
 
   public update(player: IPlayerShip): void {
     const screenHeight = this.renderer.getHeight();
-    this.height = Math.floor(screenHeight * gameConfig.ui.statusBarHeight);
+    this.height = Math.floor(screenHeight * 0.18); // Larger for detailed UI
   }
 
   public render(player: IPlayerShip): void {
@@ -2156,106 +2170,582 @@ class StatusBar implements IStatusBar {
     const screenHeight = this.renderer.getHeight();
     const statusY = screenHeight - this.height;
 
-    // Draw main status bar background with gradient
-    this.renderer.drawRect(0, statusY, screenWidth, this.height, '#1a1a2a');
-    this.renderer.drawRect(0, statusY, screenWidth, 3, '#4a5568');
-    this.renderer.drawRect(0, screenHeight - 3, screenWidth, 3, '#2d3748');
+    // Draw base chassis and frame
+    this.drawBaseChassis(screenWidth, statusY);
+    
+    // Draw left panel - Ship Systems
+    this.drawShipSystemsPanel(player, 20, statusY + 10);
+    
+    // Draw center panel - Damage Monitor (CRT style)
+    this.drawDamageMonitorPanel(player, screenWidth / 2 - 150, statusY + 10);
+    
+    // Draw right panels - Weapons and Radar
+    this.drawWeaponsPanel(player, screenWidth - 420, statusY + 10);
+    this.drawRadarPanel(player, screenWidth - 180, statusY + 10);
+  }
 
-    // Left panel - Ship Status
-    this.drawStatusSection("SHIP STATUS", 20, statusY + 15, '#00d4ff');
+  private drawBaseChassis(screenWidth: number, statusY: number): void {
+    const ctx = this.renderer.getContext();
     
-    // Hull with color coding
-    const hullColor = player.hull > 75 ? '#00ff41' : player.hull > 50 ? '#ffaa00' : player.hull > 25 ? '#ff6600' : '#ff0040';
-    this.drawStatusBar("HULL", player.hull, player.maxHull, 20, statusY + 35, hullColor);
+    // Main chassis plate with heavy industrial feel
+    const plateRect = { x: 10, y: statusY + 10, width: screenWidth - 20, height: this.height - 20 };
     
-    // Shields with color coding  
-    const shieldColor = player.shields > 75 ? '#00aaff' : player.shields > 50 ? '#0088dd' : player.shields > 25 ? '#0066bb' : '#004499';
-    this.drawStatusBar("SHIELDS", player.shields, player.maxShields, 20, statusY + 50, shieldColor);
+    // Background chassis plate with gradient
+    ctx.fillStyle = this.colors.chassisPrimary;
+    ctx.fillRect(plateRect.x, plateRect.y, plateRect.width, plateRect.height);
     
-    // Energy with color coding
-    const energyColor = player.energy > 75 ? '#ffff00' : player.energy > 50 ? '#ffcc00' : player.energy > 25 ? '#ff9900' : '#ff6600';
-    this.drawStatusBar("ENERGY", player.energy, player.maxEnergy, 20, statusY + 65, energyColor);
+    // Heavy plate edges with 3D effect
+    this.drawHeavyPlateEdge(ctx, plateRect);
     
-    // Fuel with color coding
-    const fuelColor = player.fuel > 75 ? '#00ff88' : player.fuel > 50 ? '#00cc66' : player.fuel > 25 ? '#ff9900' : '#ff4400';
-    this.drawStatusBar("FUEL", player.fuel, player.maxFuel, 20, statusY + 80, fuelColor);
+    // Corner screws for industrial feel
+    this.drawMassiveScrew(ctx, plateRect.x + 15, plateRect.y + 15);
+    this.drawMassiveScrew(ctx, plateRect.x + plateRect.width - 25, plateRect.y + 15);
+    this.drawMassiveScrew(ctx, plateRect.x + 15, plateRect.y + plateRect.height - 25);
+    this.drawMassiveScrew(ctx, plateRect.x + plateRect.width - 25, plateRect.y + plateRect.height - 25);
+    
+    // Ship identification plate
+    this.drawIdentificationPlate(ctx, plateRect);
+    
+    // Decorative oil stains and wear marks
+    this.drawChassisDetails(ctx, plateRect);
+  }
 
-    // Center panel - Navigation & Systems
-    const centerX = screenWidth / 2 - 100;
-    this.drawStatusSection("NAVIGATION", centerX, statusY + 15, '#ff9500');
+  private drawHeavyPlateEdge(ctx: CanvasRenderingContext2D, rect: any): void {
+    // Top edge (illuminated) - 6px chamfer
+    const gradient = ctx.createLinearGradient(0, rect.y, 0, rect.y + 6);
+    gradient.addColorStop(0, this.colors.highlightStandard);
+    gradient.addColorStop(0.3, this.colors.highlightStandard);
+    gradient.addColorStop(0.6, this.colors.chassisPrimary);
+    gradient.addColorStop(1, this.colors.chassisMidtone);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(rect.x, rect.y, rect.width, 6);
     
-    const speed = Math.sqrt(player.velocity.x ** 2 + player.velocity.y ** 2);
-    this.renderer.drawText(`VELOCITY: ${(speed * 100).toFixed(1)} m/s`, centerX, statusY + 35, '#ffffff', '10px "Big Apple 3PM", monospace');
-    this.renderer.drawText(`HEADING: ${Math.round((player.angle * 180 / Math.PI) % 360)}°`, centerX, statusY + 50, '#ffffff', '10px "Big Apple 3PM", monospace');
-    
-    // Warp status
-    const warpPercent = Math.round((player.warpCharge / player.maxWarpCharge) * 100);
-    const warpColor = player.canWarp() ? '#00ff88' : '#666666';
-    this.drawStatusBar("WARP", player.warpCharge, player.maxWarpCharge, centerX, statusY + 65, warpColor);
-    
-    if (player.isWarping) {
-      this.renderer.drawText('⚡ WARPING...', centerX, statusY + 85, '#00ffff', 'bold 10px "Big Apple 3PM", monospace');
+    // Bottom edge (shadowed) - 4px shadow
+    ctx.fillStyle = this.colors.chassisAbyss;
+    ctx.fillRect(rect.x, rect.y + rect.height - 4, rect.width, 4);
+  }
+
+  private drawMassiveScrew(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+    // Industrial hex screw head
+    ctx.fillStyle = this.colors.chassisDark;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * Math.PI) / 3;
+      const px = x + Math.cos(angle) * 8;
+      const py = y + Math.sin(angle) * 8;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
     }
+    ctx.closePath();
+    ctx.fill();
+    
+    // Screw highlight
+    ctx.fillStyle = this.colors.highlightStandard;
+    ctx.fillRect(x - 6, y - 1, 12, 2);
+    ctx.fillRect(x - 1, y - 6, 2, 12);
+  }
 
-    // Right panel - Weapons & Systems
-    const rightX = screenWidth - 250;
-    this.drawStatusSection("WEAPONS", rightX, statusY + 15, '#ff4081');
+  private drawIdentificationPlate(ctx: CanvasRenderingContext2D, rect: any): void {
+    const plateX = rect.x + 50;
+    const plateY = rect.y + rect.height - 40;
+    
+    ctx.fillStyle = this.colors.chassisDark;
+    ctx.fillRect(plateX, plateY, 200, 25);
+    
+    // Thin metal bezel
+    ctx.strokeStyle = this.colors.highlightStandard;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(plateX, plateY, 200, 25);
+    
+    // ID text with 16-bit pixelated font
+    ctx.fillStyle = this.colors.accentYellow;
+    ctx.font = '8px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('UESC VOYAGER // REG: 7B-42', plateX + 100, plateY + 16);
+  }
+
+  private drawChassisDetails(ctx: CanvasRenderingContext2D, rect: any): void {
+    // Oil stains (random dithered patterns)
+    ctx.fillStyle = this.colors.chassisAbyss;
+    ctx.globalAlpha = 0.3;
+    for (let i = 0; i < 8; i++) {
+      const x = rect.x + Math.random() * rect.width;
+      const y = rect.y + Math.random() * rect.height;
+      ctx.fillRect(x, y, 2 + Math.random() * 4, 1 + Math.random() * 3);
+    }
+    ctx.globalAlpha = 1.0;
+  }
+
+  private drawShipSystemsPanel(player: IPlayerShip, x: number, y: number): void {
+    const panelWidth = 400;
+    const panelHeight = 140;
+    
+    // Panel base with recessed look
+    this.drawPanelBase(x, y, panelWidth, panelHeight);
+    
+    // Ship systems header
+    this.renderer.drawText('SYSTÉMY LODI', x + 10, y + 20, this.colors.accentGreen, 'bold 8px "Big Apple 3PM", monospace');
+    
+    // Resource bars with 16-bit segmented display
+    this.drawSegmentedResourceBar(player, 'TRUP', player.hull, player.maxHull, x + 10, y + 35, this.colors.accentGreen);
+    this.drawSegmentedResourceBar(player, 'ŠTÍTY', player.shields, player.maxShields, x + 10, y + 55, this.colors.accentYellow);
+    this.drawSegmentedResourceBar(player, 'ENERGIE', player.energy, player.maxEnergy, x + 10, y + 75, this.colors.accentOrange);
+    this.drawSegmentedResourceBar(player, 'PALIVO', player.fuel, player.maxFuel, x + 10, y + 95, this.colors.accentRed);
+    
+    // Pressure gauges
+    this.drawPressureGauges(x + 280, y + 45);
+    
+    // Exposed cables detail
+    this.drawExposedCables(x + 10, y + 115);
+  }
+
+  private drawSegmentedResourceBar(player: any, label: string, current: number, max: number, x: number, y: number, baseColor: string): void {
+    const segments = 20;
+    const segmentWidth = 8;
+    const segmentHeight = 12;
+    const spacing = 1;
+    const percent = Math.max(0, Math.min(100, (current / max) * 100));
+    const activeSegments = Math.floor((segments * percent) / 100);
+    
+    // Label
+    this.renderer.drawText(`${label}:`, x, y + 8, this.colors.highlightStandard, '7px "Big Apple 3PM", monospace');
+    
+    // Draw segments
+    for (let i = 0; i < segments; i++) {
+      const segX = x + 60 + i * (segmentWidth + spacing);
+      const ctx = this.renderer.getContext();
+      
+      if (i < activeSegments) {
+        // Active segment with 3D effect
+        // Top highlight
+        ctx.fillStyle = this.colors.highlightSpecular;
+        ctx.fillRect(segX, y, segmentWidth, 1);
+        
+        // Main body with gradient
+        const gradient = ctx.createLinearGradient(0, y + 1, 0, y + segmentHeight - 1);
+        gradient.addColorStop(0, this.lightenColor(baseColor, 0.2));
+        gradient.addColorStop(1, this.darkenColor(baseColor, 0.2));
+        ctx.fillStyle = gradient;
+        ctx.fillRect(segX, y + 1, segmentWidth, segmentHeight - 2);
+        
+        // Bottom shadow
+        ctx.fillStyle = this.colors.chassisDark;
+        ctx.fillRect(segX, y + segmentHeight - 1, segmentWidth, 1);
+      } else {
+        // Inactive segment
+        ctx.fillStyle = this.colors.chassisAbyss;
+        ctx.fillRect(segX, y, segmentWidth, segmentHeight);
+        ctx.strokeStyle = this.colors.chassisMidtone;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(segX, y, segmentWidth, segmentHeight);
+      }
+    }
+    
+    // Percentage display
+    this.renderer.drawText(`${Math.round(percent)}%`, x + 280, y + 8, baseColor, '7px "Big Apple 3PM", monospace');
+  }
+
+  private drawPressureGauges(x: number, y: number): void {
+    for (let i = 0; i < 4; i++) {
+      const gaugeX = x + i * 25;
+      const radius = 10;
+      const value = 20 + Math.random() * 60; // Simulated pressure
+      
+      // Gauge recessed housing
+      const ctx = this.renderer.getContext();
+      ctx.fillStyle = this.colors.chassisAbyss;
+      ctx.beginPath();
+      ctx.arc(gaugeX, y, radius + 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Gauge face
+      ctx.fillStyle = this.colors.chassisDark;
+      ctx.beginPath();
+      ctx.arc(gaugeX, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Needle (with subtle animation)
+      const angle = (value / 100) * Math.PI - Math.PI / 2;
+      const needleX = gaugeX + Math.cos(angle) * (radius - 2);
+      const needleY = y + Math.sin(angle) * (radius - 2);
+      
+      ctx.strokeStyle = value > 80 ? this.colors.accentRed : value > 60 ? this.colors.accentYellow : this.colors.accentGreen;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(gaugeX, y);
+      ctx.lineTo(needleX, needleY);
+      ctx.stroke();
+    }
+  }
+
+  private drawDamageMonitorPanel(player: IPlayerShip, x: number, y: number): void {
+    const monitorWidth = 300;
+    const monitorHeight = 140;
+    
+    // CRT monitor housing with deep recess
+    this.drawCRTHousing(x, y, monitorWidth, monitorHeight);
+    
+    // CRT screen with retro effects
+    this.drawCRTScreen(player, x + 20, y + 20, monitorWidth - 40, monitorHeight - 40);
+  }
+
+  private drawCRTHousing(x: number, y: number, width: number, height: number): void {
+    const ctx = this.renderer.getContext();
+    
+    // Outer housing
+    ctx.fillStyle = this.colors.chassisPrimary;
+    ctx.fillRect(x, y, width, height);
+    
+    // Deep recess shadow
+    ctx.fillStyle = this.colors.chassisAbyss;
+    ctx.fillRect(x + 15, y + 15, width - 30, height - 30);
+    
+    // Screen bezel
+    ctx.strokeStyle = this.colors.chassisMidtone;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 18, y + 18, width - 36, height - 36);
+    
+    // Manufacturer badge
+    ctx.fillStyle = this.colors.highlightStandard;
+    ctx.globalAlpha = 0.5;
+    ctx.font = '6px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('OMNI-TECH CRT SYSTEMS', x + 5, y + height - 5);
+    ctx.globalAlpha = 1.0;
+  }
+
+  private drawCRTScreen(player: IPlayerShip, x: number, y: number, width: number, height: number): void {
+    const ctx = this.renderer.getContext();
+    
+    // Screen background (dark with slight green tint)
+    ctx.fillStyle = '#001100';
+    ctx.fillRect(x, y, width, height);
+    
+    // Ship damage schematic (16-bit style)
+    this.drawShipSchematic(player, x + width/2, y + height/2);
+    
+    // CRT scanlines effect
+    this.applyCRTEffects(ctx, x, y, width, height);
+    
+    // Screen crack effect
+    this.drawScreenCrack(ctx, x, y, width, height);
+  }
+
+  private drawShipSchematic(player: IPlayerShip, centerX: number, centerY: number): void {
+    const ctx = this.renderer.getContext();
+    
+    // Ship outline (pixelated)
+    ctx.strokeStyle = this.colors.accentGreen;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    // Simple ship shape
+    ctx.moveTo(centerX, centerY - 30);
+    ctx.lineTo(centerX - 20, centerY + 20);
+    ctx.lineTo(centerX - 10, centerY + 15);
+    ctx.lineTo(centerX + 10, centerY + 15);
+    ctx.lineTo(centerX + 20, centerY + 20);
+    ctx.closePath();
+    ctx.stroke();
+    
+    // Damage indicators
+    const hullPercent = player.hull / player.maxHull;
+    if (hullPercent < 0.8) {
+      ctx.fillStyle = this.colors.accentRed;
+      ctx.fillRect(centerX - 5, centerY - 10, 10, 8);
+    }
+    
+    // System status indicators
+    ctx.font = '6px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = this.colors.accentYellow;
+    ctx.fillText('TRUP OK', centerX, centerY + 35);
+  }
+
+  private applyCRTEffects(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
+    // Scanlines
+    ctx.fillStyle = 'rgba(0, 255, 0, 0.05)';
+    for (let i = 0; i < height; i += 2) {
+      ctx.fillRect(x, y + i, width, 1);
+    }
+    
+    // Screen curvature reflection
+    const gradient = ctx.createRadialGradient(x + width/2, y + height/2, 0, x + width/2, y + height/2, width/2);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.02)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, y, width, height);
+  }
+
+  private drawScreenCrack(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
+    // Spider web crack from corner
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    const crackX = x + width * 0.8;
+    const crackY = y + height * 0.2;
+    
+    // Main crack lines
+    ctx.moveTo(crackX, crackY);
+    ctx.lineTo(crackX + 15, crackY + 20);
+    ctx.moveTo(crackX, crackY);
+    ctx.lineTo(crackX - 10, crackY + 15);
+    ctx.stroke();
+  }
+
+  private drawWeaponsPanel(player: IPlayerShip, x: number, y: number): void {
+    const panelWidth = 200;
+    const panelHeight = 140;
+    
+    this.drawPanelBase(x, y, panelWidth, panelHeight);
+    
+    this.renderer.drawText('ZBRAŇOVÉ SYSTÉMY', x + 10, y + 20, this.colors.accentRed, 'bold 8px "Big Apple 3PM", monospace');
     
     const weapon = player.getWeaponStatus(player.selectedWeapon);
     if (weapon) {
-      this.renderer.drawText(`TYPE: ${weapon.type.toUpperCase()}`, rightX, statusY + 35, '#ffffff', '10px "Big Apple 3PM", monospace');
+      this.renderer.drawText(`TYP: ${weapon.type.toUpperCase()}`, x + 10, y + 35, this.colors.highlightStandard, '7px "Big Apple 3PM", monospace');
       
-      // Heat bar
-      const heatColor = weapon.heat > 75 ? '#ff0040' : weapon.heat > 50 ? '#ff6600' : weapon.heat > 25 ? '#ffaa00' : '#00ff41';
-      this.drawStatusBar("HEAT", weapon.heat, weapon.maxHeat || 100, rightX, statusY + 50, heatColor);
+      // Heat indicator with cooling fins visualization
+      this.drawCoolingSystem(x + 10, y + 50, weapon.heat || 0);
       
-      if (weapon.ammo !== undefined) {
-        const ammoPercent = weapon.maxAmmo ? (weapon.ammo / weapon.maxAmmo) * 100 : 0;
-        const ammoColor = ammoPercent > 75 ? '#00ff41' : ammoPercent > 50 ? '#ffaa00' : ammoPercent > 25 ? '#ff6600' : '#ff0040';
-        this.renderer.drawText(`AMMO: ${weapon.ammo}/${weapon.maxAmmo || 'INF'}`, rightX, statusY + 70, ammoColor, '10px "Big Apple 3PM", monospace');
+      // Ammo belt visual
+      this.drawAmmoBelt(x + 10, y + 90, weapon.ammo || 0, weapon.maxAmmo || 100);
+      
+      // Safety switch
+      this.drawSafetySwitch(x + 150, y + 110);
+    }
+  }
+
+  private drawCoolingSystem(x: number, y: number, heat: number): void {
+    const ctx = this.renderer.getContext();
+    
+    // Cooling fins
+    for (let i = 0; i < 10; i++) {
+      const finX = x + i * 8;
+      const heatLevel = Math.min(1, heat / 100);
+      const finHeight = 20 + heatLevel * 10;
+      
+      // Color based on heat
+      let finColor = this.colors.chassisMidtone;
+      if (heatLevel > 0.8) finColor = this.colors.accentRed;
+      else if (heatLevel > 0.6) finColor = this.colors.accentOrange;
+      else if (heatLevel > 0.4) finColor = this.colors.accentYellow;
+      
+      ctx.fillStyle = finColor;
+      ctx.fillRect(finX, y + 20 - finHeight, 6, finHeight);
+    }
+    
+    // Heat shimmer effect when hot
+    if (heat > 70) {
+      ctx.strokeStyle = 'rgba(255, 100, 0, 0.3)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 5; i++) {
+        const shimmerY = y - Math.random() * 15;
+        ctx.beginPath();
+        ctx.moveTo(x, shimmerY);
+        ctx.quadraticCurveTo(x + 40, shimmerY - 5, x + 80, shimmerY);
+        ctx.stroke();
       }
     }
-
-    // System status indicators (far right)
-    const systemX = screenWidth - 80;
-    this.drawStatusSection("SYS", systemX, statusY + 15, '#9c27b0');
-    
-    const systems = ['REACTOR', 'ENGINES', 'SHIELDS', 'WEAPONS'];
-    systems.forEach((sys, i) => {
-      const system = player.systems.get(sys as any);
-      if (system) {
-        const color = system.active && system.health > 75 ? '#00ff41' : 
-                     system.active && system.health > 50 ? '#ffaa00' : 
-                     system.active ? '#ff6600' : '#333333';
-        const status = system.active ? '●' : '○';
-        this.renderer.drawText(`${sys.charAt(0)}${status}`, systemX, statusY + 35 + i * 12, color, '8px "Big Apple 3PM", monospace');
-      }
-    });
   }
 
-  private drawStatusSection(title: string, x: number, y: number, color: string): void {
-    this.renderer.drawText(title, x, y, color, 'bold 10px "Big Apple 3PM", monospace');
-    this.renderer.drawRect(x, y + 2, title.length * 6, 1, color);
+  private drawAmmoBelt(x: number, y: number, current: number, max: number): void {
+    const ctx = this.renderer.getContext();
+    
+    // Belt housing
+    ctx.fillStyle = this.colors.chassisDark;
+    ctx.fillRect(x, y, 120, 20);
+    
+    // Individual cartridges
+    const cartridges = 10;
+    const percent = current / max;
+    const visibleCartridges = Math.floor(cartridges * percent);
+    
+    for (let i = 0; i < visibleCartridges; i++) {
+      const cartX = x + 5 + i * 11;
+      ctx.fillStyle = this.colors.accentYellow;
+      ctx.fillRect(cartX, y + 5, 8, 10);
+      // Bullet tip
+      ctx.fillStyle = this.colors.highlightStandard;
+      ctx.fillRect(cartX + 2, y + 2, 4, 3);
+    }
   }
 
-  private drawStatusBar(label: string, current: number, max: number, x: number, y: number, color: string): void {
-    const barWidth = 120;
-    const barHeight = 8;
-    const percent = Math.max(0, Math.min(100, (current / max) * 100));
+  private drawSafetySwitch(x: number, y: number): void {
+    const ctx = this.renderer.getContext();
     
-    // Background
-    this.renderer.drawRect(x + 50, y - 4, barWidth, barHeight, '#222222');
+    // Switch housing
+    ctx.fillStyle = this.colors.chassisDark;
+    ctx.fillRect(x, y, 30, 15);
     
-    // Fill bar
-    const fillWidth = (barWidth * percent) / 100;
-    this.renderer.drawRect(x + 50, y - 4, fillWidth, barHeight, color);
+    // Switch toggle (always shown as OFF for safety)
+    ctx.fillStyle = this.colors.accentRed;
+    ctx.fillRect(x + 20, y + 3, 8, 9);
     
-    // Border
-    this.renderer.strokeRect(x + 50, y - 4, barWidth, barHeight, '#555555', 1);
+    // SAFETY label
+    ctx.fillStyle = this.colors.highlightStandard;
+    ctx.font = '6px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('SAFE', x - 25, y + 10);
+  }
+
+  private drawRadarPanel(player: IPlayerShip, x: number, y: number): void {
+    const radarSize = 140;
     
-    // Label and value
-    this.renderer.drawText(`${label}:`, x, y, '#cccccc', '10px "Big Apple 3PM", monospace');
-    this.renderer.drawText(`${Math.round(current)}%`, x + 175, y, color, '10px "Big Apple 3PM", monospace');
+    // Radar housing
+    this.drawPanelBase(x, y, 160, radarSize);
+    
+    this.renderer.drawText('RADAR', x + 10, y + 20, this.colors.accentYellow, 'bold 8px "Big Apple 3PM", monospace');
+    
+    // Radar display
+    this.drawRadarDisplay(x + 80, y + 70, 50);
+    
+    // Rotary control knob
+    this.drawRotaryKnob(x + 20, y + 110);
+    
+    // Calibration screws
+    this.drawCalibrationScrews(x + 120, y + 100);
+  }
+
+  private drawRadarDisplay(centerX: number, centerY: number, radius: number): void {
+    const ctx = this.renderer.getContext();
+    
+    // Radar screen background
+    ctx.fillStyle = this.colors.chassisAbyss;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Burned-in grid (always visible)
+    ctx.strokeStyle = 'rgba(67, 76, 85, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 0.3, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Range rings
+    ctx.strokeStyle = this.colors.accentGreen;
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 0.9, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1.0;
+    
+    // Sweep line (rotating)
+    const sweepAngle = (Date.now() * 0.002) % (Math.PI * 2);
+    ctx.strokeStyle = this.colors.accentGreen;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(
+      centerX + Math.cos(sweepAngle) * radius * 0.9,
+      centerY + Math.sin(sweepAngle) * radius * 0.9
+    );
+    ctx.stroke();
+    
+    // Glass cover reflections
+    this.drawGlassCoverReflections(ctx, centerX, centerY, radius);
+  }
+
+  private drawGlassCoverReflections(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number): void {
+    // Main light reflection
+    ctx.strokeStyle = this.colors.highlightSpecular;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(centerX - radius * 0.3, centerY - radius * 0.3, radius * 0.2, Math.PI * 0.6, Math.PI * 1.1);
+    ctx.stroke();
+    
+    // Secondary reflection
+    ctx.strokeStyle = 'rgba(162, 170, 178, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(centerX + radius * 0.2, centerY - radius * 0.4, radius * 0.15, -Math.PI * 0.2, Math.PI * 0.2);
+    ctx.stroke();
+  }
+
+  private drawRotaryKnob(x: number, y: number): void {
+    const ctx = this.renderer.getContext();
+    
+    // Knob base
+    ctx.fillStyle = this.colors.chassisMidtone;
+    ctx.beginPath();
+    ctx.arc(x, y, 15, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Knob highlight
+    ctx.fillStyle = this.colors.highlightStandard;
+    ctx.beginPath();
+    ctx.arc(x - 3, y - 3, 8, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Position indicator line
+    ctx.strokeStyle = this.colors.accentYellow;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 10, y - 5);
+    ctx.stroke();
+  }
+
+  private drawCalibrationScrews(x: number, y: number): void {
+    const labels = ['X', 'Y', 'F'];
+    for (let i = 0; i < 3; i++) {
+      const screwY = y + i * 15;
+      
+      // Screw head
+      this.renderer.fillCircle(x, screwY, 5, this.colors.chassisDark);
+      this.renderer.strokeCircle(x, screwY, 5, this.colors.highlightStandard, 1);
+      
+      // Screw slot
+      this.renderer.drawLine(x - 3, screwY, x + 3, screwY, this.colors.chassisAbyss, 1);
+      
+      // Label
+      this.renderer.drawText(labels[i], x + 15, screwY + 3, this.colors.highlightStandard, '6px "Big Apple 3PM", monospace');
+    }
+  }
+
+  private drawPanelBase(x: number, y: number, width: number, height: number): void {
+    const ctx = this.renderer.getContext();
+    
+    // Panel background
+    ctx.fillStyle = this.colors.chassisMidtone;
+    ctx.fillRect(x, y, width, height);
+    
+    // Recessed border effect
+    this.drawHeavyPlateEdge(ctx, { x, y, width, height });
+    
+    // Panel border
+    ctx.strokeStyle = this.colors.chassisDark;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, width, height);
+  }
+
+  private drawExposedCables(x: number, y: number): void {
+    const ctx = this.renderer.getContext();
+    
+    // Cable conduit
+    ctx.fillStyle = this.colors.chassisAbyss;
+    ctx.fillRect(x, y, 100, 8);
+    
+    // Individual cables
+    const cableColors = [this.colors.accentRed, this.colors.accentYellow, this.colors.accentGreen];
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = cableColors[i];
+      ctx.fillRect(x + 5 + i * 15, y + 2, 12, 4);
+    }
+  }
+
+  // Helper functions for color manipulation
+  private lightenColor(color: string, factor: number): string {
+    // Simple color lightening - in real implementation, would parse hex and adjust
+    return color; // Simplified for now
+  }
+
+  private darkenColor(color: string, factor: number): string {
+    // Simple color darkening - in real implementation, would parse hex and adjust  
+    return color; // Simplified for now
   }
 }
 
@@ -2379,25 +2869,25 @@ export class GameEngine implements IGameEngine {
     this.renderer.drawLine(width/2, height/2 - 8, width/2, height/2 + 8, 'rgba(96, 96, 96, 0.6)', 1);
 
     // Coordinates and status
-    this.renderer.drawText(`X: ${Math.round(this.player.position.x)} AU`, 10, 25, '#505050', '10px "Big Apple 3PM", monospace');
-    this.renderer.drawText(`Y: ${Math.round(this.player.position.y)} AU`, 10, 40, '#505050', '10px "Big Apple 3PM", monospace');
+    this.renderer.drawText(`X: ${Math.round(this.player.position.x)} AU`, 10, 25, '#a2aab2', '10px "Big Apple 3PM", monospace');
+    this.renderer.drawText(`Y: ${Math.round(this.player.position.y)} AU`, 10, 40, '#a2aab2', '10px "Big Apple 3PM", monospace');
 
     const speed = Math.sqrt(this.player.velocity.x ** 2 + this.player.velocity.y ** 2);
-    this.renderer.drawText(`V: ${(speed * 100).toFixed(1)} m/s`, 10, 55, '#505050', '10px "Big Apple 3PM", monospace');
+    this.renderer.drawText(`V: ${(speed * 100).toFixed(1)} m/s`, 10, 55, '#a2aab2', '10px "Big Apple 3PM", monospace');
 
     // Current scene info
-    this.renderer.drawText(`SCENE: STAR SYSTEM`, 10, 70, '#505050', '10px "Big Apple 3PM", monospace');
+    this.renderer.drawText(`SCENE: STAR SYSTEM`, 10, 70, '#a2aab2', '10px "Big Apple 3PM", monospace');
 
     // Active quests
     this.renderActiveQuests();
 
     // Warp charge indicator
     const warpPercent = Math.round((this.player.warpCharge / this.player.maxWarpCharge) * 100);
-    const warpColor = this.player.canWarp() ? '#606060' : '#505050';
+    const warpColor = this.player.canWarp() ? '#ffc357' : '#a2aab2';
     this.renderer.drawText(`WARP: ${warpPercent}%`, 10, 100, warpColor, 'bold 10px "Big Apple 3PM", monospace');
     
     if (this.player.isWarping) {
-      this.renderer.drawText('WARPING...', 10, 115, '#505050', 'bold 12px "Big Apple 3PM", monospace');
+      this.renderer.drawText('WARPING...', 10, 115, '#52de44', 'bold 12px "Big Apple 3PM", monospace');
     }
 
     // Instructions
@@ -2408,7 +2898,7 @@ export class GameEngine implements IGameEngine {
       : 'WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests | J: Warp | H: Test Damage';
     
     this.renderer.drawText(instructionText, 10, 
-      this.renderer.getHeight() - statusBarHeight - 20, '#505050', '8px "Big Apple 3PM", monospace');
+      this.renderer.getHeight() - statusBarHeight - 20, '#a2aab2', '8px "Big Apple 3PM", monospace');
   }
 
   public renderActiveQuests(): void {
@@ -2421,13 +2911,13 @@ export class GameEngine implements IGameEngine {
 
     // Quest panel background
     this.renderer.drawRect(startX - 10, startY - 10, 340, Math.min(200, activeQuests.length * 60 + 40), 'rgba(0, 0, 0, 0.7)');
-    this.renderer.drawText('AKTIVNÍ ÚKOLY', startX + 160, startY + 10, '#00ffff', 'bold 12px "Big Apple 3PM", monospace');
+    this.renderer.drawText('AKTIVNÍ ÚKOLY', startX + 160, startY + 10, '#52de44', 'bold 12px "Big Apple 3PM", monospace');
 
     activeQuests.slice(0, 3).forEach((quest, index) => {
       const y = startY + 40 + index * 60;
       
       // Quest title
-      this.renderer.drawText(quest.title, startX, y, '#dcd0c0', 'bold 10px "Big Apple 3PM", monospace');
+      this.renderer.drawText(quest.title, startX, y, '#e0e3e6', 'bold 10px "Big Apple 3PM", monospace');
       
       // Progress
       const completedObjectives = quest.objectives.filter(obj => obj.completed).length;
@@ -2437,7 +2927,7 @@ export class GameEngine implements IGameEngine {
       if (quest.timeRemaining !== undefined) {
         const minutes = Math.floor(quest.timeRemaining / 60);
         const seconds = Math.floor(quest.timeRemaining % 60);
-        const timeColor = quest.timeRemaining < 300 ? '#ff4444' : '#ffff00';
+        const timeColor = quest.timeRemaining < 300 ? '#d43d3d' : '#ffc357';
         this.renderer.drawText(`${minutes}:${seconds.toString().padStart(2, '0')}`, startX + 280, y + 15, timeColor, '8px "Big Apple 3PM", monospace');
       }
       

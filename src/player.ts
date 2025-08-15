@@ -358,8 +358,9 @@ export class PlayerShip implements IPlayerShip {
   private renderHull(renderer: IRenderer): void {
     const ctx = renderer.getContext();
 
-    ctx.fillStyle = '#505050';
-    ctx.strokeStyle = '#404040';
+    // 16-bit ship colors
+    ctx.fillStyle = '#5a6978'; // chassis primary
+    ctx.strokeStyle = '#2b323a'; // chassis dark
     ctx.lineWidth = 1;
 
     ctx.beginPath();
@@ -374,15 +375,15 @@ export class PlayerShip implements IPlayerShip {
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#606060';
+    ctx.fillStyle = '#a2aab2'; // highlight standard
     ctx.fillRect(8, -2, 4, 1);
     ctx.fillRect(8, 1, 4, 1);
     ctx.fillRect(-6, -1, 3, 2);
 
-    ctx.fillStyle = '#404040';
+    ctx.fillStyle = '#434c55'; // chassis midtone
     ctx.fillRect(12, -1, 3, 2);
 
-    ctx.strokeStyle = '#606060';
+    ctx.strokeStyle = '#e0e3e6'; // highlight specular
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(-8, -6);
@@ -396,8 +397,9 @@ export class PlayerShip implements IPlayerShip {
     const ctx = renderer.getContext();
     const intensity = this.thrust;
 
-    ctx.fillStyle = '#404040';
-    ctx.globalAlpha = intensity * 0.4;
+    // 16-bit engine effects
+    ctx.fillStyle = '#e8732c'; // accent orange for engine flames
+    ctx.globalAlpha = intensity * 0.6;
 
     ctx.beginPath();
     ctx.moveTo(-12, -3);
@@ -408,7 +410,7 @@ export class PlayerShip implements IPlayerShip {
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = '#505050';
+    ctx.fillStyle = '#ffc357'; // accent yellow for engine particles
     for (let i = 0; i < 5; i++) {
       const particleX = -15 - Math.random() * 10 * intensity;
       const particleY = (Math.random() - 0.5) * 6;
@@ -422,9 +424,10 @@ export class PlayerShip implements IPlayerShip {
     const ctx = renderer.getContext();
     const shieldStrength = this.shields / this.maxShields;
 
-    ctx.strokeStyle = '#505050';
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = shieldStrength * 0.2;
+    // 16-bit shield effects
+    ctx.strokeStyle = '#52de44'; // accent green for shields
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = shieldStrength * 0.3;
 
     ctx.beginPath();
     ctx.arc(0, 0, 20, 0, Math.PI * 2);
