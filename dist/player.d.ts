@@ -34,6 +34,7 @@ export declare class PlayerShip implements IPlayerShip {
     private initializeWeapons;
     private initializeComponents;
     update(deltaTime: number, game: any): void;
+    private updateMotionEffects;
     private handleInput;
     private updateSystems;
     private updateWeapons;

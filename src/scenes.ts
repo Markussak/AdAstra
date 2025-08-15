@@ -27,7 +27,7 @@ export class StarSystemScene implements IScene {
     const random = new SeededRandom(this.systemSeed);
 
     const starMass = 800 + random.next() * 400;
-    const starRadius = 30 + random.next() * 20;
+    const starRadius = 60 + random.next() * 40; // Increased from 30+20
     const starColor = this.generateStarColor(random);
 
     const centralStar = new CelestialBody(
@@ -37,12 +37,12 @@ export class StarSystemScene implements IScene {
     this.celestialBodies.push(centralStar);
 
     const planetCount = 2 + Math.floor(random.next() * 6);
-    let currentDistance = 120;
+    let currentDistance = 200; // Increased from 120
 
     for (let i = 0; i < planetCount; i++) {
-      currentDistance += 50 + random.next() * 100;
+      currentDistance += 100 + random.next() * 200; // Increased spacing
       
-      const planetRadius = 8 + random.next() * 15;
+      const planetRadius = 16 + random.next() * 30; // Increased from 8+15
       const planetMass = planetRadius * 2;
       const planetColor = this.generatePlanetColor(random);
       const orbitSpeed = 0.01 / Math.sqrt(currentDistance / 100);
@@ -53,31 +53,35 @@ export class StarSystemScene implements IScene {
         `${this.systemName}-${i + 1}`, planetMass, planetColor
       );
       
-      planet.setOrbit({ x: 0, y: 0 }, currentDistance, orbitSpeed, startAngle);
+      // Add some orbital eccentricity for realism
+      const eccentricity = Math.random() * 0.3; // 0-0.3 eccentricity
+      planet.setOrbit({ x: 0, y: 0 }, currentDistance, orbitSpeed, startAngle, eccentricity);
       
       if (random.next() < 0.4) {
         planet.hasAtmosphere = true;
         planet.atmosphereColor = 'rgba(95, 158, 158, 0.4)';
+        planet.atmosphereRadius = planetRadius * (1.3 + random.next() * 0.4);
       }
 
       this.celestialBodies.push(planet);
 
       // Generate moons
-      if (planetRadius > 12 && random.next() < 0.6) {
+      if (planetRadius > 20 && random.next() < 0.6) { // Adjusted threshold
         const moonCount = 1 + Math.floor(random.next() * 3);
         for (let j = 0; j < moonCount; j++) {
-          const moonDistance = planetRadius * 3 + j * 25;
-          const moonRadius = 3 + random.next() * 5;
+          const moonDistance = planetRadius * 4 + j * 40; // Increased spacing
+          const moonRadius = 6 + random.next() * 10; // Increased from 3+5
           const moonMass = moonRadius;
-          const moonColor = '#888888';
+          const moonColor = this.generateMoonColor(random); // Use new method
           const moonOrbitSpeed = 0.05 / Math.sqrt(moonDistance / 10);
+          const moonEccentricity = Math.random() * 0.15; // Small eccentricity for moons
 
           const moon = new CelestialBody(
             currentDistance + moonDistance, 0, moonRadius, CelestialBodyType.MOON,
             `${planet.name}-M${j + 1}`, moonMass, moonColor
           );
           
-          moon.setOrbit(planet.position, moonDistance, moonOrbitSpeed, random.next() * Math.PI * 2);
+          moon.setOrbit(planet.position, moonDistance, moonOrbitSpeed, random.next() * Math.PI * 2, moonEccentricity);
           this.celestialBodies.push(moon);
         }
       }
@@ -85,22 +89,23 @@ export class StarSystemScene implements IScene {
 
     // Generate asteroid belt
     if (random.next() < 0.7) {
-      const beltDistance = currentDistance + 80 + random.next() * 100;
+      const beltDistance = currentDistance + 160 + random.next() * 200; // Increased spacing
       const asteroidCount = 15 + Math.floor(random.next() * 25);
       
       for (let i = 0; i < asteroidCount; i++) {
         const angle = random.next() * Math.PI * 2;
-        const distance = beltDistance + (random.next() - 0.5) * 60;
-        const asteroidRadius = 2 + random.next() * 4;
+        const distance = beltDistance + (random.next() - 0.5) * 120; // Increased spread
+        const asteroidRadius = 4 + random.next() * 8; // Increased from 2+4
         const asteroidMass = asteroidRadius * 0.5;
         const orbitSpeed = 0.008 / Math.sqrt(distance / 100);
+        const asteroidEccentricity = Math.random() * 0.5; // More eccentric asteroid orbits
 
         const asteroid = new CelestialBody(
           distance, 0, asteroidRadius, CelestialBodyType.ASTEROID,
-          `Asteroid-${i}`, asteroidMass, '#666666'
+          `Asteroid-${i}`, asteroidMass, this.generateAsteroidColor(random) // Use new method
         );
         
-        asteroid.setOrbit({ x: 0, y: 0 }, distance, orbitSpeed, angle);
+        asteroid.setOrbit({ x: 0, y: 0 }, distance, orbitSpeed, random.next() * Math.PI * 2, asteroidEccentricity);
         this.celestialBodies.push(asteroid);
       }
     }
@@ -108,17 +113,61 @@ export class StarSystemScene implements IScene {
 
   private generateStarColor(random: SeededRandom): string {
     const starTypes = [
-      '#606060', '#505050', '#404040', '#505050', '#606060'
+      '#FFD700', // G-type (Yellow like our Sun)
+      '#FF6B47', // K-type (Orange)
+      '#FF4444', // M-type (Red dwarf)
+      '#87CEEB', // B-type (Blue)
+      '#FFFFFF', // O-type (White/Blue)
+      '#FFA500', // Orange giant
+      '#FFE4B5'  // Warm yellow
     ];
     return random.choose(starTypes);
   }
 
   private generatePlanetColor(random: SeededRandom): string {
     const planetColors = [
-      '#505050', '#404040', '#404040', '#505050', '#404040',
-      '#505050', '#606060', '#404040'
+      '#4169E1', // Earth-like blue
+      '#CD853F', // Desert/Mars-like
+      '#8B4513', // Rocky brown
+      '#228B22', // Forest green
+      '#DC143C', // Volcanic red
+      '#9370DB', // Purple gas giant
+      '#FF6347', // Orange/red rocky
+      '#4682B4', // Ice world blue
+      '#DDA0DD', // Pink/purple exotic
+      '#32CD32', // Lime green
+      '#FF8C00', // Orange gas giant
+      '#8A2BE2'  // Blue-violet exotic
     ];
     return random.choose(planetColors);
+  }
+
+  private generateMoonColor(random: SeededRandom): string {
+    const moonColors = [
+      '#C0C0C0', // Classic silver
+      '#8B7355', // Sandy brown
+      '#696969', // Dim gray
+      '#A0522D', // Sienna
+      '#BC8F8F', // Rosy brown
+      '#D2691E', // Chocolate
+      '#F4A460', // Sandy brown
+      '#CD853F'  // Peru
+    ];
+    return random.choose(moonColors);
+  }
+
+  private generateAsteroidColor(random: SeededRandom): string {
+    const asteroidColors = [
+      '#8B7D6B', // Light taupe
+      '#A0522D', // Sienna
+      '#696969', // Dim gray
+      '#708090', // Slate gray
+      '#778899', // Light slate gray
+      '#B8860B', // Dark goldenrod
+      '#CD853F', // Peru
+      '#D2691E'  // Chocolate
+    ];
+    return random.choose(asteroidColors);
   }
 
   public update(deltaTime: number, game: any): void {

@@ -27,9 +27,13 @@ export class CelestialBody implements ICelestialBody {
   public orbitSpeed: number = 0;
   public orbitAngle: number = 0;
   public orbitCenter: Vector2D | null = null;
+  public orbitEccentricity: number = 0; // 0 = perfect circle, 0.99 = very elliptical
+  public periapsis: number = 0; // Closest approach distance
+  public apoapsis: number = 0;  // Farthest distance
 
   public hasAtmosphere: boolean = false;
   public atmosphereColor: string | null = null;
+  public atmosphereRadius: number = 0;
   public surfaceFeatures: SurfaceFeature[] = [];
 
   constructor(
@@ -49,6 +53,12 @@ export class CelestialBody implements ICelestialBody {
     this.color = color;
     this.rotationSpeed = 0.01 + Math.random() * 0.02;
 
+    // Set atmosphere for planets
+    if (type === CelestialBodyType.PLANET && Math.random() < 0.4) {
+      this.hasAtmosphere = true;
+      this.atmosphereRadius = radius * (1.2 + Math.random() * 0.5);
+    }
+
     this.generateSurfaceFeatures();
   }
 
@@ -63,14 +73,89 @@ export class CelestialBody implements ICelestialBody {
     }
   }
 
+  // Enhanced orbit setting with elliptical orbits
+  public setOrbit(center: Vector2D, distance: number, speed: number, startAngle: number = 0, eccentricity: number = 0): void {
+    this.orbitCenter = center;
+    this.orbitDistance = distance;
+    this.orbitSpeed = speed;
+    this.orbitAngle = startAngle;
+    this.orbitEccentricity = Math.min(0.8, eccentricity); // Limit eccentricity for stability
+    
+    // Calculate periapsis and apoapsis for elliptical orbits
+    this.periapsis = distance * (1 - this.orbitEccentricity);
+    this.apoapsis = distance * (1 + this.orbitEccentricity);
+    
+    // Set initial position based on orbit
+    this.updateOrbitalPosition();
+  }
+
+  private updateOrbitalPosition(): void {
+    if (!this.orbitCenter) return;
+    
+    // For elliptical orbits, distance varies with angle
+    const currentDistance = this.orbitDistance * (1 - this.orbitEccentricity * this.orbitEccentricity) / 
+                           (1 + this.orbitEccentricity * Math.cos(this.orbitAngle));
+    
+    this.position.x = this.orbitCenter.x + Math.cos(this.orbitAngle) * currentDistance;
+    this.position.y = this.orbitCenter.y + Math.sin(this.orbitAngle) * currentDistance;
+  }
+
   public update(deltaTime: number, game: any): void {
     this.rotation += this.rotationSpeed * deltaTime;
 
     if (this.orbitCenter && this.orbitDistance > 0) {
-      this.orbitAngle += this.orbitSpeed * deltaTime;
-      this.position.x = this.orbitCenter.x + Math.cos(this.orbitAngle) * this.orbitDistance;
-      this.position.y = this.orbitCenter.y + Math.sin(this.orbitAngle) * this.orbitDistance;
+      // Enhanced orbital mechanics with variable speed based on distance (Kepler's laws)
+      const currentDistance = this.orbitDistance * (1 - this.orbitEccentricity * this.orbitEccentricity) / 
+                             (1 + this.orbitEccentricity * Math.cos(this.orbitAngle));
+      
+      // Orbital speed varies: faster at periapsis, slower at apoapsis
+      const speedMultiplier = Math.sqrt(this.orbitDistance / currentDistance);
+      const adjustedSpeed = this.orbitSpeed * speedMultiplier;
+      
+      this.orbitAngle += adjustedSpeed * deltaTime;
+      
+      // Keep angle in reasonable range
+      if (this.orbitAngle > Math.PI * 2) {
+        this.orbitAngle -= Math.PI * 2;
+      }
+      
+      this.updateOrbitalPosition();
+      
+      // Update velocity for orbital motion (for realistic physics interactions)
+      const orbitVelX = -Math.sin(this.orbitAngle) * currentDistance * adjustedSpeed;
+      const orbitVelY = Math.cos(this.orbitAngle) * currentDistance * adjustedSpeed;
+      this.velocity.x = orbitVelX * 0.01; // Scale down for game balance
+      this.velocity.y = orbitVelY * 0.01;
     }
+
+    // Apply gravitational effects to other bodies (simplified N-body simulation)
+    if (game.sceneManager?.getCurrentScene()?.getCelestialBodies && this.type !== CelestialBodyType.ASTEROID) {
+      const otherBodies = game.sceneManager.getCurrentScene().getCelestialBodies();
+      this.applyMutualGravity(otherBodies, deltaTime);
+    }
+  }
+
+  private applyMutualGravity(otherBodies: Array<{ position: Vector2D; mass: number; radius: number }>, deltaTime: number): void {
+    // Simplified mutual gravitational effects (mostly for orbital perturbations)
+    otherBodies.forEach(other => {
+      if (other === this) return;
+      
+      const dx = other.position.x - this.position.x;
+      const dy = other.position.y - this.position.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Only apply for significant masses and at reasonable distances
+      if (distance > (this.radius + other.radius) * 2 && other.mass > this.mass * 0.1) {
+        const force = (other.mass * 0.0001) / (distance * distance); // Much weaker than ship gravity
+        const angle = Math.atan2(dy, dx);
+        
+        // Apply tiny perturbations to orbital motion
+        if (this.orbitCenter) {
+          this.orbitAngle += force * Math.sin(angle - this.orbitAngle) * deltaTime * 0.001;
+          this.orbitSpeed *= (1 + force * deltaTime * 0.0001);
+        }
+      }
+    });
   }
 
   public render(renderer: IRenderer, camera: ICamera): void {
@@ -275,13 +360,6 @@ export class CelestialBody implements ICelestialBody {
 
   private renderGeneric(renderer: IRenderer): void {
     renderer.drawCircle(0, 0, this.radius, this.color, true);
-  }
-
-  public setOrbit(center: Vector2D, distance: number, speed: number, startAngle: number = 0): void {
-    this.orbitCenter = center;
-    this.orbitDistance = distance;
-    this.orbitSpeed = speed;
-    this.orbitAngle = startAngle;
   }
 
   public isVisible(camera: ICamera, screenWidth: number, screenHeight: number): boolean {

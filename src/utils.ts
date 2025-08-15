@@ -42,19 +42,19 @@ export const gameConfig: GameConfig = {
     statusBarHeight: 0.15
   },
   physics: {
-    gravityStrength: 0.001,
-    frictionFactor: 0.999,
+    gravityStrength: 0.005, // Increased for more noticeable effects
+    frictionFactor: 0.9995, // Better space vacuum simulation
     maxVelocity: 500
   },
   colors: {
-    bgPrimary: '#1a1a1a',        // Darker background
-    hullPrimary: '#505050',      // Muted grey for hull
-    hullSecondary: '#404040',    // Darker grey secondary
-    accentFriendly: '#606060',   // Muted grey instead of cyan
-    accentHostile: '#404040',    // Dark grey instead of red
-    accentNeutral: '#404040',    // Dark grey neutral
-    fxGlowPrimary: '#505050',    // No glow, just muted grey
-    fxGlowSecondary: '#404040'   // No glow, just dark grey
+    bgPrimary: '#1a1a1a',        
+    hullPrimary: '#505050',      
+    hullSecondary: '#404040',    
+    accentFriendly: '#606060',   
+    accentHostile: '#404040',    
+    accentNeutral: '#404040',    
+    fxGlowPrimary: '#505050',    
+    fxGlowSecondary: '#404040'   
   }
 };
 
@@ -62,35 +62,97 @@ export class PhysicsEngine {
   static applyNewtonianMotion(
     object: { position: Vector2D; velocity: Vector2D },
     deltaTime: number,
-    friction: number = 0.999
+    friction: number = 0.9995
   ): void {
+    // Apply velocity to position
     object.position.x += object.velocity.x * deltaTime;
     object.position.y += object.velocity.y * deltaTime;
 
+    // Apply very minimal friction (space is mostly vacuum)
     const frictionFactor = Math.pow(friction, deltaTime);
     object.velocity.x *= frictionFactor;
     object.velocity.y *= frictionFactor;
+
+    // Limit maximum velocity for stability
+    const speed = Math.sqrt(object.velocity.x ** 2 + object.velocity.y ** 2);
+    if (speed > gameConfig.physics.maxVelocity) {
+      const factor = gameConfig.physics.maxVelocity / speed;
+      object.velocity.x *= factor;
+      object.velocity.y *= factor;
+    }
   }
 
   static applyGravity(
     object: { position: Vector2D; velocity: Vector2D },
     gravitySources: Array<{ position: Vector2D; mass: number; radius: number }>,
     deltaTime: number,
-    gravityStrength: number = 0.001
+    gravityStrength: number = 0.005
   ): void {
     gravitySources.forEach(source => {
       const dx = source.position.x - object.position.x;
       const dy = source.position.y - object.position.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (distance > source.radius * 2) {
+      // Only apply gravity if not inside the celestial body
+      if (distance > source.radius) {
+        // More realistic gravity calculation: F = G * m1 * m2 / r^2
+        // Simplified with mass scaling for game balance
         const force = (source.mass * gravityStrength) / (distance * distance);
         const angle = Math.atan2(dy, dx);
         
-        object.velocity.x += Math.cos(angle) * force * deltaTime;
-        object.velocity.y += Math.sin(angle) * force * deltaTime;
+        // Apply gravitational acceleration (F = ma, a = F/m, assuming ship mass = 1)
+        const accelX = Math.cos(angle) * force;
+        const accelY = Math.sin(angle) * force;
+        
+        object.velocity.x += accelX * deltaTime;
+        object.velocity.y += accelY * deltaTime;
+
+        // Enhanced effects for very close approaches
+        if (distance < source.radius * 3) {
+          // Tidal effects - slight velocity dampening near massive objects
+          const tidalStrength = 1.0 - (distance / (source.radius * 3));
+          const dampening = 1.0 - (tidalStrength * 0.02 * deltaTime);
+          object.velocity.x *= dampening;
+          object.velocity.y *= dampening;
+        }
       }
     });
+  }
+
+  static applyAtmosphericDrag(
+    object: { position: Vector2D; velocity: Vector2D },
+    atmosphere: { position: Vector2D; radius: number; density: number },
+    deltaTime: number
+  ): void {
+    const dx = object.position.x - atmosphere.position.x;
+    const dy = object.position.y - atmosphere.position.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // Apply drag if inside atmosphere
+    if (distance < atmosphere.radius) {
+      const altitudeRatio = distance / atmosphere.radius;
+      const dragStrength = atmosphere.density * (1 - altitudeRatio);
+      
+      // Drag opposes velocity (quadratic drag: F = -k * v^2)
+      const speed = Math.sqrt(object.velocity.x ** 2 + object.velocity.y ** 2);
+      if (speed > 0) {
+        const dragFactor = 1.0 - (dragStrength * speed * deltaTime * 0.1);
+        const clampedFactor = Math.max(0.9, dragFactor); // Minimum to prevent stopping
+        
+        object.velocity.x *= clampedFactor;
+        object.velocity.y *= clampedFactor;
+      }
+    }
+  }
+
+  static calculateEscapeVelocity(mass: number, radius: number): number {
+    // v_escape = sqrt(2 * G * M / r) - simplified for game use
+    return Math.sqrt(2 * gameConfig.physics.gravityStrength * mass / radius);
+  }
+
+  static calculateOrbitalVelocity(mass: number, distance: number): number {
+    // v_orbital = sqrt(G * M / r) - simplified for game use
+    return Math.sqrt(gameConfig.physics.gravityStrength * mass / distance);
   }
 
   static checkCollision(

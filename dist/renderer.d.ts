@@ -13,6 +13,7 @@ export declare class Renderer implements IRenderer {
     getWidth(): number;
     getHeight(): number;
     drawRect(x: number, y: number, width: number, height: number, color: string): void;
+    strokeRect(x: number, y: number, width: number, height: number, color: string, lineWidth?: number): void;
     drawCircle(x: number, y: number, radius: number, color: string, filled?: boolean): void;
     fillCircle(x: number, y: number, radius: number, color: string): void;
     strokeCircle(x: number, y: number, radius: number, color: string, lineWidth?: number): void;

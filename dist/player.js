@@ -1,5 +1,5 @@
 import { ShipSystemType, WeaponType, EffectType } from './types';
-import { PhysicsEngine } from './utils';
+import { PhysicsEngine, gameConfig } from './utils';
 export class PlayerShip {
     constructor(x, y) {
         this.velocity = { x: 0, y: 0 };
@@ -106,12 +106,35 @@ export class PlayerShip {
         this.handleInput(game.inputManager, deltaTime);
         this.updateSystems(deltaTime);
         this.updateWeapons(deltaTime);
-        PhysicsEngine.applyNewtonianMotion(this, deltaTime);
+        PhysicsEngine.applyNewtonianMotion(this, deltaTime, gameConfig.physics.frictionFactor);
         if (game.sceneManager.getCurrentScene()?.getCelestialBodies) {
             const celestialBodies = game.sceneManager.getCurrentScene().getCelestialBodies();
             if (celestialBodies) {
-                PhysicsEngine.applyGravity(this, celestialBodies, deltaTime);
+                PhysicsEngine.applyGravity(this, celestialBodies, deltaTime, gameConfig.physics.gravityStrength);
+                celestialBodies.forEach((body) => {
+                    if (body.hasAtmosphere && body.atmosphereRadius > 0) {
+                        const atmosphere = {
+                            position: body.position,
+                            radius: body.atmosphereRadius,
+                            density: 0.5
+                        };
+                        PhysicsEngine.applyAtmosphericDrag(this, atmosphere, deltaTime);
+                    }
+                });
             }
+        }
+        this.updateMotionEffects(deltaTime);
+    }
+    updateMotionEffects(deltaTime) {
+        const speed = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+        if (speed > 50) {
+            const speedFactor = Math.min(1.0, speed / 200);
+            const drift = (Math.random() - 0.5) * speedFactor * 0.01 * deltaTime;
+            this.angle += drift;
+        }
+        if (this.thrust > 0) {
+            const speedPenalty = 1 + (speed / 100) * 0.1;
+            this.fuel = Math.max(0, this.fuel - (0.1 * this.thrust * speedPenalty * deltaTime));
         }
     }
     handleInput(inputManager, deltaTime) {

@@ -11,67 +11,113 @@ export class StarSystemScene {
     generateSolarSystem() {
         const random = new SeededRandom(this.systemSeed);
         const starMass = 800 + random.next() * 400;
-        const starRadius = 30 + random.next() * 20;
+        const starRadius = 60 + random.next() * 40;
         const starColor = this.generateStarColor(random);
         const centralStar = new CelestialBody(0, 0, starRadius, CelestialBodyType.STAR, this.systemName, starMass, starColor);
         this.celestialBodies.push(centralStar);
         const planetCount = 2 + Math.floor(random.next() * 6);
-        let currentDistance = 120;
+        let currentDistance = 200;
         for (let i = 0; i < planetCount; i++) {
-            currentDistance += 50 + random.next() * 100;
-            const planetRadius = 8 + random.next() * 15;
+            currentDistance += 100 + random.next() * 200;
+            const planetRadius = 16 + random.next() * 30;
             const planetMass = planetRadius * 2;
             const planetColor = this.generatePlanetColor(random);
             const orbitSpeed = 0.01 / Math.sqrt(currentDistance / 100);
             const startAngle = random.next() * Math.PI * 2;
             const planet = new CelestialBody(currentDistance, 0, planetRadius, CelestialBodyType.PLANET, `${this.systemName}-${i + 1}`, planetMass, planetColor);
-            planet.setOrbit({ x: 0, y: 0 }, currentDistance, orbitSpeed, startAngle);
+            const eccentricity = Math.random() * 0.3;
+            planet.setOrbit({ x: 0, y: 0 }, currentDistance, orbitSpeed, startAngle, eccentricity);
             if (random.next() < 0.4) {
                 planet.hasAtmosphere = true;
                 planet.atmosphereColor = 'rgba(95, 158, 158, 0.4)';
+                planet.atmosphereRadius = planetRadius * (1.3 + random.next() * 0.4);
             }
             this.celestialBodies.push(planet);
-            if (planetRadius > 12 && random.next() < 0.6) {
+            if (planetRadius > 20 && random.next() < 0.6) {
                 const moonCount = 1 + Math.floor(random.next() * 3);
                 for (let j = 0; j < moonCount; j++) {
-                    const moonDistance = planetRadius * 3 + j * 25;
-                    const moonRadius = 3 + random.next() * 5;
+                    const moonDistance = planetRadius * 4 + j * 40;
+                    const moonRadius = 6 + random.next() * 10;
                     const moonMass = moonRadius;
-                    const moonColor = '#888888';
+                    const moonColor = this.generateMoonColor(random);
                     const moonOrbitSpeed = 0.05 / Math.sqrt(moonDistance / 10);
+                    const moonEccentricity = Math.random() * 0.15;
                     const moon = new CelestialBody(currentDistance + moonDistance, 0, moonRadius, CelestialBodyType.MOON, `${planet.name}-M${j + 1}`, moonMass, moonColor);
-                    moon.setOrbit(planet.position, moonDistance, moonOrbitSpeed, random.next() * Math.PI * 2);
+                    moon.setOrbit(planet.position, moonDistance, moonOrbitSpeed, random.next() * Math.PI * 2, moonEccentricity);
                     this.celestialBodies.push(moon);
                 }
             }
         }
         if (random.next() < 0.7) {
-            const beltDistance = currentDistance + 80 + random.next() * 100;
+            const beltDistance = currentDistance + 160 + random.next() * 200;
             const asteroidCount = 15 + Math.floor(random.next() * 25);
             for (let i = 0; i < asteroidCount; i++) {
                 const angle = random.next() * Math.PI * 2;
-                const distance = beltDistance + (random.next() - 0.5) * 60;
-                const asteroidRadius = 2 + random.next() * 4;
+                const distance = beltDistance + (random.next() - 0.5) * 120;
+                const asteroidRadius = 4 + random.next() * 8;
                 const asteroidMass = asteroidRadius * 0.5;
                 const orbitSpeed = 0.008 / Math.sqrt(distance / 100);
-                const asteroid = new CelestialBody(distance, 0, asteroidRadius, CelestialBodyType.ASTEROID, `Asteroid-${i}`, asteroidMass, '#666666');
-                asteroid.setOrbit({ x: 0, y: 0 }, distance, orbitSpeed, angle);
+                const asteroidEccentricity = Math.random() * 0.5;
+                const asteroid = new CelestialBody(distance, 0, asteroidRadius, CelestialBodyType.ASTEROID, `Asteroid-${i}`, asteroidMass, this.generateAsteroidColor(random));
+                asteroid.setOrbit({ x: 0, y: 0 }, distance, orbitSpeed, random.next() * Math.PI * 2, asteroidEccentricity);
                 this.celestialBodies.push(asteroid);
             }
         }
     }
     generateStarColor(random) {
         const starTypes = [
-            '#606060', '#505050', '#404040', '#505050', '#606060'
+            '#FFD700',
+            '#FF6B47',
+            '#FF4444',
+            '#87CEEB',
+            '#FFFFFF',
+            '#FFA500',
+            '#FFE4B5'
         ];
         return random.choose(starTypes);
     }
     generatePlanetColor(random) {
         const planetColors = [
-            '#505050', '#404040', '#404040', '#505050', '#404040',
-            '#505050', '#606060', '#404040'
+            '#4169E1',
+            '#CD853F',
+            '#8B4513',
+            '#228B22',
+            '#DC143C',
+            '#9370DB',
+            '#FF6347',
+            '#4682B4',
+            '#DDA0DD',
+            '#32CD32',
+            '#FF8C00',
+            '#8A2BE2'
         ];
         return random.choose(planetColors);
+    }
+    generateMoonColor(random) {
+        const moonColors = [
+            '#C0C0C0',
+            '#8B7355',
+            '#696969',
+            '#A0522D',
+            '#BC8F8F',
+            '#D2691E',
+            '#F4A460',
+            '#CD853F'
+        ];
+        return random.choose(moonColors);
+    }
+    generateAsteroidColor(random) {
+        const asteroidColors = [
+            '#8B7D6B',
+            '#A0522D',
+            '#696969',
+            '#708090',
+            '#778899',
+            '#B8860B',
+            '#CD853F',
+            '#D2691E'
+        ];
+        return random.choose(asteroidColors);
     }
     update(deltaTime, game) {
         this.celestialBodies.forEach(body => {

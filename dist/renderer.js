@@ -40,6 +40,11 @@ export class Renderer {
         this.ctx.fillStyle = color;
         this.ctx.fillRect(x, y, width, height);
     }
+    strokeRect(x, y, width, height, color, lineWidth = 1) {
+        this.ctx.strokeStyle = color;
+        this.ctx.lineWidth = lineWidth;
+        this.ctx.strokeRect(x, y, width, height);
+    }
     drawCircle(x, y, radius, color, filled = true) {
         this.ctx.beginPath();
         this.ctx.arc(x, y, radius, 0, Math.PI * 2);

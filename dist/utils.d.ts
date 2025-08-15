@@ -22,6 +22,16 @@ export declare class PhysicsEngine {
         mass: number;
         radius: number;
     }>, deltaTime: number, gravityStrength?: number): void;
+    static applyAtmosphericDrag(object: {
+        position: Vector2D;
+        velocity: Vector2D;
+    }, atmosphere: {
+        position: Vector2D;
+        radius: number;
+        density: number;
+    }, deltaTime: number): void;
+    static calculateEscapeVelocity(mass: number, radius: number): number;
+    static calculateOrbitalVelocity(mass: number, distance: number): number;
     static checkCollision(obj1: {
         position: Vector2D;
         radius: number;

@@ -14,7 +14,7 @@ import {
   CargoItem,
   EffectType
 } from './types';
-import { PhysicsEngine } from './utils';
+import { PhysicsEngine, gameConfig } from './utils';
 
 export class PlayerShip implements IPlayerShip {
   public position: Vector2D;
@@ -139,13 +139,49 @@ export class PlayerShip implements IPlayerShip {
     this.updateSystems(deltaTime);
     this.updateWeapons(deltaTime);
 
-    PhysicsEngine.applyNewtonianMotion(this, deltaTime);
+    // Apply enhanced Newtonian motion
+    PhysicsEngine.applyNewtonianMotion(this, deltaTime, gameConfig.physics.frictionFactor);
 
+    // Apply gravitational forces from celestial bodies
     if (game.sceneManager.getCurrentScene()?.getCelestialBodies) {
       const celestialBodies = game.sceneManager.getCurrentScene().getCelestialBodies();
       if (celestialBodies) {
-        PhysicsEngine.applyGravity(this, celestialBodies, deltaTime);
+        PhysicsEngine.applyGravity(this, celestialBodies, deltaTime, gameConfig.physics.gravityStrength);
+        
+        // Apply atmospheric drag for planets with atmospheres
+        celestialBodies.forEach((body: any) => {
+          if (body.hasAtmosphere && body.atmosphereRadius > 0) {
+            const atmosphere = {
+              position: body.position,
+              radius: body.atmosphereRadius,
+              density: 0.5 // Atmospheric density factor
+            };
+            PhysicsEngine.applyAtmosphericDrag(this, atmosphere, deltaTime);
+          }
+        });
       }
+    }
+
+    // Update ship orientation to show motion effects
+    this.updateMotionEffects(deltaTime);
+  }
+
+  private updateMotionEffects(deltaTime: number): void {
+    // Calculate current speed for various effects
+    const speed = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+    
+    // High-speed effects (visual feedback for realistic physics)
+    if (speed > 50) {
+      // Slight angular drift at high speeds (simulating control difficulty)
+      const speedFactor = Math.min(1.0, speed / 200);
+      const drift = (Math.random() - 0.5) * speedFactor * 0.01 * deltaTime;
+      this.angle += drift;
+    }
+
+    // Fuel consumption based on actual thrust usage and speed
+    if (this.thrust > 0) {
+      const speedPenalty = 1 + (speed / 100) * 0.1; // More fuel at higher speeds
+      this.fuel = Math.max(0, this.fuel - (0.1 * this.thrust * speedPenalty * deltaTime));
     }
   }
 
