@@ -122,11 +122,16 @@
     
     <!-- Development mode script loading -->
     <script type="module">
-        // Development mode - load TypeScript files directly via Vite
-        if (import.meta.env?.DEV) {
-            import('./src/main.ts');
-        } else {
-            // Production mode - load built JavaScript
+        // Check if we're running in development (Vite) or production
+        try {
+            // Try to detect if Vite is available
+            if (import.meta.env?.DEV) {
+                import('./src/main.ts');
+            } else {
+                throw new Error('Not in Vite dev mode');
+            }
+        } catch (e) {
+            // Production mode or static server - load built JavaScript
             import('./dist/main.js');
         }
     </script>

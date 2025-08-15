@@ -2358,6 +2358,7 @@ export function initializeGame() {
         }
         const game = new GameEngine('gameCanvas');
         window.game = game;
+        game.startGameLoop();
         console.log('✅ Game initialized successfully');
         console.log('🎮 Controls: WASD/Arrow keys for movement, SPACE for fire, ESC for menu');
         console.log('🔧 Debug: Use window.game object in console');
