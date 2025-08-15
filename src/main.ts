@@ -366,6 +366,14 @@ class NewGameSetupState implements IGameState {
   private selectedShip: ShipType = ShipType.EXPLORER;
   private playerName: string = '';
   private isEditingName: boolean = false;
+  
+  // UI button states for touch/mouse support
+  private backButton = { x: 0, y: 0, width: 120, height: 40, hovered: false, pressed: false };
+  private nextButton = { x: 0, y: 0, width: 120, height: 40, hovered: false, pressed: false };
+  private difficultyButtons: Array<{ x: number, y: number, width: number, height: number, difficulty: DifficultyLevel, hovered: boolean }> = [];
+  private shipButtons: Array<{ x: number, y: number, width: number, height: number, shipType: ShipType, hovered: boolean }> = [];
+  private nameInputButton = { x: 0, y: 0, width: 300, height: 40, hovered: false };
+  private startGameButton = { x: 0, y: 0, width: 200, height: 50, hovered: false, pressed: false };
 
   public enter(): void {
     console.log('New game setup entered');
@@ -434,8 +442,50 @@ class NewGameSetupState implements IGameState {
         break;
     }
 
-    // Navigation hints
-    renderer.drawText('←→ Navigace | ENTER Potvrdit | ESC Zpět', width/2, height - 50, '#505050', '14px "Big Apple 3PM", monospace');
+    // Navigation buttons
+    this.renderNavigationButtons(renderer, width, height);
+  }
+
+  private renderNavigationButtons(renderer: IRenderer, width: number, height: number): void {
+    // Update button positions
+    this.backButton.x = 50;
+    this.backButton.y = height - 80;
+    this.nextButton.x = width - 170;
+    this.nextButton.y = height - 80;
+    
+    // Back button (only show if not on first step)
+    if (this.currentStep > 0) {
+      const backColor = this.backButton.pressed ? 'rgba(96, 96, 96, 0.8)' : 
+                        this.backButton.hovered ? 'rgba(96, 96, 96, 0.4)' : 'rgba(64, 64, 64, 0.7)';
+      renderer.drawRect(this.backButton.x, this.backButton.y, this.backButton.width, this.backButton.height, backColor);
+      renderer.drawRect(this.backButton.x, this.backButton.y, this.backButton.width, this.backButton.height, '#505050');
+      renderer.drawText('← ZPĚT', this.backButton.x + this.backButton.width/2, this.backButton.y + this.backButton.height/2 + 5, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+    }
+    
+    // Next button (show as "POKRAČOVAT" or "SPUSTIT" on last step)
+    const isLastStep = this.currentStep === this.steps.length - 1;
+    const canProceed = this.canProceedFromCurrentStep();
+    const nextText = isLastStep ? 'SPUSTIT' : 'POKRAČOVAT →';
+    
+    if (canProceed) {
+      const nextColor = this.nextButton.pressed ? 'rgba(96, 96, 96, 0.8)' : 
+                        this.nextButton.hovered ? 'rgba(96, 96, 96, 0.4)' : 'rgba(64, 64, 64, 0.7)';
+      renderer.drawRect(this.nextButton.x, this.nextButton.y, this.nextButton.width, this.nextButton.height, nextColor);
+      renderer.drawRect(this.nextButton.x, this.nextButton.y, this.nextButton.width, this.nextButton.height, '#505050');
+      renderer.drawText(nextText, this.nextButton.x + this.nextButton.width/2, this.nextButton.y + this.nextButton.height/2 + 5, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+    }
+    
+    // Hint text
+    renderer.drawText('Klávesnice: ←→ ESC ENTER | Touch: Klepněte na tlačítka', width/2, height - 30, '#505050', '12px "Big Apple 3PM", monospace');
+  }
+
+  private canProceedFromCurrentStep(): boolean {
+    switch (this.currentStep) {
+      case 1: // Character creation - need name
+        return this.playerName.trim().length > 0;
+      default:
+        return true;
+    }
   }
 
   private renderDifficultySelection(renderer: IRenderer): void {
@@ -444,16 +494,36 @@ class NewGameSetupState implements IGameState {
     
     renderer.drawText('VYBERTE OBTÍŽNOST', width/2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
     
+    // Clear difficulty buttons array
+    this.difficultyButtons = [];
+    
     Object.values(DifficultyLevel).forEach((difficulty, index) => {
       const settings = DIFFICULTY_SETTINGS[difficulty];
       const y = startY + 80 + index * 80;
       const isSelected = difficulty === this.selectedDifficulty;
       
-      if (isSelected) {
-        renderer.drawRect(width/2 - 400, y - 30, 800, 60, 'rgba(96, 96, 96, 0.2)');
-      }
+      // Create button area for touch detection
+      const buttonArea = {
+        x: width/2 - 400,
+        y: y - 30,
+        width: 800,
+        height: 60,
+        difficulty: difficulty,
+        hovered: false
+      };
+      this.difficultyButtons.push(buttonArea);
       
-      const color = isSelected ? '#606060' : '#505050';
+      // Button background
+      let bgColor = 'rgba(64, 64, 64, 0.3)';
+      if (isSelected) {
+        bgColor = 'rgba(96, 96, 96, 0.6)';
+      } else if (buttonArea.hovered) {
+        bgColor = 'rgba(80, 80, 80, 0.4)';
+      }
+      renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
+      renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
+      
+      const color = isSelected ? '#dcd0c0' : '#606060';
       renderer.drawText(settings.name, width/2 - 200, y, color, isSelected ? 'bold 20px "Big Apple 3PM", monospace' : '18px "Big Apple 3PM", monospace');
       renderer.drawText(settings.description, width/2 + 50, y, color, '14px "Big Apple 3PM", monospace');
     });
@@ -467,21 +537,35 @@ class NewGameSetupState implements IGameState {
     
     renderer.drawText('Jméno pilota:', width/2 - 100, startY + 80, '#606060', '18px "Big Apple 3PM", monospace');
     
-    const nameBoxColor = this.isEditingName ? '#606060' : '#404040';
-    renderer.drawRect(width/2 - 150, startY + 100, 300, 40, 'rgba(0, 0, 0, 0.5)');
-    renderer.drawRect(width/2 - 150, startY + 100, 300, 40, nameBoxColor);
+    // Update name input button position
+    this.nameInputButton.x = width/2 - 150;
+    this.nameInputButton.y = startY + 100;
+    
+    // Name input box with touch support
+    let nameBoxColor = 'rgba(64, 64, 64, 0.7)';
+    if (this.isEditingName) {
+      nameBoxColor = 'rgba(96, 96, 96, 0.8)';
+    } else if (this.nameInputButton.hovered) {
+      nameBoxColor = 'rgba(80, 80, 80, 0.7)';
+    }
+    
+    renderer.drawRect(this.nameInputButton.x, this.nameInputButton.y, this.nameInputButton.width, this.nameInputButton.height, 'rgba(0, 0, 0, 0.5)');
+    renderer.drawRect(this.nameInputButton.x, this.nameInputButton.y, this.nameInputButton.width, this.nameInputButton.height, nameBoxColor);
+    renderer.drawRect(this.nameInputButton.x, this.nameInputButton.y, this.nameInputButton.width, this.nameInputButton.height, '#505050');
     
     const displayName = this.playerName || 'Zadejte jméno...';
-    const nameColor = this.playerName ? '#606060' : '#505050';
+    const nameColor = this.playerName ? '#dcd0c0' : '#808080';
     renderer.drawText(displayName, width/2, startY + 125, nameColor, '16px "Big Apple 3PM", monospace');
     
     if (this.isEditingName) {
       // Blinking cursor
       const cursorX = width/2 + (this.playerName.length * 9);
-              renderer.drawText('|', cursorX, startY + 125, '#606060', '16px "Big Apple 3PM", monospace');
+      if (Math.floor(Date.now() / 500) % 2 === 0) {
+        renderer.drawText('|', cursorX, startY + 125, '#dcd0c0', '16px "Big Apple 3PM", monospace');
+      }
     }
     
-          renderer.drawText('ENTER pro editaci | TAB pro dokončení', width/2, startY + 180, '#505050', '12px "Big Apple 3PM", monospace');
+    renderer.drawText('Klepněte pro editaci jména | ENTER/TAB pro dokončení', width/2, startY + 180, '#505050', '12px "Big Apple 3PM", monospace');
   }
 
   private renderShipSelection(renderer: IRenderer): void {
@@ -495,6 +579,9 @@ class NewGameSetupState implements IGameState {
     const shipWidth = 250;
     const shipHeight = 120;
     
+    // Clear ship buttons array
+    this.shipButtons = [];
+    
     ships.forEach((shipType, index) => {
       const template = SHIP_TEMPLATES[shipType];
       const row = Math.floor(index / shipsPerRow);
@@ -505,13 +592,30 @@ class NewGameSetupState implements IGameState {
       
       const isSelected = shipType === this.selectedShip;
       
+      // Create button area for touch detection
+      const buttonArea = {
+        x: x - shipWidth/2,
+        y: y - shipHeight/2,
+        width: shipWidth,
+        height: shipHeight,
+        shipType: shipType,
+        hovered: false
+      };
+      this.shipButtons.push(buttonArea);
+      
+      // Ship card background
+      let bgColor = 'rgba(64, 64, 64, 0.7)';
       if (isSelected) {
-        renderer.drawRect(x - shipWidth/2, y - shipHeight/2, shipWidth, shipHeight, 'rgba(96, 96, 96, 0.3)');
+        bgColor = 'rgba(96, 96, 96, 0.8)';
+      } else if (buttonArea.hovered) {
+        bgColor = 'rgba(80, 80, 80, 0.7)';
       }
       
-      renderer.drawRect(x - shipWidth/2 + 5, y - shipHeight/2 + 5, shipWidth - 10, shipHeight - 10, 'rgba(64, 64, 64, 0.7)');
+      renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
+      renderer.drawRect(buttonArea.x + 5, buttonArea.y + 5, buttonArea.width - 10, buttonArea.height - 10, 'rgba(32, 32, 32, 0.7)');
+      renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
       
-      const color = isSelected ? '#606060' : '#505050';
+      const color = isSelected ? '#dcd0c0' : '#808080';
       renderer.drawText(template.name, x, y - 35, color, isSelected ? 'bold 16px "Big Apple 3PM", monospace' : '14px "Big Apple 3PM", monospace');
       renderer.drawText(`Hull: ${template.baseStats.hull}`, x - 80, y - 10, color, '10px "Big Apple 3PM", monospace');
       renderer.drawText(`Speed: ${template.baseStats.speed}`, x + 80, y - 10, color, '10px "Big Apple 3PM", monospace');
@@ -524,24 +628,168 @@ class NewGameSetupState implements IGameState {
     const width = renderer.getWidth();
     const startY = 250;
     
-        renderer.drawText('SOUHRN NASTAVENÍ', width/2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
+    renderer.drawText('SOUHRN NASTAVENÍ', width/2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
 
     const difficultySettings = DIFFICULTY_SETTINGS[this.selectedDifficulty];
     const shipTemplate = SHIP_TEMPLATES[this.selectedShip];
     
-    renderer.drawText('Pilot: ' + (this.playerName || 'Neznámý'), width/2, startY + 60, '#606060', '18px "Big Apple 3PM", monospace');
-    renderer.drawText('Obtížnost: ' + difficultySettings.name, width/2, startY + 100, '#606060', '18px "Big Apple 3PM", monospace');
-    renderer.drawText('Loď: ' + shipTemplate.name, width/2, startY + 140, '#606060', '18px "Big Apple 3PM", monospace');
+    renderer.drawText('Pilot: ' + (this.playerName || 'Neznámý'), width/2, startY + 60, '#dcd0c0', '18px "Big Apple 3PM", monospace');
+    renderer.drawText('Obtížnost: ' + difficultySettings.name, width/2, startY + 100, '#dcd0c0', '18px "Big Apple 3PM", monospace');
+    renderer.drawText('Loď: ' + shipTemplate.name, width/2, startY + 140, '#dcd0c0', '18px "Big Apple 3PM", monospace');
     
-    renderer.drawText('Počáteční zdroje:', width/2, startY + 200, '#505050', '16px "Big Apple 3PM", monospace');
-    renderer.drawText(`Palivo: ${difficultySettings.startingResources.fuel}%`, width/2 - 100, startY + 230, '#505050', '14px "Big Apple 3PM", monospace');
-    renderer.drawText(`Energie: ${difficultySettings.startingResources.energy}%`, width/2, startY + 230, '#505050', '14px "Big Apple 3PM", monospace');
-    renderer.drawText(`Kredity: ${difficultySettings.startingResources.credits}`, width/2 + 100, startY + 230, '#505050', '14px "Big Apple 3PM", monospace');
+    renderer.drawText('Počáteční zdroje:', width/2, startY + 200, '#808080', '16px "Big Apple 3PM", monospace');
+    renderer.drawText(`Palivo: ${difficultySettings.startingResources.fuel}%`, width/2 - 100, startY + 230, '#808080', '14px "Big Apple 3PM", monospace');
+    renderer.drawText(`Energie: ${difficultySettings.startingResources.energy}%`, width/2, startY + 230, '#808080', '14px "Big Apple 3PM", monospace');
+    renderer.drawText(`Kredity: ${difficultySettings.startingResources.credits}`, width/2 + 100, startY + 230, '#808080', '14px "Big Apple 3PM", monospace');
     
-    renderer.drawText('ENTER pro zahájení hry', width/2, startY + 300, '#606060', 'bold 20px "Big Apple 3PM", monospace');
+    // Update start game button position
+    this.startGameButton.x = width/2 - this.startGameButton.width/2;
+    this.startGameButton.y = startY + 290;
+    
+    // Start game button with touch support
+    const buttonColor = this.startGameButton.pressed ? 'rgba(96, 96, 96, 0.8)' : 
+                        this.startGameButton.hovered ? 'rgba(96, 96, 96, 0.4)' : 'rgba(64, 64, 64, 0.7)';
+    renderer.drawRect(this.startGameButton.x, this.startGameButton.y, this.startGameButton.width, this.startGameButton.height, buttonColor);
+    renderer.drawRect(this.startGameButton.x, this.startGameButton.y, this.startGameButton.width, this.startGameButton.height, '#505050');
+    renderer.drawText('SPUSTIT HRU', width/2, startY + 320, '#dcd0c0', 'bold 20px "Big Apple 3PM", monospace');
+  }
+
+  private isPointInRect(x: number, y: number, rect: { x: number, y: number, width: number, height: number }): boolean {
+    return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
+  }
+
+  private updateHoverStates(input: IInputManager): void {
+    // Reset all hover states
+    this.backButton.hovered = false;
+    this.nextButton.hovered = false;
+    this.nameInputButton.hovered = false;
+    this.startGameButton.hovered = false;
+    this.difficultyButtons.forEach(btn => btn.hovered = false);
+    this.shipButtons.forEach(btn => btn.hovered = false);
+    
+    // Check for hovers (mouse only, not touch)
+    if (!input.isMobile) {
+      const mousePos = input.getMousePosition();
+      let mouseX = mousePos.x, mouseY = mousePos.y;
+      
+      // Convert mouse coordinates to canvas coordinates
+      const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = mousePos.x - rect.left;
+        mouseY = mousePos.y - rect.top;
+      }
+      
+      this.backButton.hovered = this.isPointInRect(mouseX, mouseY, this.backButton);
+      this.nextButton.hovered = this.isPointInRect(mouseX, mouseY, this.nextButton);
+      this.nameInputButton.hovered = this.isPointInRect(mouseX, mouseY, this.nameInputButton);
+      this.startGameButton.hovered = this.isPointInRect(mouseX, mouseY, this.startGameButton);
+      
+      this.difficultyButtons.forEach(btn => {
+        btn.hovered = this.isPointInRect(mouseX, mouseY, btn);
+      });
+      
+      this.shipButtons.forEach(btn => {
+        btn.hovered = this.isPointInRect(mouseX, mouseY, btn);
+      });
+    }
+  }
+
+  private handleTouchAndMouseClicks(input: IInputManager): boolean {
+    let handled = false;
+    
+    // Reset pressed states
+    this.backButton.pressed = false;
+    this.nextButton.pressed = false;
+    this.startGameButton.pressed = false;
+    
+    // Handle mouse clicks and touch events
+    const mousePressed = input.mouse.justPressed;
+    const touchPressed = input.touches.size > 0;
+    
+    if (mousePressed || touchPressed) {
+      let clickX = 0, clickY = 0;
+      
+      if (mousePressed) {
+        // Convert mouse coordinates to canvas coordinates
+        const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+        if (canvas) {
+          const rect = canvas.getBoundingClientRect();
+          clickX = input.mouse.x - rect.left;
+          clickY = input.mouse.y - rect.top;
+        }
+      } else if (touchPressed) {
+        const touch = input.touches.values().next().value;
+        clickX = touch.x;
+        clickY = touch.y;
+      }
+      
+      // Check navigation buttons
+      if (this.currentStep > 0 && this.isPointInRect(clickX, clickY, this.backButton)) {
+        this.backButton.pressed = true;
+        this.currentStep--;
+        handled = true;
+      } else if (this.canProceedFromCurrentStep() && this.isPointInRect(clickX, clickY, this.nextButton)) {
+        this.nextButton.pressed = true;
+        if (this.currentStep === this.steps.length - 1) {
+          this.startGame();
+        } else {
+          this.currentStep++;
+        }
+        handled = true;
+      }
+      
+      // Step-specific click handling
+      if (!handled) {
+        switch (this.currentStep) {
+          case 0: // Difficulty selection
+            this.difficultyButtons.forEach(btn => {
+              if (this.isPointInRect(clickX, clickY, btn)) {
+                this.selectedDifficulty = btn.difficulty;
+                handled = true;
+              }
+            });
+            break;
+            
+          case 1: // Character creation
+            if (this.isPointInRect(clickX, clickY, this.nameInputButton)) {
+              this.isEditingName = !this.isEditingName;
+              handled = true;
+            }
+            break;
+            
+          case 2: // Ship selection
+            this.shipButtons.forEach(btn => {
+              if (this.isPointInRect(clickX, clickY, btn)) {
+                this.selectedShip = btn.shipType;
+                handled = true;
+              }
+            });
+            break;
+            
+          case 3: // Summary
+            if (this.isPointInRect(clickX, clickY, this.startGameButton)) {
+              this.startGameButton.pressed = true;
+              this.startGame();
+              handled = true;
+            }
+            break;
+        }
+      }
+    }
+    
+    return handled;
   }
 
   public handleInput(input: IInputManager): void {
+    this.updateHoverStates(input);
+    
+    // Handle touch/mouse input first
+    if (this.handleTouchAndMouseClicks(input)) {
+      return;
+    }
+    
+    // ESC key to go back to main menu
     if (input.wasKeyJustPressed('escape')) {
       const game = (window as any).game;
       if (game) {
@@ -550,7 +798,7 @@ class NewGameSetupState implements IGameState {
       return;
     }
 
-    // Handle name editing
+    // Handle name editing keyboard input
     if (this.currentStep === 1) {
       if (input.wasKeyJustPressed('enter')) {
         this.isEditingName = !this.isEditingName;
@@ -558,7 +806,7 @@ class NewGameSetupState implements IGameState {
       }
       
       if (this.isEditingName) {
-        // Simple text input handling (you might want to use a proper text input library)
+        // Simple text input handling
         input.keys.forEach((keyState, key) => {
           if (keyState.justPressed && key.length === 1 && this.playerName.length < 20) {
             this.playerName += key.toUpperCase();
@@ -576,16 +824,16 @@ class NewGameSetupState implements IGameState {
       }
     }
 
-    // Navigation between steps
+    // Keyboard navigation between steps
     if (input.wasKeyJustPressed('arrowleft') && this.currentStep > 0) {
       this.currentStep--;
     }
     
-    if (input.wasKeyJustPressed('arrowright') && this.currentStep < this.steps.length - 1) {
+    if (input.wasKeyJustPressed('arrowright') && this.canProceedFromCurrentStep() && this.currentStep < this.steps.length - 1) {
       this.currentStep++;
     }
 
-    // Step-specific input
+    // Step-specific keyboard input
     switch (this.currentStep) {
       case 0: // Difficulty selection
         if (input.wasKeyJustPressed('arrowup') || input.wasKeyJustPressed('arrowdown')) {
