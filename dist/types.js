@@ -69,6 +69,73 @@ export var ShipType;
     ShipType["STEALTH"] = "stealth";
     ShipType["MINING"] = "mining";
 })(ShipType || (ShipType = {}));
+export var CharacterGender;
+(function (CharacterGender) {
+    CharacterGender["MALE"] = "male";
+    CharacterGender["FEMALE"] = "female";
+    CharacterGender["NON_BINARY"] = "nonBinary";
+    CharacterGender["OTHER"] = "other";
+})(CharacterGender || (CharacterGender = {}));
+export var CharacterRace;
+(function (CharacterRace) {
+    CharacterRace["HUMAN"] = "human";
+    CharacterRace["TERRAN"] = "terran";
+    CharacterRace["ZEPHYRIAN"] = "zephyrian";
+    CharacterRace["CRYSTALLINE"] = "crystalline";
+    CharacterRace["VORTHAN"] = "vorthan";
+    CharacterRace["AQUARIAN"] = "aquarian";
+    CharacterRace["MECHANO"] = "mechano";
+    CharacterRace["ETHEREAL"] = "ethereal";
+    CharacterRace["DRAKONID"] = "drakonid";
+    CharacterRace["SYLVAN"] = "sylvan";
+})(CharacterRace || (CharacterRace = {}));
+export var CharacterSkill;
+(function (CharacterSkill) {
+    CharacterSkill["PILOTING"] = "piloting";
+    CharacterSkill["ENGINEERING"] = "engineering";
+    CharacterSkill["COMBAT"] = "combat";
+    CharacterSkill["TRADING"] = "trading";
+    CharacterSkill["DIPLOMACY"] = "diplomacy";
+    CharacterSkill["EXPLORATION"] = "exploration";
+    CharacterSkill["MINING"] = "mining";
+    CharacterSkill["RESEARCH"] = "research";
+    CharacterSkill["STEALTH"] = "stealth";
+    CharacterSkill["LEADERSHIP"] = "leadership";
+})(CharacterSkill || (CharacterSkill = {}));
+export var CharacterBackground;
+(function (CharacterBackground) {
+    CharacterBackground["MILITARY_PILOT"] = "militaryPilot";
+    CharacterBackground["MERCHANT"] = "merchant";
+    CharacterBackground["EXPLORER"] = "explorer";
+    CharacterBackground["SCIENTIST"] = "scientist";
+    CharacterBackground["ENGINEER"] = "engineer";
+    CharacterBackground["BOUNTY_HUNTER"] = "bountyHunter";
+    CharacterBackground["DIPLOMAT"] = "diplomat";
+    CharacterBackground["MINER"] = "miner";
+    CharacterBackground["SMUGGLER"] = "smuggler";
+    CharacterBackground["REFUGEE"] = "refugee";
+})(CharacterBackground || (CharacterBackground = {}));
+export var GalaxySize;
+(function (GalaxySize) {
+    GalaxySize["SMALL"] = "small";
+    GalaxySize["MEDIUM"] = "medium";
+    GalaxySize["LARGE"] = "large";
+    GalaxySize["HUGE"] = "huge";
+})(GalaxySize || (GalaxySize = {}));
+export var GalaxyDensity;
+(function (GalaxyDensity) {
+    GalaxyDensity["SPARSE"] = "sparse";
+    GalaxyDensity["NORMAL"] = "normal";
+    GalaxyDensity["DENSE"] = "dense";
+    GalaxyDensity["PACKED"] = "packed";
+})(GalaxyDensity || (GalaxyDensity = {}));
+export var EconomyComplexity;
+(function (EconomyComplexity) {
+    EconomyComplexity["SIMPLE"] = "simple";
+    EconomyComplexity["MODERATE"] = "moderate";
+    EconomyComplexity["COMPLEX"] = "complex";
+    EconomyComplexity["REALISTIC"] = "realistic";
+})(EconomyComplexity || (EconomyComplexity = {}));
 export var QuestType;
 (function (QuestType) {
     QuestType["DELIVERY"] = "delivery";

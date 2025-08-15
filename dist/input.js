@@ -25,9 +25,13 @@ export class InputManager {
         };
         this.joystickTouchId = null;
         this.canvas = null;
+        this.mobileTextInput = null;
+        this.textInputCallback = null;
+        this.textInputActive = false;
         this.isMobile = this.detectMobile();
         this.setupEventListeners();
         this.initializeTouchControls();
+        this.setupMobileTextInput();
     }
     detectMobile() {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -67,6 +71,63 @@ export class InputManager {
             document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
             document.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
         }
+    }
+    setupMobileTextInput() {
+        if (this.isMobile) {
+            this.mobileTextInput = document.createElement('input');
+            this.mobileTextInput.type = 'text';
+            this.mobileTextInput.style.position = 'absolute';
+            this.mobileTextInput.style.left = '-9999px';
+            this.mobileTextInput.style.top = '-9999px';
+            this.mobileTextInput.style.opacity = '0';
+            this.mobileTextInput.style.pointerEvents = 'none';
+            this.mobileTextInput.autocomplete = 'off';
+            this.mobileTextInput.autocorrect = 'off';
+            this.mobileTextInput.autocapitalize = 'off';
+            this.mobileTextInput.spellcheck = false;
+            document.body.appendChild(this.mobileTextInput);
+            this.mobileTextInput.addEventListener('input', (e) => {
+                if (this.textInputCallback && this.textInputActive) {
+                    this.textInputCallback(this.mobileTextInput.value);
+                }
+            });
+            this.mobileTextInput.addEventListener('blur', () => {
+                this.textInputActive = false;
+            });
+        }
+    }
+    activateMobileTextInput(currentText, callback) {
+        if (this.mobileTextInput && this.isMobile) {
+            this.mobileTextInput.value = currentText;
+            this.textInputCallback = callback;
+            this.textInputActive = true;
+            this.mobileTextInput.style.left = '50%';
+            this.mobileTextInput.style.top = '50%';
+            this.mobileTextInput.style.transform = 'translate(-50%, -50%)';
+            this.mobileTextInput.style.zIndex = '9999';
+            this.mobileTextInput.style.opacity = '0.1';
+            this.mobileTextInput.style.pointerEvents = 'auto';
+            this.mobileTextInput.focus();
+            this.mobileTextInput.select();
+            setTimeout(() => {
+                if (this.mobileTextInput) {
+                    this.mobileTextInput.style.left = '-9999px';
+                    this.mobileTextInput.style.top = '-9999px';
+                    this.mobileTextInput.style.opacity = '0';
+                    this.mobileTextInput.style.pointerEvents = 'none';
+                }
+            }, 100);
+        }
+    }
+    deactivateMobileTextInput() {
+        if (this.mobileTextInput && this.isMobile) {
+            this.textInputActive = false;
+            this.mobileTextInput.blur();
+            this.textInputCallback = null;
+        }
+    }
+    isMobileTextInputActive() {
+        return this.textInputActive;
     }
     handleKeyDown(event) {
         const key = event.key.toLowerCase();

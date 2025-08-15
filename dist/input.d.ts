@@ -31,11 +31,18 @@ export declare class InputManager implements IInputManager {
     };
     private joystickTouchId;
     private canvas;
+    private mobileTextInput;
+    private textInputCallback;
+    private textInputActive;
     constructor();
     private detectMobile;
     private initializeTouchControls;
     private updateTouchButtonPositions;
     private setupEventListeners;
+    private setupMobileTextInput;
+    activateMobileTextInput(currentText: string, callback: (text: string) => void): void;
+    deactivateMobileTextInput(): void;
+    isMobileTextInputActive(): boolean;
     private handleKeyDown;
     private handleKeyUp;
     private handleMouseMove;

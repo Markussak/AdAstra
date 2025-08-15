@@ -1,4 +1,4 @@
-import { DifficultyLevel, ShipType, WeaponType } from './types';
+import { DifficultyLevel, ShipType, WeaponType, CharacterRace, CharacterSkill, CharacterBackground, GalaxySize, GalaxyDensity, EconomyComplexity } from './types';
 export const SHIP_TEMPLATES = {
     [ShipType.SCOUT]: {
         type: ShipType.SCOUT,
@@ -392,4 +392,278 @@ M: Mapa
 
 Užijte si svou cestu mezi hvězdami!
 `;
+export const RACE_DATA = {
+    [CharacterRace.HUMAN]: {
+        name: 'Lidé',
+        description: 'Adaptabilní a vytrvalí průzkumníci původem ze Země. Vyváženě rozvinutá rasa.',
+        traits: ['Univerzálnost', 'Rychlé učení', 'Diplomacie'],
+        bonuses: { piloting: 1, diplomacy: 1 },
+        portraitColor: '#ffdbac'
+    },
+    [CharacterRace.TERRAN]: {
+        name: 'Terraňané',
+        description: 'Pokročilí potomci pozemšťanů, mistři technologie a inženýrství.',
+        traits: ['Technologické mistrovství', 'Analytické myšlení', 'Inovace'],
+        bonuses: { engineering: 2, research: 1 },
+        portraitColor: '#e8c5a0'
+    },
+    [CharacterRace.ZEPHYRIAN]: {
+        name: 'Zefyriáni',
+        description: 'Vzdušní nomádi z plynných planet, narození piloti s intuitivním citem pro letectví.',
+        traits: ['Přirozené pilotování', 'Rychlé reflexy', 'Navigační instinkt'],
+        bonuses: { piloting: 2, exploration: 1 },
+        portraitColor: '#b3d9ff'
+    },
+    [CharacterRace.CRYSTALLINE]: {
+        name: 'Krystalové',
+        description: 'Křemíkoví bytosti s přirozeným pochopením energetických systémů a vědy.',
+        traits: ['Energetická afinita', 'Dlouhověkost', 'Logické myšlení'],
+        bonuses: { research: 2, engineering: 1 },
+        portraitColor: '#e6ccff'
+    },
+    [CharacterRace.VORTHAN]: {
+        name: 'Vorthané',
+        description: 'Válečníci z pustých světů, specialisté na boj a taktiku.',
+        traits: ['Bojová zdatnost', 'Odolnost', 'Taktické myšlení'],
+        bonuses: { combat: 2, leadership: 1 },
+        portraitColor: '#ffb3b3'
+    },
+    [CharacterRace.AQUARIAN]: {
+        name: 'Akvariáni',
+        description: 'Mírní obyvatelé oceánských světů, mistři obchodu a diplomacie.',
+        traits: ['Obchodní smysl', 'Empatie', 'Kulturní porozumění'],
+        bonuses: { trading: 2, diplomacy: 1 },
+        portraitColor: '#b3ffcc'
+    },
+    [CharacterRace.MECHANO]: {
+        name: 'Mechanoidové',
+        description: 'Kyborgoví inženýři, fúze organického a umělého života.',
+        traits: ['Technická integrace', 'Systémová analýza', 'Modularita'],
+        bonuses: { engineering: 2, mining: 1 },
+        portraitColor: '#cccccc'
+    },
+    [CharacterRace.ETHEREAL]: {
+        name: 'Éteriálové',
+        description: 'Záhadné bytosti z jiných dimenzí s nadpřirozenými schopnostmi.',
+        traits: ['Dimenzionální vnímání', 'Psychické schopnosti', 'Mystika'],
+        bonuses: { exploration: 2, stealth: 1 },
+        portraitColor: '#d9b3ff'
+    },
+    [CharacterRace.DRAKONID]: {
+        name: 'Drakonidi',
+        description: 'Ještěří válečníci s drsnou minulostí a silným hrdostí.',
+        traits: ['Přírodní pancíř', 'Teritorialita', 'Čestný kodex'],
+        bonuses: { combat: 1, leadership: 2 },
+        portraitColor: '#ccff99'
+    },
+    [CharacterRace.SYLVAN]: {
+        name: 'Sylváni',
+        description: 'Rostlinní bytosti s hlubokým spojením s přírodou a ekosystémy.',
+        traits: ['Ekolokální harmonizace', 'Regenerace', 'Organická intuice'],
+        bonuses: { mining: 2, research: 1 },
+        portraitColor: '#99ff99'
+    }
+};
+export const BACKGROUND_DATA = {
+    [CharacterBackground.MILITARY_PILOT]: {
+        name: 'Vojenský pilot',
+        description: 'Bývalý člen hvězdné flotily s rozsáhlými bojovými zkušenostmi.',
+        bonuses: { combat: 3, piloting: 2, leadership: 1 },
+        startingCredits: 8000,
+        startingEquipment: ['Vojenská ID karta', 'Taktický manuál']
+    },
+    [CharacterBackground.MERCHANT]: {
+        name: 'Obchodník',
+        description: 'Zkušený trader znající obchodní trasy a tržní možnosti.',
+        bonuses: { trading: 3, diplomacy: 2, piloting: 1 },
+        startingCredits: 15000,
+        startingEquipment: ['Obchodní licence', 'Kontakty']
+    },
+    [CharacterBackground.EXPLORER]: {
+        name: 'Průzkumník',
+        description: 'Nezávislý explorér s vášní pro objevování neznámých světů.',
+        bonuses: { exploration: 3, piloting: 2, research: 1 },
+        startingCredits: 10000,
+        startingEquipment: ['Průzkumná licence', 'Mapovací zařízení']
+    },
+    [CharacterBackground.SCIENTIST]: {
+        name: 'Vědec',
+        description: 'Akademický výzkumník specializující se na vesmírné fenomény.',
+        bonuses: { research: 3, engineering: 2, exploration: 1 },
+        startingCredits: 12000,
+        startingEquipment: ['Vědecká licence', 'Laboratorní zařízení']
+    },
+    [CharacterBackground.ENGINEER]: {
+        name: 'Inženýr',
+        description: 'Technický specialista se znalostí lodních systémů.',
+        bonuses: { engineering: 3, mining: 2, combat: 1 },
+        startingCredits: 11000,
+        startingEquipment: ['Inženýrské nástroje', 'Technické manuály']
+    },
+    [CharacterBackground.BOUNTY_HUNTER]: {
+        name: 'Lovec odměn',
+        description: 'Nezávislý hunter vyslídil nebezpečné zločince.',
+        bonuses: { combat: 2, stealth: 2, piloting: 2 },
+        startingCredits: 9000,
+        startingEquipment: ['Lovecká licence', 'Sledovací zařízení']
+    },
+    [CharacterBackground.DIPLOMAT]: {
+        name: 'Diplomat',
+        description: 'Zkušený vyjednavač znající galaktické politické struktury.',
+        bonuses: { diplomacy: 3, trading: 1, leadership: 2 },
+        startingCredits: 13000,
+        startingEquipment: ['Diplomatické pověření', 'Lingvistický překladač']
+    },
+    [CharacterBackground.MINER]: {
+        name: 'Horník',
+        description: 'Tvrdý pracovník specializující se na těžbu asteroidů.',
+        bonuses: { mining: 3, engineering: 2, piloting: 1 },
+        startingCredits: 7000,
+        startingEquipment: ['Těžební licence', 'Geologické skenery']
+    },
+    [CharacterBackground.SMUGGLER]: {
+        name: 'Pašerák',
+        description: 'Rizikový trader operující na hranici legality.',
+        bonuses: { stealth: 2, piloting: 2, trading: 2 },
+        startingCredits: 6000,
+        startingEquipment: ['Skryté oddíly', 'Černý trh kontakty']
+    },
+    [CharacterBackground.REFUGEE]: {
+        name: 'Uprchlík',
+        description: 'Survivor z konfliktní zóny s netušenými schopnostmi.',
+        bonuses: { stealth: 2, diplomacy: 1, exploration: 1, piloting: 1, engineering: 1 },
+        startingCredits: 3000,
+        startingEquipment: ['Identifikační doklady', 'Osobní vzpomínky']
+    }
+};
+export const SKILL_DATA = {
+    [CharacterSkill.PILOTING]: {
+        name: 'Pilotování',
+        description: 'Ovládání lodě, manévrování a rychlost reakce při letu.',
+        icon: '🚀'
+    },
+    [CharacterSkill.ENGINEERING]: {
+        name: 'Inženýrství',
+        description: 'Opravy systémů, modifikace lodě a technická analýza.',
+        icon: '🔧'
+    },
+    [CharacterSkill.COMBAT]: {
+        name: 'Boj',
+        description: 'Efektivita ve střelbě, taktice a přežití v konfliktu.',
+        icon: '⚔️'
+    },
+    [CharacterSkill.TRADING]: {
+        name: 'Obchodování',
+        description: 'Vyjednávání cen, trţní analýza a obchodní příležitosti.',
+        icon: '💰'
+    },
+    [CharacterSkill.DIPLOMACY]: {
+        name: 'Diplomacie',
+        description: 'Komunikace s frakcemi, vyjednávání a konfliktní řešení.',
+        icon: '🤝'
+    },
+    [CharacterSkill.EXPLORATION]: {
+        name: 'Průzkum',
+        description: 'Navigace neznámými oblastmi a objevování tajemství.',
+        icon: '🌌'
+    },
+    [CharacterSkill.MINING]: {
+        name: 'Těžba',
+        description: 'Efektivní získávání surovin z asteroidů a planet.',
+        icon: '⛏️'
+    },
+    [CharacterSkill.RESEARCH]: {
+        name: 'Výzkum',
+        description: 'Vědecká analýza, technologický vývoj a objevy.',
+        icon: '🔬'
+    },
+    [CharacterSkill.STEALTH]: {
+        name: 'Nenápadnost',
+        description: 'Vyhýbání se detekci, tajné operace a pašování.',
+        icon: '👥'
+    },
+    [CharacterSkill.LEADERSHIP]: {
+        name: 'Vedení',
+        description: 'Správa posádky, strategické plánování a motivace.',
+        icon: '👑'
+    }
+};
+export const GALAXY_SIZE_DATA = {
+    [GalaxySize.SMALL]: {
+        name: 'Malá galaxie',
+        description: 'Kompaktní galaxie s 50-100 hvězdnými systémy. Ideální pro rychlé průzkumy.',
+        systemCount: 75,
+        travelTime: 0.8
+    },
+    [GalaxySize.MEDIUM]: {
+        name: 'Střední galaxie',
+        description: 'Vyvážená galaxie se 150-250 hvězdnými systémy. Standard pro většinu her.',
+        systemCount: 200,
+        travelTime: 1.0
+    },
+    [GalaxySize.LARGE]: {
+        name: 'Velká galaxie',
+        description: 'Rozsáhlá galaxie s 300-500 hvězdnými systémy. Pro dlouhodobé kampaně.',
+        systemCount: 400,
+        travelTime: 1.3
+    },
+    [GalaxySize.HUGE]: {
+        name: 'Obrovská galaxie',
+        description: 'Masivní galaxie s 500+ hvězdnými systémy. Nekonečné možnosti průzkumu.',
+        systemCount: 750,
+        travelTime: 1.6
+    }
+};
+export const GALAXY_DENSITY_DATA = {
+    [GalaxyDensity.SPARSE]: {
+        name: 'Řídká',
+        description: 'Většina systémů je daleko od sebe. Více prostoru, méně kontaktů.',
+        connectionDensity: 0.6,
+        encounterRate: 0.7
+    },
+    [GalaxyDensity.NORMAL]: {
+        name: 'Normální',
+        description: 'Vyvážené rozložení systémů s běžnými cestovními vzdálenostmi.',
+        connectionDensity: 1.0,
+        encounterRate: 1.0
+    },
+    [GalaxyDensity.DENSE]: {
+        name: 'Hustá',
+        description: 'Systémy blízko u sebe. Více obchodních tras a kontaktů.',
+        connectionDensity: 1.4,
+        encounterRate: 1.3
+    },
+    [GalaxyDensity.PACKED]: {
+        name: 'Přeplněná',
+        description: 'Extrémně hustá galaxie s častými setkáními a konflikty.',
+        connectionDensity: 1.8,
+        encounterRate: 1.6
+    }
+};
+export const ECONOMY_COMPLEXITY_DATA = {
+    [EconomyComplexity.SIMPLE]: {
+        name: 'Jednoduchá',
+        description: 'Základní nabídka a poptávka. Stabilní ceny a jednoduché obchody.',
+        priceVariability: 0.5,
+        commodityCount: 8
+    },
+    [EconomyComplexity.MODERATE]: {
+        name: 'Mírná',
+        description: 'Více komodit a mírné cenové fluktuace. Vyvážená ekonomická hra.',
+        priceVariability: 1.0,
+        commodityCount: 16
+    },
+    [EconomyComplexity.COMPLEX]: {
+        name: 'Komplexní',
+        description: 'Pokročilé tržní mechanismy s množstvím obchodních příležitostí.',
+        priceVariability: 1.5,
+        commodityCount: 24
+    },
+    [EconomyComplexity.REALISTIC]: {
+        name: 'Realistická',
+        description: 'Simulace skutečné ekonomiky s dynamickými trhy a složitými interakcemi.',
+        priceVariability: 2.0,
+        commodityCount: 32
+    }
+};
 //# sourceMappingURL=gameData.js.map
