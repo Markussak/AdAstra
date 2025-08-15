@@ -75,6 +75,7 @@ class LoadingState {
         this.currentTextIndex = 0;
         this.lastUpdate = Date.now();
         this.startTime = Date.now();
+        this.updateHTMLLoadingDisplay();
     }
     update(deltaTime) {
         const now = Date.now();
@@ -86,15 +87,42 @@ class LoadingState {
             if (Math.random() < 0.4 && this.currentTextIndex < this.loadingTexts.length - 1) {
                 this.currentTextIndex++;
             }
+            this.updateHTMLLoadingDisplay();
             this.lastUpdate = now;
             if (this.progress >= 100 && elapsed > 2000) {
                 setTimeout(() => {
                     console.log('Loading complete, switching to main menu');
+                    this.hideHTMLLoadingOverlay();
                     if (window.game?.stateManager) {
                         window.game.stateManager.setState(GameState.MAIN_MENU);
                     }
                 }, 500);
             }
+        }
+    }
+    updateHTMLLoadingDisplay() {
+        const loadingFill = document.getElementById('loadingFill');
+        const loadingText = document.getElementById('loadingText');
+        const loadingPercent = document.getElementById('loadingPercent');
+        if (loadingFill) {
+            loadingFill.style.width = `${this.progress}%`;
+        }
+        if (loadingText && this.currentTextIndex < this.loadingTexts.length) {
+            loadingText.textContent = this.loadingTexts[this.currentTextIndex];
+        }
+        if (loadingPercent) {
+            loadingPercent.textContent = `${Math.round(this.progress)}%`;
+        }
+    }
+    hideHTMLLoadingOverlay() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('hidden');
+            setTimeout(() => {
+                if (loadingOverlay.parentNode) {
+                    loadingOverlay.parentNode.removeChild(loadingOverlay);
+                }
+            }, 1000);
         }
     }
     render(renderer) {

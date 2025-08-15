@@ -105,6 +105,9 @@ class LoadingState implements IGameState {
     this.currentTextIndex = 0;
     this.lastUpdate = Date.now();
     this.startTime = Date.now();
+    
+    // Initialize HTML loading display
+    this.updateHTMLLoadingDisplay();
   }
 
   public update(deltaTime: number): void {
@@ -120,16 +123,51 @@ class LoadingState implements IGameState {
         this.currentTextIndex++;
       }
       
+      // Update HTML loading overlay
+      this.updateHTMLLoadingDisplay();
+      
       this.lastUpdate = now;
       
       if (this.progress >= 100 && elapsed > 2000) {
         setTimeout(() => {
           console.log('Loading complete, switching to main menu');
+          this.hideHTMLLoadingOverlay();
           if ((window as any).game?.stateManager) {
             (window as any).game.stateManager.setState(GameState.MAIN_MENU);
           }
         }, 500);
       }
+    }
+  }
+
+  private updateHTMLLoadingDisplay(): void {
+    const loadingFill = document.getElementById('loadingFill');
+    const loadingText = document.getElementById('loadingText');
+    const loadingPercent = document.getElementById('loadingPercent');
+    
+    if (loadingFill) {
+      loadingFill.style.width = `${this.progress}%`;
+    }
+    
+    if (loadingText && this.currentTextIndex < this.loadingTexts.length) {
+      loadingText.textContent = this.loadingTexts[this.currentTextIndex];
+    }
+    
+    if (loadingPercent) {
+      loadingPercent.textContent = `${Math.round(this.progress)}%`;
+    }
+  }
+
+  private hideHTMLLoadingOverlay(): void {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+      loadingOverlay.classList.add('hidden');
+      // Remove the overlay completely after transition
+      setTimeout(() => {
+        if (loadingOverlay.parentNode) {
+          loadingOverlay.parentNode.removeChild(loadingOverlay);
+        }
+      }, 1000);
     }
   }
 
