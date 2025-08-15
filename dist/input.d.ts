@@ -63,6 +63,10 @@ export declare class InputManager implements IInputManager {
     getThrustInput(): number;
     getBrakeInput(): number;
     getRotationInput(): number;
+    getJoystickDirection(): {
+        x: number;
+        y: number;
+    };
     getFireInput(): boolean;
     getTouchMenuInput(): {
         up: boolean;
@@ -72,5 +76,6 @@ export declare class InputManager implements IInputManager {
     };
     setTouchControlsEnabled(enabled: boolean): void;
     renderTouchControls(renderer: any): void;
+    private draw16BitButton;
     update(): void;
 }

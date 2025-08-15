@@ -32,14 +32,10 @@ export const Vector2DUtils = {
     Vector2DUtils.magnitude(Vector2DUtils.subtract(b, a))
 };
 
-export const gameConfig: GameConfig = {
+export const gameConfig = {
   canvas: {
-    width: 1920,
-    height: 1080,
-    pixelRatio: 1
-  },
-  ui: {
-    statusBarHeight: 0.15
+    width: 1200,
+    height: 800
   },
   physics: {
     gravityStrength: 0.005, // Increased for more noticeable effects
@@ -47,14 +43,114 @@ export const gameConfig: GameConfig = {
     maxVelocity: 500
   },
   colors: {
-    bgPrimary: '#181c20',        // Retro-futuristic dark background (chassis abyss)
-    hullPrimary: '#5a6978',      // 16-bit chassis primary
-    hullSecondary: '#434c55',    // 16-bit chassis midtone  
-    accentFriendly: '#52de44',   // 16-bit accent green
-    accentHostile: '#d43d3d',    // 16-bit accent red
-    accentNeutral: '#ffc357',    // 16-bit accent yellow
-    fxGlowPrimary: '#e0e3e6',    // 16-bit highlight specular
-    fxGlowSecondary: '#a2aab2'   // 16-bit highlight standard
+    // Enhanced retro 16-bit color palette - no neon, subtle and atmospheric
+    bgPrimary: '#000000',            // Pure black space background
+    bgSecondary: '#0a0a0a',          // Deep space black
+    
+    // Ship and chassis colors - muted retro tones
+    hullPrimary: '#5a6978',          // Muted blue-gray hull
+    hullSecondary: '#434c55',        // Darker hull accent
+    hullDamaged: '#6d4c4c',          // Subtle red tint for damage
+    
+    // Retro accent colors - desaturated and subtle
+    accentFriendly: '#4a8a44',       // Muted green
+    accentHostile: '#8a4444',        // Muted red
+    accentNeutral: '#8a7a44',        // Muted yellow/amber
+    accentInfo: '#44708a',           // Muted blue
+    accentWarning: '#8a6a44',        // Muted orange
+    
+    // Text colors - classic computer terminal style
+    textPrimary: '#e8e8e8',          // Off-white text
+    textSecondary: '#b8b8b8',        // Light gray text
+    textDim: '#888888',              // Dim gray text
+    textAmber: '#d4a574',            // Muted amber (not bright)
+    textGreen: '#74a574',            // Muted green (not bright)
+    textRed: '#a57474',              // Muted red (not bright)
+    
+    // UI panel colors - industrial and retro
+    panelDark: '#1a1a1a',            // Dark panel background
+    panelMid: '#2a2a2a',             // Mid-tone panel
+    panelLight: '#3a3a3a',           // Light panel accent
+    panelBorder: '#404040',          // Panel borders
+    panelShadow: '#0f0f0f',          // Panel shadows
+    
+    // HUD and interface colors
+    hudOverlay: 'rgba(0,0,0,0.7)',   // Semi-transparent overlay
+    hudBorder: '#505050',            // HUD element borders
+    hudBackground: '#1a1a1a',        // HUD background
+    
+    // Star and space colors
+    starDim: '#a8a8a8',              // Dim distant stars
+    starMid: '#c8c8c8',              // Medium stars
+    starBright: '#e8e8e8',           // Bright nearby stars
+    nebulaBase: '#2a1a2a',           // Base nebula color (dark purple)
+    nebulaAccent: '#3a2a3a',         // Nebula accent (slightly lighter)
+    
+    // Status and system colors - muted versions
+    statusOk: '#60a060',             // Muted green for OK status
+    statusWarning: '#a0a060',        // Muted yellow for warnings
+    statusError: '#a06060',          // Muted red for errors
+    statusInfo: '#6080a0',           // Muted blue for info
+    statusInactive: '#404040',       // Gray for inactive
+    
+    // Planet and celestial body colors
+    planetRocky: '#8a7a6a',          // Rocky planet base
+    planetOcean: '#5a7a8a',          // Ocean world base
+    planetDesert: '#8a8a6a',         // Desert world base
+    planetIce: '#7a8a8a',            // Ice world base
+    planetGas: '#7a7a8a',            // Gas giant base
+    
+    // Star colors - realistic but muted
+    starYellow: '#e8d8a8',           // Yellow star
+    starOrange: '#e8c8a8',           // Orange star
+    starRed: '#e8a8a8',              // Red star
+    starBlue: '#a8c8e8',             // Blue star
+    starWhite: '#e8e8e8'             // White star
+  },
+  ui: {
+    statusBarHeight: 0.15,
+    fontSize: {
+      small: '8px',
+      normal: '10px', 
+      large: '12px',
+      title: '16px'
+    },
+    fontFamily: '"Big Apple 3PM", monospace',
+    borderRadius: 0, // Sharp corners for retro feel
+    lineHeight: 1.2,
+    padding: {
+      small: 4,
+      normal: 8,
+      large: 16
+    }
+  },
+  audio: {
+    enabled: true,
+    volume: 0.7,
+    sfxVolume: 0.5,
+    musicVolume: 0.3
+  },
+  graphics: {
+    pixelArt: true,                  // Enable pixel-perfect rendering
+    smoothing: false,                // Disable anti-aliasing for crisp pixels
+    pixelScale: 1,                   // Base pixel scale
+    dithering: true,                 // Enable dithering for retro effect
+    scanlines: false,                // Disable scanlines (too modern/CRT)
+    bloom: false,                    // Disable bloom effects
+    glowEffects: false,              // Disable glow effects
+    particleCount: 50,               // Reduced particles for retro feel
+    maxStars: 1000,                  // Star count for backgrounds
+    renderDistance: 5000,            // Maximum render distance
+    lodLevels: 3                     // Number of Level-of-Detail levels
+  },
+  gameplay: {
+    startingSystem: 'Sol',
+    startingCredits: 1000,
+    startingFuel: 100,
+    warpCost: 10,
+    baseSpeed: 100,
+    turnSpeed: 3.0,
+    thrustPower: 200
   }
 };
 
@@ -189,30 +285,26 @@ export class PhysicsEngine {
   }
 
   // Enhanced inertia effects for ships
-  static applyAngularInertia(
-    object: { angle: number; angularVelocity?: number },
-    targetAngularVelocity: number,
-    inertia: number,
-    deltaTime: number
+  static updateAngularPhysics(
+    object: { angle: number; angularVelocity?: number }, 
+    targetAngularVelocity: number, 
+    deltaTime: number, 
+    inertia: number = 1.0
   ): void {
-    // Initialize angular velocity if not present
+    // Initialize angularVelocity if it doesn't exist
     if (object.angularVelocity === undefined) {
-      (object as any).angularVelocity = 0;
+      object.angularVelocity = 0;
     }
     
-    // Apply angular acceleration based on inertia
+    // Angular acceleration to reach target velocity
     const angularAccel = (targetAngularVelocity - object.angularVelocity) / inertia;
     object.angularVelocity += angularAccel * deltaTime;
-    
-    // Apply angular damping (space friction on rotation)
+
+    // Apply angular friction
     object.angularVelocity *= Math.pow(0.995, deltaTime);
-    
+
     // Update angle
     object.angle += object.angularVelocity * deltaTime;
-    
-    // Normalize angle
-    while (object.angle > Math.PI * 2) object.angle -= Math.PI * 2;
-    while (object.angle < 0) object.angle += Math.PI * 2;
   }
 
   static applyThrustWithInertia(

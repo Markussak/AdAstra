@@ -3,8 +3,10 @@ export declare class PlayerShip implements IPlayerShip {
     position: Vector2D;
     velocity: Vector2D;
     angle: number;
+    angularVelocity: number;
     radius: number;
     active: boolean;
+    mass: number;
     systems: Map<ShipSystemType, ShipSystem>;
     components: ShipComponent[];
     weapons: Map<WeaponType, Weapon>;
@@ -23,6 +25,7 @@ export declare class PlayerShip implements IPlayerShip {
     warpCharge: number;
     maxWarpCharge: number;
     isWarping: boolean;
+    inertialDampers: boolean;
     thrust: number;
     maxThrust: number;
     rotationSpeed: number;
@@ -35,6 +38,7 @@ export declare class PlayerShip implements IPlayerShip {
     private initializeComponents;
     update(deltaTime: number, game: any): void;
     private updateMotionEffects;
+    private applyInertialDampening;
     private handleInput;
     private updateSystems;
     private updateWeapons;

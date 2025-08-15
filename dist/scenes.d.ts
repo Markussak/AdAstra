@@ -3,6 +3,7 @@ export declare class StarSystemScene implements IScene {
     private celestialBodies;
     private systemName;
     private systemSeed;
+    private spaceBackground;
     constructor(systemName?: string, seed?: number);
     private generateSolarSystem;
     private generateStarColor;

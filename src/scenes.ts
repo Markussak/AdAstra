@@ -19,54 +19,66 @@ class SpaceBackground {
   private nebulae: Array<{x: number, y: number, size: number, color: string, intensity: number, type: string}> = [];
   private starClusters: Array<{x: number, y: number, size: number, starCount: number, brightness: number}> = [];
   private galaxies: Array<{x: number, y: number, size: number, type: string, rotation: number, color: string}> = [];
-  private homeGalaxyPlane: {angle: number, width: number, density: number, color: string};
+  private homeGalaxyPlane: {angle: number, width: number, density: number, color: string, starCount: number};
   private distantStars: Array<{x: number, y: number, size: number, brightness: number, color: string, layer: number}> = [];
   
   constructor(seed: number = Math.random() * 1000000) {
     this.seed = seed;
     this.random = new SeededRandom(seed);
-    this.generateBackground();
-    this.generateHomeGalaxyPlane();
+    
+    // Initialize homeGalaxyPlane with default values
+    this.homeGalaxyPlane = {
+      angle: 0,
+      width: 500,
+      density: 0.8,
+      color: '#E6E6FA',
+      starCount: 2000
+    };
+    
+    this.generateEnhancedBackground();
+    this.generateMassiveHomeGalaxyPlane();
   }
 
-  private generateBackground(): void {
-    // Generate multiple layers of distant stars
-    this.generateDistantStars();
+  private generateEnhancedBackground(): void {
+    // Generate multiple layers of distant stars with much more variety
+    this.generateMultiLayerStars();
     
-    // Generate mini pixel galaxies
-    this.generateDistantGalaxies();
+    // Generate abundant mini pixel galaxies
+    this.generateAbundantMiniGalaxies();
     
-    // Generate star clusters
-    this.generateStarClusters();
+    // Generate more star clusters
+    this.generateEnhancedStarClusters();
     
-    // Generate nebulae
-    this.generateNebulae();
+    // Generate purple-red nebulae scattered throughout
+    this.generatePurpleRedNebulae();
   }
 
-  private generateDistantStars(): void {
+  private generateMultiLayerStars(): void {
     const layers = [
-      {count: 300, minSize: 1, maxSize: 1, brightness: 0.3, layer: 0},
-      {count: 200, minSize: 1, maxSize: 2, brightness: 0.5, layer: 1},
-      {count: 100, minSize: 1, maxSize: 2, brightness: 0.8, layer: 2},
-      {count: 50, minSize: 2, maxSize: 3, brightness: 1.0, layer: 3}
+      {count: 800, minSize: 1, maxSize: 1, brightness: 0.15, layer: 0}, // Far background dots
+      {count: 600, minSize: 1, maxSize: 1, brightness: 0.25, layer: 1}, // Mid-far background
+      {count: 400, minSize: 1, maxSize: 2, brightness: 0.4, layer: 2},  // Mid background
+      {count: 300, minSize: 1, maxSize: 2, brightness: 0.6, layer: 3},  // Closer background
+      {count: 200, minSize: 2, maxSize: 3, brightness: 0.8, layer: 4},  // Near background
+      {count: 100, minSize: 2, maxSize: 3, brightness: 1.0, layer: 5}   // Foreground stars
     ];
 
     layers.forEach(layerInfo => {
       for (let i = 0; i < layerInfo.count; i++) {
-        const x = this.random.next() * 4000 - 2000;
-        const y = this.random.next() * 4000 - 2000;
+        const x = this.random.next() * 8000 - 4000; // Much larger space
+        const y = this.random.next() * 8000 - 4000;
         const size = layerInfo.minSize + this.random.next() * (layerInfo.maxSize - layerInfo.minSize);
-        const brightness = layerInfo.brightness * (0.7 + this.random.next() * 0.3);
+        const brightness = layerInfo.brightness * (0.6 + this.random.next() * 0.4);
         
-        // Diverse star colors based on temperature
+        // More subtle, retro star colors without neon
         const starTypes = [
-          '#FFE4E1', // Cool red stars
-          '#FFE4B5', // Warm yellow stars  
-          '#FFFFFF', // Hot white stars
-          '#E6E6FA', // Very hot blue-white stars
-          '#87CEEB', // Hot blue stars
-          '#FFA500', // Orange giants
-          '#FFB6C1'  // Pink/red giants
+          '#F8F8FF', // Ghost white
+          '#E6E6FA', // Lavender
+          '#F0F8FF', // Alice blue
+          '#FFF8DC', // Cornsilk
+          '#F5F5DC', // Beige
+          '#FFFAF0', // Floral white
+          '#FAF0E6'  // Linen
         ];
         const color = starTypes[Math.floor(this.random.next() * starTypes.length)];
 
@@ -78,25 +90,27 @@ class SpaceBackground {
     });
   }
 
-  private generateDistantGalaxies(): void {
-    const galaxyCount = 8 + Math.floor(this.random.next() * 12);
+  private generateAbundantMiniGalaxies(): void {
+    const galaxyCount = 25 + Math.floor(this.random.next() * 35); // Many more galaxies
     
     for (let i = 0; i < galaxyCount; i++) {
-      const x = this.random.next() * 6000 - 3000;
-      const y = this.random.next() * 6000 - 3000;
-      const size = 40 + this.random.next() * 120;
+      const x = this.random.next() * 12000 - 6000; // Much larger distribution
+      const y = this.random.next() * 12000 - 6000;
+      const size = 30 + this.random.next() * 100; // Varied sizes
       const rotation = this.random.next() * Math.PI * 2;
       
-      const galaxyTypes = ['spiral', 'elliptical', 'irregular', 'barred'];
+      const galaxyTypes = ['spiral', 'elliptical', 'irregular', 'barred', 'dwarf'];
       const type = galaxyTypes[Math.floor(this.random.next() * galaxyTypes.length)];
       
+      // Subtle retro galaxy colors
       const galaxyColors = [
         '#E6E6FA', // Light purple
-        '#F0F8FF', // Alice blue
+        '#F0F8FF', // Alice blue  
         '#FFE4E1', // Misty rose
         '#F5F5DC', // Beige
         '#E0E6FF', // Light blue
-        '#FFE4B5'  // Moccasin
+        '#FFF8DC', // Cornsilk
+        '#FAF0E6'  // Linen
       ];
       const color = galaxyColors[Math.floor(this.random.next() * galaxyColors.length)];
 
@@ -106,15 +120,15 @@ class SpaceBackground {
     }
   }
 
-  private generateStarClusters(): void {
-    const clusterCount = 15 + Math.floor(this.random.next() * 20);
+  private generateEnhancedStarClusters(): void {
+    const clusterCount = 40 + Math.floor(this.random.next() * 60); // Many more clusters
     
     for (let i = 0; i < clusterCount; i++) {
-      const x = this.random.next() * 5000 - 2500;
-      const y = this.random.next() * 5000 - 2500;
-      const size = 20 + this.random.next() * 80;
-      const starCount = 10 + Math.floor(this.random.next() * 30);
-      const brightness = 0.4 + this.random.next() * 0.6;
+      const x = this.random.next() * 10000 - 5000; // Larger distribution
+      const y = this.random.next() * 10000 - 5000;
+      const size = 15 + this.random.next() * 120; // Varied cluster sizes
+      const starCount = 8 + Math.floor(this.random.next() * 50); // More stars per cluster
+      const brightness = 0.3 + this.random.next() * 0.7;
 
       this.starClusters.push({
         x, y, size, starCount, brightness
@@ -122,31 +136,32 @@ class SpaceBackground {
     }
   }
 
-  private generateNebulae(): void {
-    const nebulaCount = 6 + Math.floor(this.random.next() * 8);
+  private generatePurpleRedNebulae(): void {
+    const nebulaCount = 15 + Math.floor(this.random.next() * 25); // More nebulae
     
     for (let i = 0; i < nebulaCount; i++) {
-      const x = this.random.next() * 4000 - 2000;
-      const y = this.random.next() * 4000 - 2000;
-      const size = 100 + this.random.next() * 300;
-      const intensity = 0.2 + this.random.next() * 0.4;
+      const x = this.random.next() * 8000 - 4000;
+      const y = this.random.next() * 8000 - 4000;
+      const size = 80 + this.random.next() * 400; // Varied sizes
+      const intensity = 0.15 + this.random.next() * 0.35; // Subtle intensity
       
       const nebulaTypes = ['emission', 'reflection', 'dark', 'planetary'];
       const type = nebulaTypes[Math.floor(this.random.next() * nebulaTypes.length)];
       
-      let color = '#400040'; // Default dark nebula
+      // Purple-red nebula colors as requested, but subtle for retro feel
+      let color = '#2D1B3D'; // Default dark nebula
       switch (type) {
         case 'emission':
-          color = this.random.choose(['#FF6347', '#FF1493', '#FF4500', '#DC143C']); // Red/pink emission
+          color = this.random.choose(['#4A2C4A', '#3D1A3D', '#5D2E5D', '#4D1F4D']); // Purple-red emission
           break;
         case 'reflection':
-          color = this.random.choose(['#4169E1', '#1E90FF', '#87CEEB', '#6495ED']); // Blue reflection
+          color = this.random.choose(['#3A2A5A', '#2E1E4E', '#4A3A6A', '#3D2D5D']); // Purple-blue reflection  
           break;
         case 'planetary':
-          color = this.random.choose(['#00FF7F', '#32CD32', '#ADFF2F', '#7FFF00']); // Green planetary
+          color = this.random.choose(['#4A2C2C', '#3D1F1F', '#5D2E2E', '#4D2121']); // Red planetary
           break;
         case 'dark':
-          color = this.random.choose(['#2F2F2F', '#404040', '#1C1C1C', '#191970']); // Dark nebula
+          color = this.random.choose(['#2F1F2F', '#1F1F2F', '#2A1A2A', '#251525']); // Dark nebula
           break;
       }
 
@@ -156,12 +171,13 @@ class SpaceBackground {
     }
   }
 
-  private generateHomeGalaxyPlane(): void {
+  private generateMassiveHomeGalaxyPlane(): void {
     this.homeGalaxyPlane = {
       angle: this.random.next() * Math.PI * 2,
-      width: 200 + this.random.next() * 300,
-      density: 0.6 + this.random.next() * 0.4,
-      color: '#E6E6FA'
+      width: 500 + this.random.next() * 800, // Much wider and more impressive
+      density: 0.8 + this.random.next() * 0.2, // Higher density
+      color: '#E6E6FA',
+      starCount: 2000 + Math.floor(this.random.next() * 3000) // Many more stars
     };
   }
 
@@ -170,305 +186,278 @@ class SpaceBackground {
     const width = renderer.getWidth();
     const height = renderer.getHeight();
 
-    // Enhanced dark space gradient background
-    const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, '#050510');
-    gradient.addColorStop(0.3, '#0a0a15');
-    gradient.addColorStop(0.7, '#0f0f1a');
-    gradient.addColorStop(1, '#181c20');
-    ctx.fillStyle = gradient;
+    // Pure black background base
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, width, height);
 
     // Turn off smoothing for pixel art effect
     ctx.imageSmoothingEnabled = false;
 
-    // Render home galaxy plane
-    this.renderHomeGalaxyPlane(ctx, camera, width, height);
+    // Render massive home galaxy plane first (furthest back)
+    this.renderMassiveHomeGalaxyPlane(ctx, camera, width, height);
 
-    // Render distant galaxies
-    this.renderDistantGalaxies(ctx, camera);
+    // Render mini pixel galaxies
+    this.renderMiniPixelGalaxies(ctx, camera);
 
-    // Render nebulae
-    this.renderNebulae(ctx, camera);
+    // Render purple-red nebulae
+    this.renderPurpleRedNebulae(ctx, camera);
 
-    // Render star clusters
-    this.renderStarClusters(ctx, camera);
+    // Render enhanced star clusters
+    this.renderEnhancedStarClusters(ctx, camera);
 
-    // Render distant stars in layers (parallax effect)
-    this.renderDistantStars(ctx, camera);
+    // Render multiple layers of pixel stars with parallax
+    this.renderMultiLayerPixelStars(ctx, camera);
 
     // Turn smoothing back on
     ctx.imageSmoothingEnabled = true;
   }
 
-  private renderHomeGalaxyPlane(ctx: CanvasRenderingContext2D, camera: ICamera, width: number, height: number): void {
-    const centerX = width / 2;
-    const centerY = height / 2;
+  private renderMassiveHomeGalaxyPlane(ctx: CanvasRenderingContext2D, camera: ICamera, width: number, height: number): void {
+    const plane = this.homeGalaxyPlane;
+    
+    // Calculate galaxy plane position with parallax
+    const parallaxFactor = 0.1; // Very slow movement for distant galaxy
+    const planeOffsetX = -camera.x * parallaxFactor;
+    const planeOffsetY = -camera.y * parallaxFactor;
     
     ctx.save();
-    ctx.translate(centerX, centerY);
-    ctx.rotate(this.homeGalaxyPlane.angle);
+    ctx.translate(width / 2 + planeOffsetX, height / 2 + planeOffsetY);
+    ctx.rotate(plane.angle);
     
-    // Create galactic plane with star density
-    const planeHeight = 40;
-    const planeWidth = this.homeGalaxyPlane.width;
+    // Create gradient for galaxy plane
+    const gradient = ctx.createLinearGradient(-plane.width, 0, plane.width, 0);
+    gradient.addColorStop(0, 'rgba(230, 230, 250, 0)');
+    gradient.addColorStop(0.2, `rgba(230, 230, 250, ${plane.density * 0.1})`);
+    gradient.addColorStop(0.5, `rgba(230, 230, 250, ${plane.density * 0.2})`);
+    gradient.addColorStop(0.8, `rgba(230, 230, 250, ${plane.density * 0.1})`);
+    gradient.addColorStop(1, 'rgba(230, 230, 250, 0)');
     
-    for (let x = -planeWidth; x < planeWidth; x += 2) {
-      for (let y = -planeHeight; y < planeHeight; y += 2) {
-        const density = Math.exp(-Math.abs(y) / 15) * this.homeGalaxyPlane.density;
-        if (this.random.next() < density * 0.3) {
-          const alpha = density * (0.5 + this.random.next() * 0.5);
-          ctx.fillStyle = `rgba(230, 230, 250, ${alpha})`;
-          ctx.fillRect(x, y, 2, 2);
-        }
-      }
-    }
-    
-    // Galactic center bulge
-    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 80);
-    gradient.addColorStop(0, 'rgba(255, 255, 200, 0.6)');
-    gradient.addColorStop(0.5, 'rgba(255, 230, 180, 0.3)');
-    gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
-    
+    // Render the galaxy plane band
     ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 80, 20, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillRect(-plane.width, -40, plane.width * 2, 80);
+    
+    // Render individual stars in the galaxy plane
+    const random = new SeededRandom(this.seed + 9999);
+    for (let i = 0; i < plane.starCount; i++) {
+      const starX = (random.next() - 0.5) * plane.width * 2;
+      const starY = (random.next() - 0.5) * 60; // Concentrated in plane
+      const starSize = random.next() < 0.7 ? 1 : 2; // Mostly single pixels
+      const brightness = 0.3 + random.next() * 0.5;
+      
+      ctx.fillStyle = `rgba(255, 255, 255, ${brightness * plane.density})`;
+      ctx.fillRect(starX, starY, starSize, starSize);
+    }
     
     ctx.restore();
   }
 
-  private renderDistantGalaxies(ctx: CanvasRenderingContext2D, camera: ICamera): void {
+  private renderMiniPixelGalaxies(ctx: CanvasRenderingContext2D, camera: ICamera): void {
+    const parallaxFactor = 0.2;
+    
     this.galaxies.forEach(galaxy => {
-      const screenPos = this.getParallaxPosition(galaxy, camera, 0.1);
+      const screenX = galaxy.x - camera.x * parallaxFactor;
+      const screenY = galaxy.y - camera.y * parallaxFactor;
       
-      if (this.isVisible(screenPos, galaxy.size, ctx.canvas.width, ctx.canvas.height)) {
-        this.renderPixelGalaxy(ctx, screenPos, galaxy);
+      // Only render if roughly visible
+      if (screenX > -200 && screenX < ctx.canvas.width + 200 && 
+          screenY > -200 && screenY < ctx.canvas.height + 200) {
+        
+        ctx.save();
+        ctx.translate(screenX, screenY);
+        ctx.rotate(galaxy.rotation);
+        
+        // Draw mini pixel galaxy based on type
+        const random = new SeededRandom(this.seed + galaxy.x + galaxy.y);
+        
+        switch (galaxy.type) {
+          case 'spiral':
+            this.renderMiniSpiralGalaxy(ctx, galaxy, random);
+            break;
+          case 'elliptical':
+            this.renderMiniEllipticalGalaxy(ctx, galaxy, random);
+            break;
+          case 'irregular':
+            this.renderMiniIrregularGalaxy(ctx, galaxy, random);
+            break;
+          case 'barred':
+            this.renderMiniBarredGalaxy(ctx, galaxy, random);
+            break;
+          case 'dwarf':
+            this.renderMiniDwarfGalaxy(ctx, galaxy, random);
+            break;
+        }
+        
+        ctx.restore();
       }
     });
   }
 
-  private renderPixelGalaxy(ctx: CanvasRenderingContext2D, pos: Vector2D, galaxy: any): void {
-    ctx.save();
-    ctx.translate(pos.x, pos.y);
-    ctx.rotate(galaxy.rotation);
+  private renderMiniSpiralGalaxy(ctx: CanvasRenderingContext2D, galaxy: any, random: SeededRandom): void {
+    const pixelCount = Math.floor(galaxy.size / 4);
     
-    const size = galaxy.size;
-    const pixelSize = 2;
-    
-    switch (galaxy.type) {
-      case 'spiral':
-        this.renderSpiralGalaxy(ctx, size, galaxy.color, pixelSize);
-        break;
-      case 'elliptical':
-        this.renderEllipticalGalaxy(ctx, size, galaxy.color, pixelSize);
-        break;
-      case 'irregular':
-        this.renderIrregularGalaxy(ctx, size, galaxy.color, pixelSize);
-        break;
-      case 'barred':
-        this.renderBarredGalaxy(ctx, size, galaxy.color, pixelSize);
-        break;
-    }
-    
-    ctx.restore();
-  }
-
-  private renderSpiralGalaxy(ctx: CanvasRenderingContext2D, size: number, color: string, pixelSize: number): void {
-    const arms = 2;
-    const coreSize = size * 0.3;
-    
-    // Galaxy core
-    for (let x = -coreSize; x < coreSize; x += pixelSize) {
-      for (let y = -coreSize; y < coreSize; y += pixelSize) {
-        const dist = Math.sqrt(x*x + y*y);
-        if (dist < coreSize) {
-          const density = Math.exp(-dist / (coreSize * 0.5));
-          if (this.random.next() < density * 0.8) {
-            ctx.fillStyle = `rgba(255, 255, 200, ${density * 0.8})`;
-            ctx.fillRect(x, y, pixelSize, pixelSize);
-          }
-        }
-      }
-    }
-    
-    // Spiral arms
-    for (let arm = 0; arm < arms; arm++) {
-      const armAngle = (arm / arms) * Math.PI * 2;
-      
-      for (let r = coreSize; r < size; r += 4) {
-        const angle = armAngle + r * 0.02; // Spiral tightness
-        const x = Math.cos(angle) * r;
-        const y = Math.sin(angle) * r;
+    // Draw spiral arms
+    for (let arm = 0; arm < 2; arm++) {
+      for (let i = 0; i < pixelCount; i++) {
+        const angle = (arm * Math.PI) + (i / pixelCount) * Math.PI * 2;
+        const radius = (i / pixelCount) * galaxy.size / 2;
+        const x = Math.cos(angle) * radius + (random.next() - 0.5) * 4;
+        const y = Math.sin(angle) * radius + (random.next() - 0.5) * 4;
         
-        // Add arm width
-        for (let w = -8; w <= 8; w += pixelSize) {
-          const armX = x + Math.cos(angle + Math.PI/2) * w;
-          const armY = y + Math.sin(angle + Math.PI/2) * w;
-          
-          const density = Math.exp(-Math.abs(w) / 6) * Math.exp(-r / size);
-          if (this.random.next() < density * 0.4) {
-            const alpha = density * 0.6;
-            ctx.fillStyle = color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
-            ctx.fillRect(armX, armY, pixelSize, pixelSize);
-          }
+        if (random.next() < 0.6) {
+          ctx.fillStyle = galaxy.color.replace(')', ', 0.6)').replace('rgb', 'rgba');
+          ctx.fillRect(x - 1, y - 1, 1, 1);
         }
       }
     }
+    
+    // Central bulge
+    ctx.fillStyle = galaxy.color.replace(')', ', 0.8)').replace('rgb', 'rgba');
+    ctx.fillRect(-2, -2, 4, 4);
   }
 
-  private renderEllipticalGalaxy(ctx: CanvasRenderingContext2D, size: number, color: string, pixelSize: number): void {
-    const aAxis = size;
-    const bAxis = size * 0.6;
+  private renderMiniEllipticalGalaxy(ctx: CanvasRenderingContext2D, galaxy: any, random: SeededRandom): void {
+    const pixelCount = Math.floor(galaxy.size / 3);
     
-    for (let x = -aAxis; x < aAxis; x += pixelSize) {
-      for (let y = -bAxis; y < bAxis; y += pixelSize) {
-        const ellipseDist = (x*x)/(aAxis*aAxis) + (y*y)/(bAxis*bAxis);
-        if (ellipseDist <= 1) {
-          const density = Math.exp(-ellipseDist * 2);
-          if (this.random.next() < density * 0.6) {
-            const alpha = density * 0.7;
-            ctx.fillStyle = color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
-            ctx.fillRect(x, y, pixelSize, pixelSize);
-          }
-        }
-      }
-    }
-  }
-
-  private renderIrregularGalaxy(ctx: CanvasRenderingContext2D, size: number, color: string, pixelSize: number): void {
-    const clumps = 3 + Math.floor(this.random.next() * 4);
-    
-    for (let clump = 0; clump < clumps; clump++) {
-      const clumpX = (this.random.next() - 0.5) * size;
-      const clumpY = (this.random.next() - 0.5) * size;
-      const clumpSize = size * (0.2 + this.random.next() * 0.3);
+    for (let i = 0; i < pixelCount; i++) {
+      const angle = random.next() * Math.PI * 2;
+      const radius = random.next() * galaxy.size / 2;
+      const ellipticity = 0.6;
       
-      for (let x = clumpX - clumpSize; x < clumpX + clumpSize; x += pixelSize) {
-        for (let y = clumpY - clumpSize; y < clumpY + clumpSize; y += pixelSize) {
-          const dist = Math.sqrt((x-clumpX)**2 + (y-clumpY)**2);
-          if (dist < clumpSize) {
-            const density = Math.exp(-dist / (clumpSize * 0.5));
-            if (this.random.next() < density * 0.5) {
-              const alpha = density * 0.6;
-              ctx.fillStyle = color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
-              ctx.fillRect(x, y, pixelSize, pixelSize);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  private renderBarredGalaxy(ctx: CanvasRenderingContext2D, size: number, color: string, pixelSize: number): void {
-    // Central bar
-    const barLength = size * 0.6;
-    const barWidth = size * 0.15;
-    
-    for (let x = -barLength; x < barLength; x += pixelSize) {
-      for (let y = -barWidth; y < barWidth; y += pixelSize) {
-        const density = Math.exp(-Math.abs(y) / (barWidth * 0.5)) * Math.exp(-Math.abs(x) / (barLength * 0.7));
-        if (this.random.next() < density * 0.7) {
-          const alpha = density * 0.8;
-          ctx.fillStyle = `rgba(255, 255, 200, ${alpha})`;
-          ctx.fillRect(x, y, pixelSize, pixelSize);
-        }
-      }
-    }
-    
-    // Spiral arms from bar ends
-    this.renderSpiralGalaxy(ctx, size, color, pixelSize);
-  }
-
-  private renderStarClusters(ctx: CanvasRenderingContext2D, camera: ICamera): void {
-    this.starClusters.forEach(cluster => {
-      const screenPos = this.getParallaxPosition(cluster, camera, 0.3);
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius * ellipticity;
       
-      if (this.isVisible(screenPos, cluster.size, ctx.canvas.width, ctx.canvas.height)) {
-        // Cluster center glow
-        const gradient = ctx.createRadialGradient(screenPos.x, screenPos.y, 0, screenPos.x, screenPos.y, cluster.size);
-        gradient.addColorStop(0, `rgba(255, 255, 255, ${cluster.brightness * 0.3})`);
-        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(screenPos.x, screenPos.y, cluster.size, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Individual stars in cluster
-        for (let i = 0; i < cluster.starCount; i++) {
-          const angle = this.random.next() * Math.PI * 2;
-          const dist = this.random.next() * cluster.size * 0.8;
-          const x = screenPos.x + Math.cos(angle) * dist;
-          const y = screenPos.y + Math.sin(angle) * dist;
-          
-          const starBrightness = cluster.brightness * (0.6 + this.random.next() * 0.4);
-          ctx.fillStyle = `rgba(255, 255, 255, ${starBrightness})`;
-          ctx.fillRect(x - 1, y - 1, 2, 2);
-        }
-      }
-    });
+      const alpha = Math.max(0.1, 1 - (radius / (galaxy.size / 2)));
+      ctx.fillStyle = galaxy.color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
+      ctx.fillRect(x - 1, y - 1, 1, 1);
+    }
   }
 
-  private renderNebulae(ctx: CanvasRenderingContext2D, camera: ICamera): void {
+  private renderMiniIrregularGalaxy(ctx: CanvasRenderingContext2D, galaxy: any, random: SeededRandom): void {
+    const pixelCount = Math.floor(galaxy.size / 5);
+    
+    for (let i = 0; i < pixelCount; i++) {
+      const x = (random.next() - 0.5) * galaxy.size;
+      const y = (random.next() - 0.5) * galaxy.size;
+      
+      if (random.next() < 0.4) {
+        ctx.fillStyle = galaxy.color.replace(')', ', 0.5)').replace('rgb', 'rgba');
+        ctx.fillRect(x - 1, y - 1, 1, 1);
+      }
+    }
+  }
+
+  private renderMiniBarredGalaxy(ctx: CanvasRenderingContext2D, galaxy: any, random: SeededRandom): void {
+    // Draw central bar
+    ctx.fillStyle = galaxy.color.replace(')', ', 0.7)').replace('rgb', 'rgba');
+    ctx.fillRect(-galaxy.size / 4, -2, galaxy.size / 2, 4);
+    
+    // Draw spiral arms from bar ends
+    this.renderMiniSpiralGalaxy(ctx, galaxy, random);
+  }
+
+  private renderMiniDwarfGalaxy(ctx: CanvasRenderingContext2D, galaxy: any, random: SeededRandom): void {
+    const pixelCount = Math.floor(galaxy.size / 8);
+    
+    for (let i = 0; i < pixelCount; i++) {
+      const x = (random.next() - 0.5) * galaxy.size * 0.5;
+      const y = (random.next() - 0.5) * galaxy.size * 0.5;
+      
+      ctx.fillStyle = galaxy.color.replace(')', ', 0.4)').replace('rgb', 'rgba');
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+
+  private renderPurpleRedNebulae(ctx: CanvasRenderingContext2D, camera: ICamera): void {
+    const parallaxFactor = 0.3;
+    
     this.nebulae.forEach(nebula => {
-      const screenPos = this.getParallaxPosition(nebula, camera, 0.05);
+      const screenX = nebula.x - camera.x * parallaxFactor;
+      const screenY = nebula.y - camera.y * parallaxFactor;
       
-      if (this.isVisible(screenPos, nebula.size, ctx.canvas.width, ctx.canvas.height)) {
+      if (screenX > -nebula.size && screenX < ctx.canvas.width + nebula.size && 
+          screenY > -nebula.size && screenY < ctx.canvas.height + nebula.size) {
+        
+        // Create subtle nebula gradient
         const gradient = ctx.createRadialGradient(
-          screenPos.x, screenPos.y, 0,
-          screenPos.x, screenPos.y, nebula.size
+          screenX, screenY, 0,
+          screenX, screenY, nebula.size
         );
         
-        const color = nebula.color;
-        if (nebula.type === 'dark') {
-          gradient.addColorStop(0, `rgba(0, 0, 0, ${nebula.intensity * 0.8})`);
-          gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        } else {
-          gradient.addColorStop(0, color.replace(')', `, ${nebula.intensity})`).replace('rgb', 'rgba'));
-          gradient.addColorStop(0.7, color.replace(')', `, ${nebula.intensity * 0.3})`).replace('rgb', 'rgba'));
-          gradient.addColorStop(1, color.replace(')', ', 0)').replace('rgb', 'rgba'));
-        }
+        gradient.addColorStop(0, nebula.color.replace(')', `, ${nebula.intensity})`).replace('rgb', 'rgba'));
+        gradient.addColorStop(0.6, nebula.color.replace(')', `, ${nebula.intensity * 0.5})`).replace('rgb', 'rgba'));
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(screenPos.x, screenPos.y, nebula.size, 0, Math.PI * 2);
+        ctx.arc(screenX, screenY, nebula.size, 0, Math.PI * 2);
         ctx.fill();
       }
     });
   }
 
-  private renderDistantStars(ctx: CanvasRenderingContext2D, camera: ICamera): void {
-    this.distantStars.forEach(star => {
-      const parallaxFactor = 0.1 + star.layer * 0.1; // Different parallax for each layer
-      const screenPos = this.getParallaxPosition(star, camera, parallaxFactor);
+  private renderEnhancedStarClusters(ctx: CanvasRenderingContext2D, camera: ICamera): void {
+    const parallaxFactor = 0.4;
+    
+    this.starClusters.forEach(cluster => {
+      const screenX = cluster.x - camera.x * parallaxFactor;
+      const screenY = cluster.y - camera.y * parallaxFactor;
       
-      if (this.isVisible(screenPos, star.size, ctx.canvas.width, ctx.canvas.height)) {
-        const twinkle = 0.7 + 0.3 * Math.sin(Date.now() * 0.001 + star.x * 0.01);
-        const alpha = star.brightness * twinkle;
+      if (screenX > -cluster.size && screenX < ctx.canvas.width + cluster.size && 
+          screenY > -cluster.size && screenY < ctx.canvas.height + cluster.size) {
         
-        ctx.fillStyle = star.color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
-        ctx.fillRect(screenPos.x - star.size/2, screenPos.y - star.size/2, star.size, star.size);
+        const random = new SeededRandom(this.seed + cluster.x + cluster.y);
         
-        // Add cross pattern for brighter stars
-        if (star.brightness > 0.7 && star.size >= 2) {
-          ctx.fillRect(screenPos.x - star.size - 1, screenPos.y, star.size * 2 + 2, 1);
-          ctx.fillRect(screenPos.x, screenPos.y - star.size - 1, 1, star.size * 2 + 2);
+        for (let i = 0; i < cluster.starCount; i++) {
+          const angle = random.next() * Math.PI * 2;
+          const radius = random.next() * cluster.size / 2;
+          const starX = screenX + Math.cos(angle) * radius;
+          const starY = screenY + Math.sin(angle) * radius;
+          
+          const starBrightness = cluster.brightness * (0.5 + random.next() * 0.5);
+          const starSize = random.next() < 0.8 ? 1 : 2;
+          
+          ctx.fillStyle = `rgba(255, 255, 255, ${starBrightness})`;
+          ctx.fillRect(starX, starY, starSize, starSize);
         }
       }
     });
   }
 
-  private getParallaxPosition(object: any, camera: ICamera, parallaxFactor: number): Vector2D {
-    return {
-      x: object.x - camera.x * parallaxFactor,
-      y: object.y - camera.y * parallaxFactor
-    };
-  }
-
-  private isVisible(pos: Vector2D, size: number, width: number, height: number): boolean {
-    return pos.x + size > 0 && pos.x - size < width && 
-           pos.y + size > 0 && pos.y - size < height;
+  private renderMultiLayerPixelStars(ctx: CanvasRenderingContext2D, camera: ICamera): void {
+    // Render stars in layers with different parallax factors
+    const layerParallax = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
+    
+    for (let layer = 0; layer < 6; layer++) {
+      const parallaxFactor = layerParallax[layer];
+      
+      this.distantStars.forEach(star => {
+        if (star.layer !== layer) return;
+        
+        const screenX = star.x - camera.x * parallaxFactor;
+        const screenY = star.y - camera.y * parallaxFactor;
+        
+        // Wrap around for infinite scrolling effect
+        let finalX = screenX;
+        let finalY = screenY;
+        
+        if (screenX < -100) finalX += ctx.canvas.width + 200;
+        if (screenX > ctx.canvas.width + 100) finalX -= ctx.canvas.width + 200;
+        if (screenY < -100) finalY += ctx.canvas.height + 200;
+        if (screenY > ctx.canvas.height + 100) finalY -= ctx.canvas.height + 200;
+        
+        if (finalX >= 0 && finalX <= ctx.canvas.width && 
+            finalY >= 0 && finalY <= ctx.canvas.height) {
+          
+          // Apply subtle twinkle effect
+          const time = Date.now() * 0.001;
+          const twinkle = 0.8 + Math.sin(time + star.x * 0.01 + star.y * 0.01) * 0.2;
+          const finalBrightness = star.brightness * twinkle;
+          
+          ctx.fillStyle = star.color.replace(')', `, ${finalBrightness})`).replace('rgb', 'rgba');
+          ctx.fillRect(finalX, finalY, star.size, star.size);
+        }
+      });
+    }
   }
 }
 
@@ -499,10 +488,10 @@ export class StarSystemScene implements IScene {
     this.celestialBodies.push(centralStar);
 
     const planetCount = 3 + Math.floor(random.next() * 5);
-    let currentDistance = 800; // Much larger starting distance
+    let currentDistance = 1500; // Significantly larger starting distance (was 800)
 
     for (let i = 0; i < planetCount; i++) {
-      currentDistance += 400 + random.next() * 800; // Much larger spacing between planets
+      currentDistance += 800 + random.next() * 1600; // Much larger spacing between planets (was 400 + 800)
       
       const planetRadius = 48 + random.next() * 90; // Much larger planets
       const planetMass = planetRadius * 3;
@@ -530,7 +519,7 @@ export class StarSystemScene implements IScene {
       if (planetRadius > 30 && random.next() < 0.7) {
         const moonCount = 1 + Math.floor(random.next() * 3);
         for (let j = 0; j < moonCount; j++) {
-          const moonDistance = planetRadius * 8 + j * 120; // Much larger moon orbit distance
+          const moonDistance = planetRadius * 12 + j * 180; // Even larger moon orbit distance (was 8 + 120)
           const moonRadius = 18 + random.next() * 32; // Much larger moons
           const moonMass = moonRadius * 2;
           const moonColor = this.generateMoonColor(random);
@@ -549,12 +538,12 @@ export class StarSystemScene implements IScene {
 
     // Generate asteroid belt
     if (random.next() < 0.8) {
-      const beltDistance = currentDistance + 600 + random.next() * 800; // Much larger asteroid belt distance
+      const beltDistance = currentDistance + 1200 + random.next() * 1600; // Much larger asteroid belt distance (was 600 + 800)
       const asteroidCount = 20 + Math.floor(random.next() * 35);
       
       for (let i = 0; i < asteroidCount; i++) {
         const angle = random.next() * Math.PI * 2;
-        const distance = beltDistance + (random.next() - 0.5) * 400; // Larger asteroid belt spread
+        const distance = beltDistance + (random.next() - 0.5) * 800; // Larger asteroid belt spread (was 400)
         const asteroidRadius = 12 + random.next() * 24; // Much larger asteroids
         const asteroidMass = asteroidRadius;
         const asteroidEccentricity = Math.random() * 0.4; // More eccentric asteroid orbits

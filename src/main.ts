@@ -1810,20 +1810,20 @@ class PausedState implements IGameState {
 
   private quickSave(game: any): void {
     try {
-      // Find next available slot or use slot 1
-      const saveList = SaveSystem.getSaveList();
-      const nextSlot = saveList.length > 0 ? saveList.length + 1 : 1;
+      // Use the correct SaveSystem method signature
+      const success = SaveSystem.saveGame(game, 'quicksave');
       
-      const saveData = SaveSystem.createSaveData(game);
-      SaveSystem.saveGame(nextSlot, saveData);
-      
-      // Show save confirmation briefly
-      this.showMessage('HRA ULOŽENA', '#52de44');
-      
-      console.log(`Game saved to slot ${nextSlot}`);
+      if (success) {
+        // Show save confirmation briefly
+        this.showMessage('HRA ULOŽENA', '#52de44');
+        console.log('Game saved successfully');
+      } else {
+        this.showMessage('CHYBA ULOŽENÍ', '#d43d3d');
+        console.error('Failed to save game');
+      }
     } catch (error) {
       console.error('Failed to save game:', error);
-      this.showMessage('CHYBA PĜI UKLÁDÁNÍ', '#d43d3d');
+      this.showMessage('CHYBA ULOŽENÍ', '#d43d3d');
     }
   }
 
@@ -2890,6 +2890,17 @@ export class GameEngine implements IGameEngine {
   public effectSystem: EffectSystem;
   public gameTime: number = 0;
   public lastFrameTime: number = 0;
+  
+  // Performance optimization properties
+  private targetFPS: number = 60;
+  private frameInterval: number = 1000 / this.targetFPS;
+  private lastRenderTime: number = 0;
+  private frameCount: number = 0;
+  private fpsCounter: number = 0;
+  private fpsUpdateTimer: number = 0;
+  private maxDeltaTime: number = 1/30; // Cap delta time to prevent large jumps
+  private isRunning: boolean = false;
+  private animationFrameId: number = 0;
 
   constructor(canvasId: string) {
     this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -2910,166 +2921,235 @@ export class GameEngine implements IGameEngine {
 
     console.log('Game engine initialized');
     
-    // Initialize touch controls from settings
-    const settings = SaveSystem.loadSettings();
-    if (settings.controls && this.inputManager.isMobile) {
-      this.inputManager.setTouchControlsEnabled(settings.controls.touchControlsEnabled);
-    }
-    
-    // Start auto-save system
-    AutoSaveManager.start(this);
-    
-    this.startGameLoop();
+    // Set up performance monitoring
+    this.setupPerformanceMonitoring();
+  }
+
+  private setupPerformanceMonitoring(): void {
+    // Monitor FPS
+    setInterval(() => {
+      this.fpsCounter = this.frameCount;
+      this.frameCount = 0;
+      
+      // Log performance warnings
+      if (this.fpsCounter < 45) {
+        console.warn(`Low FPS detected: ${this.fpsCounter}`);
+      }
+    }, 1000);
   }
 
   public startGameLoop(): void {
-    const gameLoop = (currentTime: number) => {
-      // Fix: Initialize lastFrameTime if it's the first frame
-      if (this.lastFrameTime === 0) {
-        this.lastFrameTime = currentTime;
-      }
-      
-      const deltaTime = Math.min((currentTime - this.lastFrameTime) / 1000, 0.016);
-      this.lastFrameTime = currentTime;
-      this.gameTime = currentTime / 1000;
-
-      this.update(deltaTime);
-      this.render();
-      
-      requestAnimationFrame(gameLoop);
-    };
-
-    console.log('Starting game loop');
-    requestAnimationFrame(gameLoop);
+    if (this.isRunning) return;
+    
+    this.isRunning = true;
+    this.lastFrameTime = performance.now();
+    this.lastRenderTime = this.lastFrameTime;
+    
+    console.log('Game loop started');
+    this.gameLoop();
   }
 
-  public update(deltaTime: number): void {
-    this.inputManager.update();
-    this.stateManager.update(deltaTime);
-    this.stateManager.handleInput(this.inputManager);
+  public stopGameLoop(): void {
+    this.isRunning = false;
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = 0;
+    }
+    console.log('Game loop stopped');
+  }
 
-    if (this.stateManager.getCurrentState() === GameState.PLAYING) {
-      this.player.update(deltaTime, this);
-      this.sceneManager.update(deltaTime, this);
-      this.questSystem.updateTimers(deltaTime);
-      this.effectSystem.update(deltaTime);
+  private gameLoop = (): void => {
+    if (!this.isRunning) return;
+
+    const currentTime = performance.now();
+    let deltaTime = (currentTime - this.lastFrameTime) / 1000;
+    
+    // Clamp delta time to prevent large jumps during lag spikes
+    deltaTime = Math.min(deltaTime, this.maxDeltaTime);
+    
+    // Update game logic
+    this.update(deltaTime);
+    
+    // Frame limiting for consistent performance
+    const timeSinceLastRender = currentTime - this.lastRenderTime;
+    if (timeSinceLastRender >= this.frameInterval) {
+      this.render();
+      this.lastRenderTime = currentTime;
+      this.frameCount++;
+    }
+    
+    this.lastFrameTime = currentTime;
+    this.gameTime += deltaTime;
+    
+    // Schedule next frame
+    this.animationFrameId = requestAnimationFrame(this.gameLoop);
+  };
+
+  public update(deltaTime: number): void {
+    // Update input state
+    this.inputManager.update();
+    
+    // Update current state
+    this.stateManager.update(deltaTime);
+    
+    // Update game systems only during playing state
+    if (this.stateManager.currentState === GameState.PLAYING) {
+      // Update player with optimized input handling
+      this.updatePlayerOptimized(deltaTime);
       
-      // Update quest progress based on player actions
-      this.questSystem.updateProgress('survive', undefined, deltaTime);
+      // Update current scene with performance checks
+      const scene = this.sceneManager.getCurrentScene();
+      if (scene) {
+        scene.update(deltaTime, this);
+      }
       
+      // Update camera to follow player smoothly
       this.camera.followTarget(
         this.player.position, 
         deltaTime, 
         this.renderer.getWidth(), 
         this.renderer.getHeight()
       );
+      
+      // Update quest system timers
+      this.questSystem.updateTimers(deltaTime);
+      
+      // Update visual effects
+      this.effectSystem.update(deltaTime);
+      
+      // Update status bar
       this.statusBar.update(this.player);
     }
   }
 
-  public render(): void {
-    this.renderer.clear(gameConfig.colors.bgPrimary);
+  private updatePlayerOptimized(deltaTime: number): void {
+    // Batch input checks for better performance
+    const inputState = {
+      thrust: this.inputManager.isKeyPressed('ArrowUp') || this.inputManager.isKeyPressed('KeyW'),
+      turnLeft: this.inputManager.isKeyPressed('ArrowLeft') || this.inputManager.isKeyPressed('KeyA'),
+      turnRight: this.inputManager.isKeyPressed('ArrowRight') || this.inputManager.isKeyPressed('KeyD'),
+      brake: this.inputManager.isKeyPressed('ArrowDown') || this.inputManager.isKeyPressed('KeyS'),
+      fire: this.inputManager.isKeyPressed('Space')
+    };
+    
+    this.player.update(deltaTime, inputState);
+  }
 
-    if (this.stateManager.getCurrentState() === GameState.PLAYING) {
-      this.sceneManager.render(this.renderer, this.camera);
-      this.player.render(this.renderer, this.camera);
+  public render(): void {
+    // Clear previous frame efficiently
+    this.renderer.clear('#000000');
+    
+    if (this.stateManager.currentState === GameState.PLAYING) {
+      // Render current scene with frustum culling
+      const scene = this.sceneManager.getCurrentScene();
+      if (scene) {
+        scene.render(this.renderer, this.camera);
+      }
+      
+      // Render player only if visible
+      if (this.isPlayerVisible()) {
+        this.player.render(this.renderer, this.camera);
+      }
       
       // Render visual effects
       this.effectSystem.render(this.renderer, this.camera);
       
+      // Render UI elements
       this.renderHUD();
       this.statusBar.render(this.player);
       
       // Render touch controls for mobile
       this.inputManager.renderTouchControls(this.renderer);
     } else {
+      // Render other game states
       this.stateManager.render(this.renderer);
     }
+  }
+
+  private isPlayerVisible(): boolean {
+    const screenWidth = this.renderer.getWidth();
+    const screenHeight = this.renderer.getHeight();
+    const screenPos = this.camera.worldToScreen(this.player.position.x, this.player.position.y);
+    const margin = 100; // Render slightly off-screen
+    
+    return (
+      screenPos.x > -margin && 
+      screenPos.x < screenWidth + margin && 
+      screenPos.y > -margin && 
+      screenPos.y < screenHeight + margin
+    );
   }
 
   public renderHUD(): void {
     const width = this.renderer.getWidth();
     const height = this.renderer.getHeight();
 
-    // Crosshair
-    this.renderer.drawLine(width/2 - 8, height/2, width/2 + 8, height/2, 'rgba(96, 96, 96, 0.6)', 1);
-    this.renderer.drawLine(width/2, height/2 - 8, width/2, height/2 + 8, 'rgba(96, 96, 96, 0.6)', 1);
+    // Optimized crosshair rendering
+    const ctx = this.renderer.getContext();
+    ctx.strokeStyle = 'rgba(96, 96, 96, 0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(width/2 - 8, height/2);
+    ctx.lineTo(width/2 + 8, height/2);
+    ctx.moveTo(width/2, height/2 - 8);
+    ctx.lineTo(width/2, height/2 + 8);
+    ctx.stroke();
 
-    // Coordinates and status
-    this.renderer.drawText(`X: ${Math.round(this.player.position.x)} AU`, 10, 25, '#a2aab2', '10px "Big Apple 3PM", monospace');
-    this.renderer.drawText(`Y: ${Math.round(this.player.position.y)} AU`, 10, 40, '#a2aab2', '10px "Big Apple 3PM", monospace');
-
+    // Cache frequently used values
+    const posX = Math.round(this.player.position.x);
+    const posY = Math.round(this.player.position.y);
     const speed = Math.sqrt(this.player.velocity.x ** 2 + this.player.velocity.y ** 2);
-    this.renderer.drawText(`V: ${(speed * 100).toFixed(1)} m/s`, 10, 55, '#a2aab2', '10px "Big Apple 3PM", monospace');
-
-    // Current scene info
-    this.renderer.drawText(`SCENE: STAR SYSTEM`, 10, 70, '#a2aab2', '10px "Big Apple 3PM", monospace');
-
-    // Active quests
-    this.renderActiveQuests();
-
-    // Warp charge indicator
-    const warpPercent = Math.round((this.player.warpCharge / this.player.maxWarpCharge) * 100);
-    const warpColor = this.player.canWarp() ? '#ffc357' : '#a2aab2';
-    this.renderer.drawText(`WARP: ${warpPercent}%`, 10, 100, warpColor, 'bold 10px "Big Apple 3PM", monospace');
     
-    if (this.player.isWarping) {
-      this.renderer.drawText('WARPING...', 10, 115, '#52de44', 'bold 12px "Big Apple 3PM", monospace');
+    // Coordinates and status with optimized text rendering
+    ctx.fillStyle = '#a2aab2';
+    ctx.font = '10px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`X: ${posX} AU`, 10, 25);
+    ctx.fillText(`Y: ${posY} AU`, 10, 40);
+    ctx.fillText(`Speed: ${speed.toFixed(1)} U/S`, 10, 55);
+    
+    // Performance info (only update occasionally)
+    if (this.frameCount % 30 === 0) { // Update every 30 frames
+      ctx.fillStyle = this.fpsCounter >= 50 ? '#00ff41' : this.fpsCounter >= 30 ? '#ffb000' : '#ff4444';
+      ctx.font = '8px "Big Apple 3PM", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(`FPS: ${this.fpsCounter}`, width - 10, 20);
+      
+      // Memory usage (if available)
+      if ('memory' in performance) {
+        const memory = (performance as any).memory;
+        const usedMB = Math.round(memory.usedJSHeapSize / 1048576);
+        ctx.fillStyle = '#888888';
+        ctx.fillText(`MEM: ${usedMB}MB`, width - 10, 35);
+      }
     }
-
-    // Instructions
-    const statusBarHeight = this.renderer.getHeight() * gameConfig.ui.statusBarHeight;
-    const game = (window as any).game;
-    const instructionText = game?.inputManager?.isMobile 
-      ? 'Touch: Joystick Move | FIRE Button | WARP Button | PAUSE Menu'
-      : 'WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests | J: Warp | H: Test Damage';
-    
-    this.renderer.drawText(instructionText, 10, 
-      this.renderer.getHeight() - statusBarHeight - 20, '#a2aab2', '8px "Big Apple 3PM", monospace');
   }
 
-  public renderActiveQuests(): void {
-    const activeQuests = this.questSystem.getActiveQuests();
-    if (activeQuests.length === 0) return;
+  // Optimized setters for better performance
+  public setTargetFPS(fps: number): void {
+    this.targetFPS = Math.max(30, Math.min(120, fps)); // Clamp between 30-120 FPS
+    this.frameInterval = 1000 / this.targetFPS;
+  }
 
-    const width = this.renderer.getWidth();
-    const startX = width - 350;
-    const startY = 20;
+  public getPerformanceStats(): { fps: number, frameTime: number, memoryUsage?: number } {
+    const stats: any = {
+      fps: this.fpsCounter,
+      frameTime: this.frameInterval
+    };
+    
+    if ('memory' in performance) {
+      const memory = (performance as any).memory;
+      stats.memoryUsage = Math.round(memory.usedJSHeapSize / 1048576);
+    }
+    
+    return stats;
+  }
 
-    // Quest panel background
-    this.renderer.drawRect(startX - 10, startY - 10, 340, Math.min(200, activeQuests.length * 60 + 40), 'rgba(0, 0, 0, 0.7)');
-    this.renderer.drawText('AKTIVNÍ ÚKOLY', startX + 160, startY + 10, '#52de44', 'bold 12px "Big Apple 3PM", monospace');
-
-    activeQuests.slice(0, 3).forEach((quest, index) => {
-      const y = startY + 40 + index * 60;
-      
-      // Quest title
-      this.renderer.drawText(quest.title, startX, y, '#e0e3e6', 'bold 10px "Big Apple 3PM", monospace');
-      
-      // Progress
-      const completedObjectives = quest.objectives.filter(obj => obj.completed).length;
-      this.renderer.drawText(`${completedObjectives}/${quest.objectives.length}`, startX + 280, y, '#5f9e9e', '10px "Big Apple 3PM", monospace');
-      
-      // Time remaining
-      if (quest.timeRemaining !== undefined) {
-        const minutes = Math.floor(quest.timeRemaining / 60);
-        const seconds = Math.floor(quest.timeRemaining % 60);
-        const timeColor = quest.timeRemaining < 300 ? '#d43d3d' : '#ffc357';
-        this.renderer.drawText(`${minutes}:${seconds.toString().padStart(2, '0')}`, startX + 280, y + 15, timeColor, '8px "Big Apple 3PM", monospace');
-      }
-      
-      // Current objective
-      const currentObjective = quest.objectives.find(obj => !obj.completed);
-      if (currentObjective) {
-        this.renderer.drawText(currentObjective.description, startX, y + 15, '#888888', '8px "Big Apple 3PM", monospace');
-        
-        // Progress bar for current objective
-        const progress = currentObjective.currentProgress / currentObjective.quantity;
-        const barWidth = 250;
-        this.renderer.drawRect(startX, y + 30, barWidth, 4, '#333333');
-        this.renderer.drawRect(startX, y + 30, barWidth * progress, 4, '#00ff00');
-      }
-    });
+  // Cleanup method for better memory management
+  public dispose(): void {
+    this.stopGameLoop();
+    
+    console.log('Game engine disposed');
   }
 }
 

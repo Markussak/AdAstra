@@ -4,8 +4,10 @@ export class PlayerShip {
     constructor(x, y) {
         this.velocity = { x: 0, y: 0 };
         this.angle = 0;
+        this.angularVelocity = 0;
         this.radius = 15;
         this.active = true;
+        this.mass = 100;
         this.systems = new Map();
         this.components = [];
         this.weapons = new Map();
@@ -24,9 +26,10 @@ export class PlayerShip {
         this.warpCharge = 0;
         this.maxWarpCharge = 100;
         this.isWarping = false;
+        this.inertialDampers = true;
         this.thrust = 0;
-        this.maxThrust = 0.2;
-        this.rotationSpeed = 3.0;
+        this.maxThrust = 0.4;
+        this.rotationSpeed = 4.0;
         this.cargoItems = new Map();
         this.cargoWeight = 0;
         this.maxCargoWeight = 1000;
@@ -107,6 +110,10 @@ export class PlayerShip {
         this.updateSystems(deltaTime);
         this.updateWeapons(deltaTime);
         PhysicsEngine.applyNewtonianMotion(this, deltaTime, gameConfig.physics.frictionFactor);
+        PhysicsEngine.applyGyroscopicEffects(this, deltaTime);
+        if (this.inertialDampers && this.energy > 1) {
+            this.applyInertialDampening(deltaTime);
+        }
         if (game.sceneManager.getCurrentScene()?.getCelestialBodies) {
             const celestialBodies = game.sceneManager.getCurrentScene().getCelestialBodies();
             if (celestialBodies) {
@@ -130,34 +137,75 @@ export class PlayerShip {
         if (speed > 50) {
             const speedFactor = Math.min(1.0, speed / 200);
             const drift = (Math.random() - 0.5) * speedFactor * 0.01 * deltaTime;
-            this.angle += drift;
+            this.angularVelocity += drift;
         }
         if (this.thrust > 0) {
             const speedPenalty = 1 + (speed / 100) * 0.1;
             this.fuel = Math.max(0, this.fuel - (0.1 * this.thrust * speedPenalty * deltaTime));
         }
     }
+    applyInertialDampening(deltaTime) {
+        const speed = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+        const angularSpeed = Math.abs(this.angularVelocity);
+        if (speed > 5 || angularSpeed > 0.1) {
+            const linearDampening = Math.min(speed * 0.02, 10);
+            const angularDampening = Math.min(angularSpeed * 0.1, 1);
+            if (speed > 5) {
+                const dampFactor = Math.pow(0.98, deltaTime);
+                this.velocity.x *= dampFactor;
+                this.velocity.y *= dampFactor;
+            }
+            if (angularSpeed > 0.1) {
+                this.angularVelocity *= Math.pow(0.95, deltaTime);
+            }
+            const energyCost = (linearDampening + angularDampening) * 0.1 * deltaTime;
+            this.energy = Math.max(0, this.energy - energyCost);
+            if (this.energy < 1) {
+                this.inertialDampers = false;
+            }
+        }
+    }
     handleInput(inputManager, deltaTime) {
-        const rotationInput = inputManager.getRotationInput();
-        this.angle += rotationInput * this.rotationSpeed * deltaTime;
-        const thrustInput = inputManager.getThrustInput();
         const enginesActive = this.systems.get(ShipSystemType.ENGINES)?.active;
-        if (thrustInput > 0 && enginesActive && this.fuel > 0) {
-            const thrustForce = this.maxThrust * (this.systems.get(ShipSystemType.REACTOR)?.active ? 1.0 : 0.5);
-            this.velocity.x += Math.cos(this.angle) * thrustForce * deltaTime;
-            this.velocity.y += Math.sin(this.angle) * thrustForce * deltaTime;
-            this.fuel = Math.max(0, this.fuel - 0.1 * deltaTime);
-            this.energy = Math.max(0, this.energy - 0.05 * deltaTime);
-            this.thrust = Math.min(1.0, this.thrust + 2.0 * deltaTime);
+        const thrustForce = this.maxThrust * (this.systems.get(ShipSystemType.REACTOR)?.active ? 1.0 : 0.5) * 3;
+        const joystickDir = inputManager.getJoystickDirection();
+        if (joystickDir.x !== 0 || joystickDir.y !== 0) {
+            if (enginesActive && this.fuel > 0) {
+                const magnitude = Math.sqrt(joystickDir.x * joystickDir.x + joystickDir.y * joystickDir.y);
+                const normalizedX = joystickDir.x / magnitude;
+                const normalizedY = joystickDir.y / magnitude;
+                this.velocity.x += normalizedX * thrustForce * magnitude * deltaTime;
+                this.velocity.y += normalizedY * thrustForce * magnitude * deltaTime;
+                const targetAngle = Math.atan2(normalizedY, normalizedX);
+                const angleDiff = targetAngle - this.angle;
+                const normalizedAngleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+                this.angle += normalizedAngleDiff * 3 * deltaTime;
+                this.fuel = Math.max(0, this.fuel - 0.1 * magnitude * deltaTime);
+                this.energy = Math.max(0, this.energy - 0.05 * magnitude * deltaTime);
+                this.thrust = Math.min(1.0, this.thrust + 2.0 * deltaTime);
+            }
         }
         else {
-            this.thrust = Math.max(0, this.thrust - 4.0 * deltaTime);
-        }
-        const brakeInput = inputManager.getBrakeInput();
-        if (brakeInput > 0 && enginesActive) {
-            const brakeForce = this.maxThrust * 0.5;
-            this.velocity.x -= Math.cos(this.angle) * brakeForce * deltaTime;
-            this.velocity.y -= Math.sin(this.angle) * brakeForce * deltaTime;
+            const rotationInput = inputManager.getRotationInput();
+            const targetAngularVelocity = rotationInput * this.rotationSpeed;
+            PhysicsEngine.updateAngularPhysics(this, targetAngularVelocity, deltaTime, 0.5);
+            const thrustInput = inputManager.getThrustInput();
+            if (thrustInput > 0 && enginesActive && this.fuel > 0) {
+                PhysicsEngine.applyThrustWithInertia(this, thrustForce * thrustInput, this.mass, deltaTime);
+                this.fuel = Math.max(0, this.fuel - 0.1 * deltaTime);
+                this.energy = Math.max(0, this.energy - 0.05 * deltaTime);
+                this.thrust = Math.min(1.0, this.thrust + 2.0 * deltaTime);
+            }
+            else {
+                this.thrust = Math.max(0, this.thrust - 4.0 * deltaTime);
+            }
+            const brakeInput = inputManager.getBrakeInput();
+            if (brakeInput > 0 && enginesActive) {
+                const reverseAngle = this.angle + Math.PI;
+                PhysicsEngine.applyThrustWithInertia({ position: this.position, velocity: this.velocity, angle: reverseAngle }, thrustForce * 0.6 * brakeInput, this.mass, deltaTime);
+                this.fuel = Math.max(0, this.fuel - 0.05 * brakeInput * deltaTime);
+                this.energy = Math.max(0, this.energy - 0.025 * brakeInput * deltaTime);
+            }
         }
         if (inputManager.getFireInput()) {
             this.fireWeapon();
@@ -278,8 +326,8 @@ export class PlayerShip {
     }
     renderHull(renderer) {
         const ctx = renderer.getContext();
-        ctx.fillStyle = '#505050';
-        ctx.strokeStyle = '#404040';
+        ctx.fillStyle = '#5a6978';
+        ctx.strokeStyle = '#2b323a';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(15, 0);
@@ -292,13 +340,13 @@ export class PlayerShip {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
-        ctx.fillStyle = '#606060';
+        ctx.fillStyle = '#a2aab2';
         ctx.fillRect(8, -2, 4, 1);
         ctx.fillRect(8, 1, 4, 1);
         ctx.fillRect(-6, -1, 3, 2);
-        ctx.fillStyle = '#404040';
+        ctx.fillStyle = '#434c55';
         ctx.fillRect(12, -1, 3, 2);
-        ctx.strokeStyle = '#606060';
+        ctx.strokeStyle = '#e0e3e6';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(-8, -6);
@@ -310,8 +358,8 @@ export class PlayerShip {
     renderEngineEffects(renderer) {
         const ctx = renderer.getContext();
         const intensity = this.thrust;
-        ctx.fillStyle = '#404040';
-        ctx.globalAlpha = intensity * 0.4;
+        ctx.fillStyle = '#e8732c';
+        ctx.globalAlpha = intensity * 0.6;
         ctx.beginPath();
         ctx.moveTo(-12, -3);
         ctx.lineTo(-12 - (8 * intensity), -1);
@@ -320,7 +368,7 @@ export class PlayerShip {
         ctx.lineTo(-12, 3);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = '#505050';
+        ctx.fillStyle = '#ffc357';
         for (let i = 0; i < 5; i++) {
             const particleX = -15 - Math.random() * 10 * intensity;
             const particleY = (Math.random() - 0.5) * 6;
@@ -331,9 +379,9 @@ export class PlayerShip {
     renderShieldEffects(renderer) {
         const ctx = renderer.getContext();
         const shieldStrength = this.shields / this.maxShields;
-        ctx.strokeStyle = '#505050';
-        ctx.lineWidth = 1;
-        ctx.globalAlpha = shieldStrength * 0.2;
+        ctx.strokeStyle = '#52de44';
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = shieldStrength * 0.3;
         ctx.beginPath();
         ctx.arc(0, 0, 20, 0, Math.PI * 2);
         ctx.stroke();

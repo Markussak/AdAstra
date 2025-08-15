@@ -14,11 +14,31 @@ export declare class GameEngine implements IGameEngine {
     effectSystem: EffectSystem;
     gameTime: number;
     lastFrameTime: number;
+    private targetFPS;
+    private frameInterval;
+    private lastRenderTime;
+    private frameCount;
+    private fpsCounter;
+    private fpsUpdateTimer;
+    private maxDeltaTime;
+    private isRunning;
+    private animationFrameId;
     constructor(canvasId: string);
+    private setupPerformanceMonitoring;
     startGameLoop(): void;
+    stopGameLoop(): void;
+    private gameLoop;
     update(deltaTime: number): void;
+    private updatePlayerOptimized;
     render(): void;
+    private isPlayerVisible;
     renderHUD(): void;
-    renderActiveQuests(): void;
+    setTargetFPS(fps: number): void;
+    getPerformanceStats(): {
+        fps: number;
+        frameTime: number;
+        memoryUsage?: number;
+    };
+    dispose(): void;
 }
 export declare function initializeGame(): void;

@@ -257,14 +257,14 @@ export class PlayerShip implements IPlayerShip {
         this.thrust = Math.min(1.0, this.thrust + 2.0 * deltaTime);
       }
     } else {
-             // Keyboard mode: traditional rotation + thrust with enhanced inertia
-       const rotationInput = inputManager.getRotationInput();
-       const targetAngularVelocity = rotationInput * this.rotationSpeed;
-       
-       // Apply angular inertia for realistic rotation
-       PhysicsEngine.applyAngularInertia(this, targetAngularVelocity, 0.5, deltaTime);
+        // Keyboard mode: traditional rotation + thrust with enhanced inertia
+        const rotationInput = inputManager.getRotationInput();
+        const targetAngularVelocity = rotationInput * this.rotationSpeed;
+        
+        // Apply angular inertia for smooth turning
+        PhysicsEngine.updateAngularPhysics(this, targetAngularVelocity, deltaTime, 0.5);
 
-       const thrustInput = inputManager.getThrustInput();
+        const thrustInput = inputManager.getThrustInput();
        if (thrustInput > 0 && enginesActive && this.fuel > 0) {
          // Use enhanced thrust with mass-based inertia
          PhysicsEngine.applyThrustWithInertia(this, thrustForce * thrustInput, this.mass, deltaTime);

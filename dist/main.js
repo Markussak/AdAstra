@@ -1,5 +1,4 @@
 import { GameState, DifficultyLevel, ShipType, CharacterGender, CharacterRace, CharacterSkill, CharacterBackground, GalaxySize, GalaxyDensity, EconomyComplexity } from './types';
-import { gameConfig } from './utils';
 import { Renderer } from './renderer';
 import { Camera } from './camera';
 import { InputManager } from './input';
@@ -7,7 +6,7 @@ import { PlayerShip } from './player';
 import { StarSystemScene } from './scenes';
 import { SHIP_TEMPLATES, DIFFICULTY_SETTINGS, LOADING_MESSAGES, WEAPON_DATA, RACE_DATA, BACKGROUND_DATA, SKILL_DATA, GALAXY_SIZE_DATA, GALAXY_DENSITY_DATA, ECONOMY_COMPLEXITY_DATA } from './gameData';
 import { NameGenerator } from './utils';
-import { SaveSystem, AutoSaveManager } from './saveSystem';
+import { SaveSystem } from './saveSystem';
 import { QuestSystem } from './questSystem';
 import { EffectSystem } from './effectSystem';
 class StateManager {
@@ -145,7 +144,7 @@ class LoadingState {
         }
         renderer.getContext().globalAlpha = 1.0;
         renderer.drawText('STAR DUST VOYAGER', width / 2, height / 2 - 150, '#606060', 'bold 48px "Big Apple 3PM", monospace');
-        renderer.drawText('GALAXY WANDERER', width / 2, height / 2 - 100, '#505050', '24px "Big Apple 3PM", monospace');
+        renderer.drawText('GALAXY WANDERER', width / 2, height / 2 - 100, '#e0e3e6', '24px "Big Apple 3PM", monospace');
         const barWidth = 400;
         const barHeight = 20;
         const barX = width / 2 - barWidth / 2;
@@ -159,7 +158,7 @@ class LoadingState {
         renderer.getContext().fillStyle = gradient;
         renderer.getContext().fillRect(barX, barY, fillWidth, barHeight);
         renderer.drawText(this.loadingTexts[this.currentTextIndex], width / 2, height / 2 + 100, '#606060', '14px "Big Apple 3PM", monospace');
-        renderer.drawText(`${Math.round(this.progress)}%`, width / 2, height / 2 + 130, '#505050', '12px "Big Apple 3PM", monospace');
+        renderer.drawText(`${Math.round(this.progress)}%`, width / 2, height / 2 + 130, '#a2aab2', '12px "Big Apple 3PM", monospace');
     }
     handleInput(input) {
     }
@@ -200,7 +199,7 @@ class MainMenuState {
         renderer.getContext().shadowColor = '#404040';
         renderer.getContext().shadowBlur = 0;
         renderer.drawText('STAR DUST VOYAGER', width / 2, height / 4, '#606060', 'bold 64px "Big Apple 3PM", monospace');
-        renderer.drawText('GALAXY WANDERER', width / 2, height / 4 + 60, '#505050', '32px "Big Apple 3PM", monospace');
+        renderer.drawText('GALAXY WANDERER', width / 2, height / 4 + 60, '#e0e3e6', '32px "Big Apple 3PM", monospace');
         renderer.getContext().shadowBlur = 0;
         const startY = height / 2 + 50;
         const spacing = 60;
@@ -1292,7 +1291,7 @@ class PlayingState {
 class PausedState {
     constructor() {
         this.selectedOption = 0;
-        this.menuOptions = ['POKRAČOVAT', 'NASTAVENÍ', 'HLAVNÍ MENU', 'UKONČIT'];
+        this.menuOptions = ['POKRAČOVAT', 'ULOŽIT HRU', 'NAČÍST HRU', 'NASTAVENÍ', 'HLAVNÍ MENU', 'UKONČIT'];
     }
     enter() {
         console.log('Game paused');
@@ -1303,21 +1302,40 @@ class PausedState {
     render(renderer) {
         const width = renderer.getWidth();
         const height = renderer.getHeight();
-        renderer.getContext().fillStyle = 'rgba(0, 0, 0, 0.7)';
+        renderer.getContext().fillStyle = 'rgba(0, 0, 0, 0.8)';
         renderer.getContext().fillRect(0, 0, width, height);
-        renderer.drawText('HRA POZASTAVENA', width / 2, height / 2 - 100, '#ff8c00', 'bold 32px "Big Apple 3PM", monospace');
-        const startY = height / 2 + 20;
-        const spacing = 50;
+        renderer.getContext().shadowColor = '#ffc357';
+        renderer.getContext().shadowBlur = 10;
+        renderer.drawText('HRA POZASTAVENA', width / 2, height / 2 - 120, '#ffc357', 'bold 36px "Big Apple 3PM", monospace');
+        renderer.getContext().shadowBlur = 0;
+        const menuWidth = 400;
+        const menuHeight = this.menuOptions.length * 50 + 40;
+        const menuX = width / 2 - menuWidth / 2;
+        const menuY = height / 2 - 40;
+        renderer.drawRect(menuX, menuY, menuWidth, menuHeight, 'rgba(26, 28, 32, 0.9)');
+        renderer.strokeRect(menuX, menuY, menuWidth, menuHeight, '#434c55', 2);
+        const startY = height / 2;
+        const spacing = 45;
         this.menuOptions.forEach((option, index) => {
             const y = startY + index * spacing;
             const isSelected = index === this.selectedOption;
             if (isSelected) {
-                renderer.drawText('▶ ' + option + ' ◀', width / 2, y, '#00ffff', 'bold 20px "Big Apple 3PM", monospace');
+                renderer.drawRect(menuX + 10, y - 18, menuWidth - 20, 36, 'rgba(95, 158, 158, 0.3)');
+                renderer.strokeRect(menuX + 10, y - 18, menuWidth - 20, 36, '#5f9e9e', 1);
+                renderer.drawText('▶ ' + option + ' ◀', width / 2, y, '#52de44', 'bold 20px "Big Apple 3PM", monospace');
             }
             else {
-                renderer.drawText(option, width / 2, y, '#dcd0c0', '18px "Big Apple 3PM", monospace');
+                renderer.drawText(option, width / 2, y, '#a2aab2', '18px "Big Apple 3PM", monospace');
             }
         });
+        renderer.drawText('↑↓ Navigace | ENTER Výběr | ESC Pokračovat', width / 2, height - 80, '#5a6978', '14px "Big Apple 3PM", monospace');
+        const message = this.message;
+        if (message && Date.now() - message.time < 2000) {
+            renderer.getContext().shadowColor = message.color;
+            renderer.getContext().shadowBlur = 5;
+            renderer.drawText(message.text, width / 2, height / 2 + 200, message.color, 'bold 24px "Big Apple 3PM", monospace');
+            renderer.getContext().shadowBlur = 0;
+        }
     }
     handleInput(input) {
         const touchInput = input.getTouchMenuInput();
@@ -1347,19 +1365,68 @@ class PausedState {
                 game.stateManager.setState(GameState.PLAYING);
                 break;
             case 1:
-                console.log('Settings not implemented yet');
+                this.quickSave(game);
                 break;
             case 2:
+                this.showLoadMenu(game);
+                break;
+            case 3:
+                game.stateManager.setState(GameState.SETTINGS);
+                break;
+            case 4:
                 if (confirm('Opravdu se chcete vrátit do hlavního menu? Neuložený postup bude ztracen.')) {
                     game.stateManager.setState(GameState.MAIN_MENU);
                 }
                 break;
-            case 3:
+            case 5:
                 if (confirm('Opravdu chcete ukončit hru? Neuložený postup bude ztracen.')) {
                     window.close();
                 }
                 break;
         }
+    }
+    quickSave(game) {
+        try {
+            const success = SaveSystem.saveGame(game, 'quicksave');
+            if (success) {
+                this.showMessage('HRA ULOŽENA', '#52de44');
+                console.log('Game saved successfully');
+            }
+            else {
+                this.showMessage('CHYBA ULOŽENÍ', '#d43d3d');
+                console.error('Failed to save game');
+            }
+        }
+        catch (error) {
+            console.error('Failed to save game:', error);
+            this.showMessage('CHYBA ULOŽENÍ', '#d43d3d');
+        }
+    }
+    showLoadMenu(game) {
+        const saveList = SaveSystem.getSaveList();
+        if (saveList.length === 0) {
+            this.showMessage('ŽÁDNÉ ULOŽENÉ HRY', '#ffc357');
+            return;
+        }
+        try {
+            const mostRecentSave = saveList[0];
+            const saveData = SaveSystem.loadGame(mostRecentSave.slot);
+            if (saveData) {
+                SaveSystem.applySaveData(game, saveData);
+                game.stateManager.setState(GameState.PLAYING);
+                this.showMessage('HRA NAČTENA', '#52de44');
+            }
+            else {
+                this.showMessage('CHYBA PĜI NAČÍTÁNÍ', '#d43d3d');
+            }
+        }
+        catch (error) {
+            console.error('Failed to load game:', error);
+            this.showMessage('CHYBA PĜI NAČÍTÁNÍ', '#d43d3d');
+        }
+    }
+    showMessage(text, color) {
+        this.message = { text, color, time: Date.now() };
     }
 }
 class SettingsState {
@@ -1385,7 +1452,7 @@ class SettingsState {
         const width = renderer.getWidth();
         const height = renderer.getHeight();
         renderer.clear('#0a0a0f');
-        renderer.drawText('NASTAVENÍ', width / 2, 80, '#00ffff', 'bold 36px "Big Apple 3PM", monospace');
+        renderer.drawText('NASTAVENÍ', width / 2, 80, '#52de44', 'bold 36px "Big Apple 3PM", monospace');
         const tabY = 150;
         this.tabs.forEach((tab, index) => {
             const x = (width / this.tabs.length) * (index + 0.5);
@@ -1662,86 +1729,469 @@ class StatusBar {
     constructor(renderer) {
         this.height = 0;
         this.panels = [];
+        this.colors = {
+            chassisDark: '#0a0a0a',
+            chassisPrimary: '#1a1a1a',
+            chassisMidtone: '#2a2a2a',
+            chassisLight: '#3a3a3a',
+            borderDark: '#0f0f0f',
+            borderPrimary: '#404040',
+            borderLight: '#606060',
+            textAmber: '#ffb000',
+            textAmberDim: '#cc8800',
+            textGreen: '#00ff41',
+            textGreenDim: '#00cc33',
+            textWhite: '#e8e8e8',
+            textGray: '#888888',
+            screenDark: '#001100',
+            screenGlow: '#003300',
+            scanline: '#002200',
+            statusGreen: '#00ff41',
+            statusAmber: '#ffb000',
+            statusRed: '#ff4444',
+            statusBlue: '#4488ff',
+            statusOff: '#333333',
+            hullBar: '#4488ff',
+            hullBarGlow: '#2266dd',
+            shieldBar: '#bb44ff',
+            shieldBarGlow: '#9922dd',
+            energyBar: '#ffbb44',
+            energyBarGlow: '#dd9922',
+            fuelBar: '#ff6644',
+            fuelBarGlow: '#dd4422',
+            rivetColor: '#666666',
+            screwColor: '#555555',
+            wireColor: '#777777'
+        };
         this.renderer = renderer;
     }
     update(player) {
         const screenHeight = this.renderer.getHeight();
-        this.height = Math.floor(screenHeight * gameConfig.ui.statusBarHeight);
+        this.height = Math.floor(screenHeight * 0.15);
     }
     render(player) {
         const screenWidth = this.renderer.getWidth();
         const screenHeight = this.renderer.getHeight();
         const statusY = screenHeight - this.height;
-        this.renderer.drawRect(0, statusY, screenWidth, this.height, '#1a1a2a');
-        this.renderer.drawRect(0, statusY, screenWidth, 3, '#4a5568');
-        this.renderer.drawRect(0, screenHeight - 3, screenWidth, 3, '#2d3748');
-        this.drawStatusSection("SHIP STATUS", 20, statusY + 15, '#00d4ff');
-        const hullColor = player.hull > 75 ? '#00ff41' : player.hull > 50 ? '#ffaa00' : player.hull > 25 ? '#ff6600' : '#ff0040';
-        this.drawStatusBar("HULL", player.hull, player.maxHull, 20, statusY + 35, hullColor);
-        const shieldColor = player.shields > 75 ? '#00aaff' : player.shields > 50 ? '#0088dd' : player.shields > 25 ? '#0066bb' : '#004499';
-        this.drawStatusBar("SHIELDS", player.shields, player.maxShields, 20, statusY + 50, shieldColor);
-        const energyColor = player.energy > 75 ? '#ffff00' : player.energy > 50 ? '#ffcc00' : player.energy > 25 ? '#ff9900' : '#ff6600';
-        this.drawStatusBar("ENERGY", player.energy, player.maxEnergy, 20, statusY + 65, energyColor);
-        const fuelColor = player.fuel > 75 ? '#00ff88' : player.fuel > 50 ? '#00cc66' : player.fuel > 25 ? '#ff9900' : '#ff4400';
-        this.drawStatusBar("FUEL", player.fuel, player.maxFuel, 20, statusY + 80, fuelColor);
-        const centerX = screenWidth / 2 - 100;
-        this.drawStatusSection("NAVIGATION", centerX, statusY + 15, '#ff9500');
-        const speed = Math.sqrt(player.velocity.x ** 2 + player.velocity.y ** 2);
-        this.renderer.drawText(`VELOCITY: ${(speed * 100).toFixed(1)} m/s`, centerX, statusY + 35, '#ffffff', '10px "Big Apple 3PM", monospace');
-        this.renderer.drawText(`HEADING: ${Math.round((player.angle * 180 / Math.PI) % 360)}°`, centerX, statusY + 50, '#ffffff', '10px "Big Apple 3PM", monospace');
-        const warpPercent = Math.round((player.warpCharge / player.maxWarpCharge) * 100);
-        const warpColor = player.canWarp() ? '#00ff88' : '#666666';
-        this.drawStatusBar("WARP", player.warpCharge, player.maxWarpCharge, centerX, statusY + 65, warpColor);
-        if (player.isWarping) {
-            this.renderer.drawText('⚡ WARPING...', centerX, statusY + 85, '#00ffff', 'bold 10px "Big Apple 3PM", monospace');
-        }
-        const rightX = screenWidth - 250;
-        this.drawStatusSection("WEAPONS", rightX, statusY + 15, '#ff4081');
-        const weapon = player.getWeaponStatus(player.selectedWeapon);
-        if (weapon) {
-            this.renderer.drawText(`TYPE: ${weapon.type.toUpperCase()}`, rightX, statusY + 35, '#ffffff', '10px "Big Apple 3PM", monospace');
-            const heatColor = weapon.heat > 75 ? '#ff0040' : weapon.heat > 50 ? '#ff6600' : weapon.heat > 25 ? '#ffaa00' : '#00ff41';
-            this.drawStatusBar("HEAT", weapon.heat, weapon.maxHeat || 100, rightX, statusY + 50, heatColor);
-            if (weapon.ammo !== undefined) {
-                const ammoPercent = weapon.maxAmmo ? (weapon.ammo / weapon.maxAmmo) * 100 : 0;
-                const ammoColor = ammoPercent > 75 ? '#00ff41' : ammoPercent > 50 ? '#ffaa00' : ammoPercent > 25 ? '#ff6600' : '#ff0040';
-                this.renderer.drawText(`AMMO: ${weapon.ammo}/${weapon.maxAmmo || 'INF'}`, rightX, statusY + 70, ammoColor, '10px "Big Apple 3PM", monospace');
-            }
-        }
-        const systemX = screenWidth - 80;
-        this.drawStatusSection("SYS", systemX, statusY + 15, '#9c27b0');
-        const systems = ['REACTOR', 'ENGINES', 'SHIELDS', 'WEAPONS'];
-        systems.forEach((sys, i) => {
-            const system = player.systems.get(sys);
-            if (system) {
-                const color = system.active && system.health > 75 ? '#00ff41' :
-                    system.active && system.health > 50 ? '#ffaa00' :
-                        system.active ? '#ff6600' : '#333333';
-                const status = system.active ? '●' : '○';
-                this.renderer.drawText(`${sys.charAt(0)}${status}`, systemX, statusY + 35 + i * 12, color, '8px "Big Apple 3PM", monospace');
-            }
-        });
+        this.drawMainPanel(screenWidth, statusY);
+        this.drawShipStatus(player, 20, statusY + 8);
+        this.drawWeaponCargoStatus(player, 240, statusY + 8);
+        this.drawSystemInfo(player, screenWidth / 2 - 80, statusY + 8);
+        this.drawMissionStatus(player, screenWidth / 2 + 120, statusY + 8);
+        this.drawRadarSection(player, screenWidth - 160, statusY + 8);
+        this.drawFunctionalButtons(screenWidth, statusY);
     }
-    drawStatusSection(title, x, y, color) {
-        this.renderer.drawText(title, x, y, color, 'bold 10px "Big Apple 3PM", monospace');
-        this.renderer.drawRect(x, y + 2, title.length * 6, 1, color);
+    drawMainPanel(screenWidth, statusY) {
+        const ctx = this.renderer.getContext();
+        ctx.fillStyle = this.colors.chassisDark;
+        ctx.fillRect(0, statusY, screenWidth, this.height);
+        ctx.fillStyle = this.colors.chassisPrimary;
+        ctx.fillRect(2, statusY + 2, screenWidth - 4, this.height - 4);
+        ctx.fillStyle = this.colors.chassisLight;
+        ctx.fillRect(2, statusY + 2, screenWidth - 4, 1);
+        ctx.fillStyle = this.colors.borderDark;
+        ctx.fillRect(2, statusY + this.height - 3, screenWidth - 4, 1);
+        for (let x = 20; x < screenWidth - 20; x += 80) {
+            this.drawRivet(ctx, x, statusY + 6);
+        }
+        const sectionWidth = screenWidth / 3;
+        for (let i = 1; i < 3; i++) {
+            const dividerX = sectionWidth * i;
+            ctx.fillStyle = this.colors.borderDark;
+            ctx.fillRect(dividerX - 1, statusY + 8, 2, this.height - 16);
+            ctx.fillStyle = this.colors.chassisLight;
+            ctx.fillRect(dividerX, statusY + 8, 1, this.height - 16);
+            this.drawRivet(ctx, dividerX, statusY + 15);
+            this.drawRivet(ctx, dividerX, statusY + this.height - 15);
+        }
+        this.drawCornerReinforcement(ctx, 5, statusY + 5);
+        this.drawCornerReinforcement(ctx, screenWidth - 15, statusY + 5);
+        this.drawCornerReinforcement(ctx, 5, statusY + this.height - 15);
+        this.drawCornerReinforcement(ctx, screenWidth - 15, statusY + this.height - 15);
     }
-    drawStatusBar(label, current, max, x, y, color) {
-        const barWidth = 120;
-        const barHeight = 8;
+    drawRivet(ctx, x, y) {
+        ctx.fillStyle = this.colors.borderDark;
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = this.colors.rivetColor;
+        ctx.beginPath();
+        ctx.arc(x, y, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = this.colors.chassisLight;
+        ctx.beginPath();
+        ctx.arc(x - 1, y - 1, 1, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    drawCornerReinforcement(ctx, x, y) {
+        ctx.fillStyle = this.colors.chassisMidtone;
+        ctx.fillRect(x, y, 10, 10);
+        ctx.strokeStyle = this.colors.borderDark;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, 10, 10);
+        ctx.fillStyle = this.colors.screwColor;
+        ctx.fillRect(x + 2, y + 2, 2, 2);
+        ctx.fillRect(x + 6, y + 2, 2, 2);
+        ctx.fillRect(x + 2, y + 6, 2, 2);
+        ctx.fillRect(x + 6, y + 6, 2, 2);
+    }
+    drawShipStatus(player, x, y) {
+        const ctx = this.renderer.getContext();
+        this.drawCRTBezel(ctx, x - 5, y - 5, 200, 70);
+        ctx.fillStyle = this.colors.textAmber;
+        ctx.font = 'bold 8px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('>>> SHIP STATUS <<<', x + 5, y + 10);
+        ctx.shadowBlur = 3;
+        ctx.shadowColor = this.colors.textAmber;
+        ctx.fillText('>>> SHIP STATUS <<<', x + 5, y + 10);
+        ctx.shadowBlur = 0;
+        this.drawCRTStatusBar('HULL', player.hull, player.maxHull, x + 5, y + 20, this.colors.hullBar, this.colors.hullBarGlow, 140);
+        this.drawCRTStatusBar('SHLD', player.shields, player.maxShields, x + 5, y + 32, this.colors.shieldBar, this.colors.shieldBarGlow, 140);
+        this.drawCRTStatusBar('PWR', player.energy, player.maxEnergy, x + 5, y + 44, this.colors.energyBar, this.colors.energyBarGlow, 140);
+        this.drawCRTStatusBar('FUEL', player.fuel, player.maxFuel, x + 5, y + 56, this.colors.fuelBar, this.colors.fuelBarGlow, 140);
+        ctx.fillStyle = this.colors.textAmberDim;
+        ctx.font = '6px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${Math.floor(player.hull).toString().padStart(3, '0')}/${player.maxHull.toString().padStart(3, '0')}`, x + 190, y + 26);
+        ctx.fillText(`${Math.floor(player.shields).toString().padStart(3, '0')}/${player.maxShields.toString().padStart(3, '0')}`, x + 190, y + 38);
+        ctx.fillText(`${Math.floor(player.energy).toString().padStart(3, '0')}/${player.maxEnergy.toString().padStart(3, '0')}`, x + 190, y + 50);
+        ctx.fillText(`${Math.floor(player.fuel).toString().padStart(3, '0')}/${player.maxFuel.toString().padStart(3, '0')}`, x + 190, y + 62);
+    }
+    drawCRTBezel(ctx, x, y, width, height) {
+        ctx.fillStyle = this.colors.chassisDark;
+        ctx.fillRect(x, y, width, height);
+        ctx.fillStyle = this.colors.chassisMidtone;
+        ctx.fillRect(x + 3, y + 3, width - 6, height - 6);
+        ctx.fillStyle = this.colors.screenDark;
+        ctx.fillRect(x + 5, y + 5, width - 10, height - 10);
+        for (let i = y + 6; i < y + height - 5; i += 2) {
+            ctx.fillStyle = this.colors.scanline;
+            ctx.fillRect(x + 5, i, width - 10, 1);
+        }
+        ctx.fillStyle = this.colors.screenGlow;
+        ctx.fillRect(x + 6, y + 6, width - 12, height - 12);
+        this.drawRivet(ctx, x + 8, y + 8);
+        this.drawRivet(ctx, x + width - 8, y + 8);
+        this.drawRivet(ctx, x + 8, y + height - 8);
+        this.drawRivet(ctx, x + width - 8, y + height - 8);
+    }
+    drawCRTStatusBar(label, current, max, x, y, color, glowColor, width) {
+        const ctx = this.renderer.getContext();
         const percent = Math.max(0, Math.min(100, (current / max) * 100));
-        this.renderer.drawRect(x + 50, y - 4, barWidth, barHeight, '#222222');
-        const fillWidth = (barWidth * percent) / 100;
-        this.renderer.drawRect(x + 50, y - 4, fillWidth, barHeight, color);
-        this.renderer.strokeRect(x + 50, y - 4, barWidth, barHeight, '#555555', 1);
-        this.renderer.drawText(`${label}:`, x, y, '#cccccc', '10px "Big Apple 3PM", monospace');
-        this.renderer.drawText(`${Math.round(current)}%`, x + 175, y, color, '10px "Big Apple 3PM", monospace');
+        const barHeight = 8;
+        const indicatorColor = percent > 75 ? this.colors.statusGreen :
+            percent > 50 ? this.colors.statusAmber :
+                percent > 25 ? this.colors.statusRed : this.colors.statusRed;
+        ctx.fillStyle = this.colors.borderDark;
+        ctx.fillRect(x, y + 1, 8, 6);
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = indicatorColor;
+        ctx.fillStyle = indicatorColor;
+        ctx.fillRect(x + 1, y + 2, 6, 4);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = this.colors.textAmber;
+        ctx.font = 'bold 6px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(label, x + 12, y + 6);
+        ctx.fillStyle = this.colors.borderDark;
+        ctx.fillRect(x + 42, y - 1, width + 2, barHeight + 2);
+        ctx.fillStyle = this.colors.screenDark;
+        ctx.fillRect(x + 43, y, width, barHeight);
+        const fillWidth = (width - 2) * (percent / 100);
+        if (fillWidth > 0) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x + 44, y + 1, fillWidth, barHeight - 2);
+            ctx.shadowBlur = 2;
+            ctx.shadowColor = glowColor;
+            ctx.fillStyle = glowColor;
+            ctx.fillRect(x + 44, y + 1, fillWidth, barHeight - 2);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = this.colors.textWhite;
+            ctx.fillRect(x + 44, y + 1, fillWidth, 1);
+        }
+        for (let i = 0; i < width; i += 10) {
+            ctx.fillStyle = this.colors.borderDark;
+            ctx.fillRect(x + 44 + i, y, 1, barHeight);
+        }
+    }
+    drawStatusBar(label, current, max, x, y, color, width) {
+        this.drawCRTStatusBar(label, current, max, x, y, color, color, width);
+    }
+    drawSystemInfo(player, x, y) {
+        const ctx = this.renderer.getContext();
+        this.drawCRTBezel(ctx, x - 5, y - 5, 220, 70);
+        ctx.fillStyle = this.colors.textGreen;
+        ctx.font = 'bold 8px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'left';
+        ctx.shadowBlur = 3;
+        ctx.shadowColor = this.colors.textGreen;
+        ctx.fillText('>>> NAVIGATION <<<', x + 5, y + 10);
+        ctx.shadowBlur = 0;
+        const speed = Math.sqrt(player.velocity.x ** 2 + player.velocity.y ** 2);
+        ctx.fillStyle = this.colors.textGreenDim;
+        ctx.font = '6px "Big Apple 3PM", monospace';
+        ctx.fillText(`VEL: ${speed.toFixed(2).padStart(6, '0')} U/S`, x + 5, y + 22);
+        ctx.fillText(`POS: ${Math.floor(player.position.x).toString().padStart(6, '0')},${Math.floor(player.position.y).toString().padStart(6, '0')}`, x + 5, y + 32);
+        ctx.fillText(`HDG: ${Math.floor((player.angle * 180 / Math.PI + 360) % 360).toString().padStart(3, '0')}°`, x + 5, y + 42);
+        ctx.fillStyle = this.colors.textGreen;
+        ctx.fillText('SYS STATUS:', x + 5, y + 54);
+        const systems = [
+            { name: 'NAV', active: true },
+            { name: 'COM', active: true },
+            { name: 'DEF', active: player.shields > 0 },
+            { name: 'PWR', active: player.energy > 10 },
+            { name: 'ENG', active: player.fuel > 0 }
+        ];
+        for (let i = 0; i < systems.length; i++) {
+            const sys = systems[i];
+            const baseX = x + 10 + i * 35;
+            ctx.fillStyle = sys.active ? this.colors.textGreen : this.colors.textGray;
+            ctx.fillText(sys.name, baseX + 8, y + 62);
+            ctx.fillStyle = this.colors.borderDark;
+            ctx.fillRect(baseX, y + 56, 6, 6);
+            const lightColor = sys.active ? this.colors.statusGreen : this.colors.statusOff;
+            if (sys.active) {
+                ctx.shadowBlur = 2;
+                ctx.shadowColor = lightColor;
+            }
+            ctx.fillStyle = lightColor;
+            ctx.fillRect(baseX + 1, y + 57, 4, 4);
+            ctx.shadowBlur = 0;
+        }
+    }
+    drawRadarSection(player, x, y) {
+        const ctx = this.renderer.getContext();
+        this.drawCRTBezel(ctx, x - 5, y - 5, 140, 70);
+        ctx.fillStyle = this.colors.statusBlue;
+        ctx.font = 'bold 8px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'left';
+        ctx.shadowBlur = 3;
+        ctx.shadowColor = this.colors.statusBlue;
+        ctx.fillText('>>> RADAR <<<', x + 5, y + 10);
+        ctx.shadowBlur = 0;
+        const radarSize = 60;
+        const radarX = x + 5;
+        const radarY = y + 15;
+        ctx.fillStyle = this.colors.borderDark;
+        ctx.fillRect(radarX - 2, radarY - 2, radarSize + 4, radarSize + 4);
+        ctx.fillStyle = this.colors.screenDark;
+        ctx.fillRect(radarX, radarY, radarSize, radarSize);
+        ctx.strokeStyle = this.colors.statusBlue;
+        ctx.lineWidth = 1;
+        ctx.shadowBlur = 1;
+        ctx.shadowColor = this.colors.statusBlue;
+        const centerX = radarX + radarSize / 2;
+        const centerY = radarY + radarSize / 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, radarY);
+        ctx.lineTo(centerX, radarY + radarSize);
+        ctx.moveTo(radarX, centerY);
+        ctx.lineTo(radarX + radarSize, centerY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radarSize / 6, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radarSize / 3, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radarSize / 2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = this.colors.statusGreen;
+        ctx.fillStyle = this.colors.statusGreen;
+        ctx.fillRect(centerX - 1, centerY - 1, 3, 3);
+        ctx.strokeStyle = this.colors.statusGreen;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(centerX + Math.cos(player.angle) * 8, centerY + Math.sin(player.angle) * 8);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        const sweepAngle = (Date.now() * 0.002) % (Math.PI * 2);
+        for (let i = 0; i < 10; i++) {
+            const trailAngle = sweepAngle - (i * 0.1);
+            const alpha = (10 - i) / 20;
+            ctx.strokeStyle = `rgba(0, 255, 65, ${alpha})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + Math.cos(trailAngle) * radarSize / 2, centerY + Math.sin(trailAngle) * radarSize / 2);
+            ctx.stroke();
+        }
+        ctx.fillStyle = this.colors.statusBlue;
+        ctx.font = '5px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('500', radarX + radarSize + 8, radarY + 15);
+        ctx.fillText('1K', radarX + radarSize + 8, radarY + 35);
+        ctx.fillText('2K', radarX + radarSize + 8, radarY + 55);
+        ctx.fillStyle = this.colors.textGreenDim;
+        ctx.font = '6px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('RANGE: 1000U', x + 60, y + 25);
+        ctx.fillText('CONTACTS: 0', x + 60, y + 35);
+        ctx.fillText('THREAT: LOW', x + 60, y + 45);
+    }
+    drawWeaponCargoStatus(player, x, y) {
+        const ctx = this.renderer.getContext();
+        this.drawCRTBezel(ctx, x - 5, y - 5, 180, 70);
+        ctx.fillStyle = this.colors.statusRed;
+        ctx.font = 'bold 8px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'left';
+        ctx.shadowBlur = 3;
+        ctx.shadowColor = this.colors.statusRed;
+        ctx.fillText('>>> WEAPONS <<<', x + 5, y + 10);
+        ctx.shadowBlur = 0;
+        const weapons = [
+            { name: 'PLS', charge: 85, active: true },
+            { name: 'LSR', charge: 92, active: true },
+            { name: 'MSL', charge: 12, active: false },
+            { name: 'TRP', charge: 0, active: false }
+        ];
+        for (let i = 0; i < weapons.length; i++) {
+            const weapon = weapons[i];
+            const weaponY = y + 20 + i * 9;
+            ctx.fillStyle = this.colors.borderDark;
+            ctx.fillRect(x + 5, weaponY, 6, 6);
+            const lightColor = weapon.active ? this.colors.statusRed : this.colors.statusOff;
+            if (weapon.active) {
+                ctx.shadowBlur = 2;
+                ctx.shadowColor = lightColor;
+            }
+            ctx.fillStyle = lightColor;
+            ctx.fillRect(x + 6, weaponY + 1, 4, 4);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = weapon.active ? this.colors.statusRed : this.colors.textGray;
+            ctx.font = '6px "Big Apple 3PM", monospace';
+            ctx.fillText(weapon.name, x + 15, weaponY + 5);
+            const chargeWidth = 60;
+            ctx.fillStyle = this.colors.borderDark;
+            ctx.fillRect(x + 35, weaponY, chargeWidth + 2, 6);
+            if (weapon.charge > 0) {
+                const fillWidth = (chargeWidth * weapon.charge) / 100;
+                ctx.fillStyle = weapon.active ? this.colors.statusRed : this.colors.textGray;
+                ctx.fillRect(x + 36, weaponY + 1, fillWidth, 4);
+            }
+            ctx.fillStyle = this.colors.textAmberDim;
+            ctx.font = '5px "Big Apple 3PM", monospace';
+            ctx.textAlign = 'right';
+            ctx.fillText(`${weapon.charge}%`, x + 170, weaponY + 5);
+        }
+        ctx.fillStyle = this.colors.textAmber;
+        ctx.font = 'bold 6px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('CARGO: 15/50 TONS', x + 5, y + 62);
+    }
+    drawMissionStatus(player, x, y) {
+        const ctx = this.renderer.getContext();
+        this.drawCRTBezel(ctx, x - 5, y - 5, 160, 70);
+        ctx.fillStyle = this.colors.textAmber;
+        ctx.font = 'bold 8px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'left';
+        ctx.shadowBlur = 3;
+        ctx.shadowColor = this.colors.textAmber;
+        ctx.fillText('>>> MISSION <<<', x + 5, y + 10);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = this.colors.textAmberDim;
+        ctx.font = '6px "Big Apple 3PM", monospace';
+        ctx.fillText('PRIMARY: EXPLORATION', x + 5, y + 22);
+        ctx.fillText('STATUS: IN PROGRESS', x + 5, y + 32);
+        ctx.fillText('PROGRESS: 23%', x + 5, y + 42);
+        const gameTime = new Date(Date.now());
+        const hours = gameTime.getHours().toString().padStart(2, '0');
+        const minutes = gameTime.getMinutes().toString().padStart(2, '0');
+        const seconds = gameTime.getSeconds().toString().padStart(2, '0');
+        ctx.fillStyle = this.colors.statusBlue;
+        ctx.font = 'bold 7px "Big Apple 3PM", monospace';
+        ctx.fillText(`TIME: ${hours}:${minutes}:${seconds}`, x + 5, y + 54);
+        ctx.fillStyle = this.colors.statusGreen;
+        ctx.fillText('CREDITS: 2,847', x + 5, y + 62);
+    }
+    drawFunctionalButtons(screenWidth, statusY) {
+        const ctx = this.renderer.getContext();
+        const buttonPanelY = statusY - 25;
+        ctx.fillStyle = this.colors.chassisPrimary;
+        ctx.fillRect(0, buttonPanelY, screenWidth, 25);
+        ctx.fillStyle = this.colors.borderDark;
+        ctx.fillRect(0, buttonPanelY, screenWidth, 1);
+        const buttons = [
+            { label: 'INV', key: 'I', active: false },
+            { label: 'MAP', key: 'M', active: false },
+            { label: 'LOG', key: 'L', active: false },
+            { label: 'COM', key: 'C', active: true },
+            { label: 'TRD', key: 'T', active: false },
+            { label: 'OPT', key: 'O', active: false }
+        ];
+        const buttonWidth = 60;
+        const buttonSpacing = 80;
+        const startX = 50;
+        for (let i = 0; i < buttons.length; i++) {
+            const button = buttons[i];
+            const buttonX = startX + i * buttonSpacing;
+            const buttonY = buttonPanelY + 5;
+            ctx.fillStyle = button.active ? this.colors.chassisLight : this.colors.chassisMidtone;
+            ctx.fillRect(buttonX, buttonY, buttonWidth, 15);
+            ctx.strokeStyle = this.colors.borderPrimary;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(buttonX, buttonY, buttonWidth, 15);
+            ctx.fillStyle = button.active ? this.colors.statusGreen : this.colors.textGray;
+            ctx.font = 'bold 7px "Big Apple 3PM", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(button.label, buttonX + buttonWidth / 2, buttonY + 10);
+            ctx.fillStyle = this.colors.textAmberDim;
+            ctx.font = '5px "Big Apple 3PM", monospace';
+            ctx.fillText(`[${button.key}]`, buttonX + buttonWidth / 2, buttonY + 18);
+            if (button.active) {
+                ctx.fillStyle = this.colors.statusGreen;
+                ctx.shadowBlur = 2;
+                ctx.shadowColor = this.colors.statusGreen;
+                ctx.fillRect(buttonX + 2, buttonY + 2, 3, 3);
+                ctx.shadowBlur = 0;
+            }
+        }
+        const gameTime = new Date(Date.now());
+        const timeString = gameTime.toLocaleTimeString('en-US', { hour12: false });
+        ctx.fillStyle = this.colors.textAmber;
+        ctx.font = 'bold 8px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(`SYSTEM TIME: ${timeString}`, screenWidth - 20, buttonPanelY + 15);
+        ctx.fillStyle = this.colors.statusGreen;
+        ctx.font = '6px "Big Apple 3PM", monospace';
+        ctx.fillText('60 FPS', screenWidth - 20, buttonPanelY + 8);
     }
 }
 export class GameEngine {
     constructor(canvasId) {
         this.gameTime = 0;
         this.lastFrameTime = 0;
+        this.targetFPS = 60;
+        this.frameInterval = 1000 / this.targetFPS;
+        this.lastRenderTime = 0;
+        this.frameCount = 0;
+        this.fpsCounter = 0;
+        this.fpsUpdateTimer = 0;
+        this.maxDeltaTime = 1 / 30;
+        this.isRunning = false;
+        this.animationFrameId = 0;
+        this.gameLoop = () => {
+            if (!this.isRunning)
+                return;
+            const currentTime = performance.now();
+            let deltaTime = (currentTime - this.lastFrameTime) / 1000;
+            deltaTime = Math.min(deltaTime, this.maxDeltaTime);
+            this.update(deltaTime);
+            const timeSinceLastRender = currentTime - this.lastRenderTime;
+            if (timeSinceLastRender >= this.frameInterval) {
+                this.render();
+                this.lastRenderTime = currentTime;
+                this.frameCount++;
+            }
+            this.lastFrameTime = currentTime;
+            this.gameTime += deltaTime;
+            this.animationFrameId = requestAnimationFrame(this.gameLoop);
+        };
         this.canvas = document.getElementById(canvasId);
         if (!this.canvas) {
             throw new Error(`Canvas with id '${canvasId}' not found`);
@@ -1756,48 +2206,70 @@ export class GameEngine {
         this.questSystem = new QuestSystem();
         this.effectSystem = new EffectSystem();
         console.log('Game engine initialized');
-        const settings = SaveSystem.loadSettings();
-        if (settings.controls && this.inputManager.isMobile) {
-            this.inputManager.setTouchControlsEnabled(settings.controls.touchControlsEnabled);
-        }
-        AutoSaveManager.start(this);
-        this.startGameLoop();
+        this.setupPerformanceMonitoring();
+    }
+    setupPerformanceMonitoring() {
+        setInterval(() => {
+            this.fpsCounter = this.frameCount;
+            this.frameCount = 0;
+            if (this.fpsCounter < 45) {
+                console.warn(`Low FPS detected: ${this.fpsCounter}`);
+            }
+        }, 1000);
     }
     startGameLoop() {
-        const gameLoop = (currentTime) => {
-            if (this.lastFrameTime === 0) {
-                this.lastFrameTime = currentTime;
-            }
-            const deltaTime = Math.min((currentTime - this.lastFrameTime) / 1000, 0.016);
-            this.lastFrameTime = currentTime;
-            this.gameTime = currentTime / 1000;
-            this.update(deltaTime);
-            this.render();
-            requestAnimationFrame(gameLoop);
-        };
-        console.log('Starting game loop');
-        requestAnimationFrame(gameLoop);
+        if (this.isRunning)
+            return;
+        this.isRunning = true;
+        this.lastFrameTime = performance.now();
+        this.lastRenderTime = this.lastFrameTime;
+        console.log('Game loop started');
+        this.gameLoop();
+    }
+    stopGameLoop() {
+        this.isRunning = false;
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = 0;
+        }
+        console.log('Game loop stopped');
     }
     update(deltaTime) {
         this.inputManager.update();
         this.stateManager.update(deltaTime);
-        this.stateManager.handleInput(this.inputManager);
-        if (this.stateManager.getCurrentState() === GameState.PLAYING) {
-            this.player.update(deltaTime, this);
-            this.sceneManager.update(deltaTime, this);
+        if (this.stateManager.currentState === GameState.PLAYING) {
+            this.updatePlayerOptimized(deltaTime);
+            const scene = this.sceneManager.getCurrentScene();
+            if (scene) {
+                scene.update(deltaTime, this);
+            }
+            this.camera.followTarget(this.player.position, deltaTime, this.renderer.getWidth(), this.renderer.getHeight());
             this.questSystem.updateTimers(deltaTime);
             this.effectSystem.update(deltaTime);
-            this.questSystem.updateProgress('survive', undefined, deltaTime);
-            this.camera.followTarget(this.player.position, deltaTime, this.renderer.getWidth(), this.renderer.getHeight());
             this.statusBar.update(this.player);
         }
     }
+    updatePlayerOptimized(deltaTime) {
+        const inputState = {
+            thrust: this.inputManager.isKeyPressed('ArrowUp') || this.inputManager.isKeyPressed('KeyW'),
+            turnLeft: this.inputManager.isKeyPressed('ArrowLeft') || this.inputManager.isKeyPressed('KeyA'),
+            turnRight: this.inputManager.isKeyPressed('ArrowRight') || this.inputManager.isKeyPressed('KeyD'),
+            brake: this.inputManager.isKeyPressed('ArrowDown') || this.inputManager.isKeyPressed('KeyS'),
+            fire: this.inputManager.isKeyPressed('Space')
+        };
+        this.player.update(deltaTime, inputState);
+    }
     render() {
-        this.renderer.clear(gameConfig.colors.bgPrimary);
-        if (this.stateManager.getCurrentState() === GameState.PLAYING) {
-            this.sceneManager.render(this.renderer, this.camera);
-            this.player.render(this.renderer, this.camera);
-            this.effectSystem.render(this.renderer);
+        this.renderer.clear('#000000');
+        if (this.stateManager.currentState === GameState.PLAYING) {
+            const scene = this.sceneManager.getCurrentScene();
+            if (scene) {
+                scene.render(this.renderer, this.camera);
+            }
+            if (this.isPlayerVisible()) {
+                this.player.render(this.renderer, this.camera);
+            }
+            this.effectSystem.render(this.renderer, this.camera);
             this.renderHUD();
             this.statusBar.render(this.player);
             this.inputManager.renderTouchControls(this.renderer);
@@ -1806,59 +2278,68 @@ export class GameEngine {
             this.stateManager.render(this.renderer);
         }
     }
+    isPlayerVisible() {
+        const screenWidth = this.renderer.getWidth();
+        const screenHeight = this.renderer.getHeight();
+        const screenPos = this.camera.worldToScreen(this.player.position.x, this.player.position.y);
+        const margin = 100;
+        return (screenPos.x > -margin &&
+            screenPos.x < screenWidth + margin &&
+            screenPos.y > -margin &&
+            screenPos.y < screenHeight + margin);
+    }
     renderHUD() {
         const width = this.renderer.getWidth();
         const height = this.renderer.getHeight();
-        this.renderer.drawLine(width / 2 - 8, height / 2, width / 2 + 8, height / 2, 'rgba(96, 96, 96, 0.6)', 1);
-        this.renderer.drawLine(width / 2, height / 2 - 8, width / 2, height / 2 + 8, 'rgba(96, 96, 96, 0.6)', 1);
-        this.renderer.drawText(`X: ${Math.round(this.player.position.x)} AU`, 10, 25, '#505050', '10px "Big Apple 3PM", monospace');
-        this.renderer.drawText(`Y: ${Math.round(this.player.position.y)} AU`, 10, 40, '#505050', '10px "Big Apple 3PM", monospace');
+        const ctx = this.renderer.getContext();
+        ctx.strokeStyle = 'rgba(96, 96, 96, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(width / 2 - 8, height / 2);
+        ctx.lineTo(width / 2 + 8, height / 2);
+        ctx.moveTo(width / 2, height / 2 - 8);
+        ctx.lineTo(width / 2, height / 2 + 8);
+        ctx.stroke();
+        const posX = Math.round(this.player.position.x);
+        const posY = Math.round(this.player.position.y);
         const speed = Math.sqrt(this.player.velocity.x ** 2 + this.player.velocity.y ** 2);
-        this.renderer.drawText(`V: ${(speed * 100).toFixed(1)} m/s`, 10, 55, '#505050', '10px "Big Apple 3PM", monospace');
-        this.renderer.drawText(`SCENE: STAR SYSTEM`, 10, 70, '#505050', '10px "Big Apple 3PM", monospace');
-        this.renderActiveQuests();
-        const warpPercent = Math.round((this.player.warpCharge / this.player.maxWarpCharge) * 100);
-        const warpColor = this.player.canWarp() ? '#606060' : '#505050';
-        this.renderer.drawText(`WARP: ${warpPercent}%`, 10, 100, warpColor, 'bold 10px "Big Apple 3PM", monospace');
-        if (this.player.isWarping) {
-            this.renderer.drawText('WARPING...', 10, 115, '#505050', 'bold 12px "Big Apple 3PM", monospace');
+        ctx.fillStyle = '#a2aab2';
+        ctx.font = '10px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`X: ${posX} AU`, 10, 25);
+        ctx.fillText(`Y: ${posY} AU`, 10, 40);
+        ctx.fillText(`Speed: ${speed.toFixed(1)} U/S`, 10, 55);
+        if (this.frameCount % 30 === 0) {
+            ctx.fillStyle = this.fpsCounter >= 50 ? '#00ff41' : this.fpsCounter >= 30 ? '#ffb000' : '#ff4444';
+            ctx.font = '8px "Big Apple 3PM", monospace';
+            ctx.textAlign = 'right';
+            ctx.fillText(`FPS: ${this.fpsCounter}`, width - 10, 20);
+            if ('memory' in performance) {
+                const memory = performance.memory;
+                const usedMB = Math.round(memory.usedJSHeapSize / 1048576);
+                ctx.fillStyle = '#888888';
+                ctx.fillText(`MEM: ${usedMB}MB`, width - 10, 35);
+            }
         }
-        const statusBarHeight = this.renderer.getHeight() * gameConfig.ui.statusBarHeight;
-        const game = window.game;
-        const instructionText = game?.inputManager?.isMobile
-            ? 'Touch: Joystick Move | FIRE Button | WARP Button | PAUSE Menu'
-            : 'WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests | J: Warp | H: Test Damage';
-        this.renderer.drawText(instructionText, 10, this.renderer.getHeight() - statusBarHeight - 20, '#505050', '8px "Big Apple 3PM", monospace');
     }
-    renderActiveQuests() {
-        const activeQuests = this.questSystem.getActiveQuests();
-        if (activeQuests.length === 0)
-            return;
-        const width = this.renderer.getWidth();
-        const startX = width - 350;
-        const startY = 20;
-        this.renderer.drawRect(startX - 10, startY - 10, 340, Math.min(200, activeQuests.length * 60 + 40), 'rgba(0, 0, 0, 0.7)');
-        this.renderer.drawText('AKTIVNÍ ÚKOLY', startX + 160, startY + 10, '#00ffff', 'bold 12px "Big Apple 3PM", monospace');
-        activeQuests.slice(0, 3).forEach((quest, index) => {
-            const y = startY + 40 + index * 60;
-            this.renderer.drawText(quest.title, startX, y, '#dcd0c0', 'bold 10px "Big Apple 3PM", monospace');
-            const completedObjectives = quest.objectives.filter(obj => obj.completed).length;
-            this.renderer.drawText(`${completedObjectives}/${quest.objectives.length}`, startX + 280, y, '#5f9e9e', '10px "Big Apple 3PM", monospace');
-            if (quest.timeRemaining !== undefined) {
-                const minutes = Math.floor(quest.timeRemaining / 60);
-                const seconds = Math.floor(quest.timeRemaining % 60);
-                const timeColor = quest.timeRemaining < 300 ? '#ff4444' : '#ffff00';
-                this.renderer.drawText(`${minutes}:${seconds.toString().padStart(2, '0')}`, startX + 280, y + 15, timeColor, '8px "Big Apple 3PM", monospace');
-            }
-            const currentObjective = quest.objectives.find(obj => !obj.completed);
-            if (currentObjective) {
-                this.renderer.drawText(currentObjective.description, startX, y + 15, '#888888', '8px "Big Apple 3PM", monospace');
-                const progress = currentObjective.currentProgress / currentObjective.quantity;
-                const barWidth = 250;
-                this.renderer.drawRect(startX, y + 30, barWidth, 4, '#333333');
-                this.renderer.drawRect(startX, y + 30, barWidth * progress, 4, '#00ff00');
-            }
-        });
+    setTargetFPS(fps) {
+        this.targetFPS = Math.max(30, Math.min(120, fps));
+        this.frameInterval = 1000 / this.targetFPS;
+    }
+    getPerformanceStats() {
+        const stats = {
+            fps: this.fpsCounter,
+            frameTime: this.frameInterval
+        };
+        if ('memory' in performance) {
+            const memory = performance.memory;
+            stats.memoryUsage = Math.round(memory.usedJSHeapSize / 1048576);
+        }
+        return stats;
+    }
+    dispose() {
+        this.stopGameLoop();
+        console.log('Game engine disposed');
     }
 }
 export function initializeGame() {

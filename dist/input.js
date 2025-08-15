@@ -16,12 +16,12 @@ export class InputManager {
             centerY: 0,
             x: 0,
             y: 0,
-            radius: 50
+            radius: 80
         };
         this.touchButtons = {
-            fire: { x: 0, y: 0, radius: 40, pressed: false, justPressed: false },
-            pause: { x: 0, y: 0, radius: 30, pressed: false, justPressed: false },
-            warp: { x: 0, y: 0, radius: 35, pressed: false, justPressed: false }
+            fire: { x: 0, y: 0, radius: 60, pressed: false, justPressed: false },
+            pause: { x: 0, y: 0, radius: 45, pressed: false, justPressed: false },
+            warp: { x: 0, y: 0, radius: 55, pressed: false, justPressed: false }
         };
         this.joystickTouchId = null;
         this.canvas = null;
@@ -43,22 +43,24 @@ export class InputManager {
             if (this.canvas) {
                 this.updateTouchButtonPositions();
                 this.touchControlsEnabled = true;
-                this.virtualJoystick.centerX = 120;
-                this.virtualJoystick.centerY = this.canvas.height - 120;
+                this.virtualJoystick.centerX = 150;
+                this.virtualJoystick.centerY = this.canvas.height - 160;
             }
         }
     }
     updateTouchButtonPositions() {
         if (!this.canvas)
             return;
-        const width = this.canvas.width;
-        const height = this.canvas.height;
-        this.touchButtons.fire.x = width - 80;
-        this.touchButtons.fire.y = height - 120;
-        this.touchButtons.warp.x = width - 80;
-        this.touchButtons.warp.y = height - 200;
-        this.touchButtons.pause.x = width - 50;
-        this.touchButtons.pause.y = 50;
+        const width = this.canvas.clientWidth || this.canvas.width;
+        const height = this.canvas.clientHeight || this.canvas.height;
+        this.touchButtons.fire.x = width - 120;
+        this.touchButtons.fire.y = height - 160;
+        this.touchButtons.warp.x = width - 120;
+        this.touchButtons.warp.y = height - 280;
+        this.touchButtons.pause.x = width - 70;
+        this.touchButtons.pause.y = 70;
+        this.virtualJoystick.centerX = 150;
+        this.virtualJoystick.centerY = height - 160;
     }
     setupEventListeners() {
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
@@ -289,19 +291,20 @@ export class InputManager {
     }
     getThrustInput() {
         if (this.touchControlsEnabled && this.virtualJoystick.active) {
-            return Math.max(0, -this.virtualJoystick.y);
+            const magnitude = Math.sqrt(this.virtualJoystick.x * this.virtualJoystick.x + this.virtualJoystick.y * this.virtualJoystick.y);
+            return Math.min(1, magnitude);
         }
         return (this.isKeyPressed('w') || this.isKeyPressed('arrowup')) ? 1 : 0;
     }
     getBrakeInput() {
         if (this.touchControlsEnabled && this.virtualJoystick.active) {
-            return Math.max(0, this.virtualJoystick.y);
+            return 0;
         }
         return (this.isKeyPressed('s') || this.isKeyPressed('arrowdown')) ? 1 : 0;
     }
     getRotationInput() {
         if (this.touchControlsEnabled && this.virtualJoystick.active) {
-            return this.virtualJoystick.x;
+            return this.virtualJoystick.x * 2;
         }
         let rotation = 0;
         if (this.isKeyPressed('a') || this.isKeyPressed('arrowleft'))
@@ -309,6 +312,12 @@ export class InputManager {
         if (this.isKeyPressed('d') || this.isKeyPressed('arrowright'))
             rotation += 1;
         return rotation;
+    }
+    getJoystickDirection() {
+        if (this.touchControlsEnabled && this.virtualJoystick.active) {
+            return { x: this.virtualJoystick.x, y: this.virtualJoystick.y };
+        }
+        return { x: 0, y: 0 };
     }
     getFireInput() {
         if (this.touchControlsEnabled && this.touchButtons.fire.pressed) {
@@ -346,31 +355,123 @@ export class InputManager {
         }
     }
     renderTouchControls(renderer) {
-        if (!this.touchControlsEnabled)
-            return;
-        this.updateTouchButtonPositions();
-        renderer.getContext().globalAlpha = 0.5;
-        renderer.drawCircle(this.virtualJoystick.centerX, this.virtualJoystick.centerY, this.virtualJoystick.radius, 'rgba(0, 200, 255, 0.3)');
-        renderer.strokeCircle(this.virtualJoystick.centerX, this.virtualJoystick.centerY, this.virtualJoystick.radius, 'rgba(0, 200, 255, 0.6)', 2);
-        const knobX = this.virtualJoystick.centerX + this.virtualJoystick.x * (this.virtualJoystick.radius * 0.7);
-        const knobY = this.virtualJoystick.centerY + this.virtualJoystick.y * (this.virtualJoystick.radius * 0.7);
-        renderer.drawCircle(knobX, knobY, 15, 'rgba(255, 255, 255, 0.8)');
-        renderer.strokeCircle(knobX, knobY, 15, 'rgba(0, 200, 255, 0.8)', 2);
-        renderer.getContext().globalAlpha = 1.0;
-        renderer.getContext().globalAlpha = 0.6;
-        const fireColor = this.touchButtons.fire.pressed ? 'rgba(255, 100, 100, 0.9)' : 'rgba(255, 80, 80, 0.6)';
-        renderer.drawCircle(this.touchButtons.fire.x, this.touchButtons.fire.y, this.touchButtons.fire.radius, fireColor);
-        renderer.strokeCircle(this.touchButtons.fire.x, this.touchButtons.fire.y, this.touchButtons.fire.radius, 'rgba(255, 255, 255, 0.8)', 2);
-        renderer.drawText('FIRE', this.touchButtons.fire.x, this.touchButtons.fire.y, '#ffffff', 'bold 12px "Big Apple 3PM", monospace');
-        const warpColor = this.touchButtons.warp.pressed ? 'rgba(100, 100, 255, 0.9)' : 'rgba(100, 150, 255, 0.6)';
-        renderer.drawCircle(this.touchButtons.warp.x, this.touchButtons.warp.y, this.touchButtons.warp.radius, warpColor);
-        renderer.strokeCircle(this.touchButtons.warp.x, this.touchButtons.warp.y, this.touchButtons.warp.radius, 'rgba(255, 255, 255, 0.8)', 2);
-        renderer.drawText('WARP', this.touchButtons.warp.x, this.touchButtons.warp.y, '#ffffff', 'bold 10px "Big Apple 3PM", monospace');
-        const pauseColor = this.touchButtons.pause.pressed ? 'rgba(255, 255, 100, 0.9)' : 'rgba(255, 200, 100, 0.6)';
-        renderer.drawCircle(this.touchButtons.pause.x, this.touchButtons.pause.y, this.touchButtons.pause.radius, pauseColor);
-        renderer.strokeCircle(this.touchButtons.pause.x, this.touchButtons.pause.y, this.touchButtons.pause.radius, 'rgba(255, 255, 255, 0.8)', 2);
-        renderer.drawText('⏸', this.touchButtons.pause.x, this.touchButtons.pause.y, '#ffffff', 'bold 16px "Big Apple 3PM", monospace');
-        renderer.getContext().globalAlpha = 1.0;
+        const width = renderer.getWidth();
+        const height = renderer.getHeight();
+        this.touchButtons.fire.x = width - 120;
+        this.touchButtons.fire.y = height - 160;
+        this.touchButtons.warp.x = width - 120;
+        this.touchButtons.warp.y = height - 280;
+        this.touchButtons.pause.x = width - 70;
+        this.touchButtons.pause.y = 70;
+        this.virtualJoystick.centerX = 150;
+        this.virtualJoystick.centerY = height - 160;
+        const colors = {
+            chassisPrimary: '#5a6978',
+            chassisMidtone: '#434c55',
+            chassisDark: '#2b323a',
+            highlightSpecular: '#e0e3e6',
+            highlightStandard: '#a2aab2',
+            accentYellow: '#ffc357',
+            accentOrange: '#e8732c',
+            accentRed: '#d43d3d',
+            accentGreen: '#52de44'
+        };
+        const ctx = renderer.getContext();
+        ctx.fillStyle = colors.chassisDark;
+        ctx.beginPath();
+        ctx.arc(this.virtualJoystick.centerX, this.virtualJoystick.centerY, this.virtualJoystick.radius + 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = colors.chassisMidtone;
+        ctx.beginPath();
+        ctx.arc(this.virtualJoystick.centerX, this.virtualJoystick.centerY, this.virtualJoystick.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = colors.highlightStandard;
+        ctx.lineWidth = 2;
+        const centerX = this.virtualJoystick.centerX;
+        const centerY = this.virtualJoystick.centerY;
+        const radius = this.virtualJoystick.radius;
+        ctx.beginPath();
+        ctx.moveTo(centerX - radius * 0.8, centerY);
+        ctx.lineTo(centerX + radius * 0.8, centerY);
+        ctx.moveTo(centerX, centerY - radius * 0.8);
+        ctx.lineTo(centerX, centerY + radius * 0.8);
+        ctx.stroke();
+        for (let i = 0; i < 4; i++) {
+            const angle = (i * Math.PI) / 2 + Math.PI / 4;
+            const x = centerX + Math.cos(angle) * radius * 0.7;
+            const y = centerY + Math.sin(angle) * radius * 0.7;
+            ctx.fillStyle = colors.highlightStandard;
+            ctx.fillRect(x - 2, y - 2, 4, 4);
+        }
+        ctx.strokeStyle = colors.highlightSpecular;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        const knobX = centerX + this.virtualJoystick.x * (radius * 0.6);
+        const knobY = centerY + this.virtualJoystick.y * (radius * 0.6);
+        ctx.fillStyle = colors.chassisDark;
+        ctx.beginPath();
+        ctx.arc(knobX + 2, knobY + 2, 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = colors.chassisPrimary;
+        ctx.beginPath();
+        ctx.arc(knobX, knobY, 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = colors.highlightSpecular;
+        ctx.beginPath();
+        ctx.arc(knobX - 3, knobY - 3, 12, 0, Math.PI * 2);
+        ctx.fill();
+        for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI) / 4;
+            const gx = knobX + Math.cos(angle) * 8;
+            const gy = knobY + Math.sin(angle) * 8;
+            ctx.fillStyle = colors.chassisDark;
+            ctx.fillRect(gx - 1, gy - 1, 2, 2);
+        }
+        this.draw16BitButton(renderer, this.touchButtons.fire, 'FIRE', colors.accentRed, colors);
+        this.draw16BitButton(renderer, this.touchButtons.warp, 'WARP', colors.accentYellow, colors);
+        this.draw16BitButton(renderer, this.touchButtons.pause, 'MENU', colors.accentOrange, colors);
+    }
+    draw16BitButton(renderer, button, label, accentColor, colors) {
+        const ctx = renderer.getContext();
+        const offset = button.pressed ? 2 : 0;
+        ctx.fillStyle = colors.chassisDark;
+        ctx.beginPath();
+        ctx.arc(button.x + offset, button.y + offset, button.radius + 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = button.pressed ? colors.chassisMidtone : colors.chassisPrimary;
+        ctx.beginPath();
+        ctx.arc(button.x + offset, button.y + offset, button.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = button.pressed ? colors.chassisMidtone : colors.highlightStandard;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(button.x + offset, button.y + offset, button.radius - 5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = button.pressed ? accentColor : colors.highlightSpecular;
+        ctx.beginPath();
+        ctx.arc(button.x + offset, button.y + offset, button.radius - 15, 0, Math.PI * 2);
+        ctx.fill();
+        for (let i = 0; i < 4; i++) {
+            const angle = (i * Math.PI) / 2;
+            const sx = button.x + offset + Math.cos(angle) * (button.radius - 8);
+            const sy = button.y + offset + Math.sin(angle) * (button.radius - 8);
+            ctx.fillStyle = colors.chassisDark;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = colors.highlightStandard;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(sx - 2, sy);
+            ctx.lineTo(sx + 2, sy);
+            ctx.stroke();
+        }
+        ctx.fillStyle = button.pressed ? colors.chassisDark : colors.highlightSpecular;
+        ctx.font = 'bold 14px "Big Apple 3PM", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, button.x + offset, button.y + offset + 4);
     }
     update() {
         this.keys.forEach((keyState, key) => {
