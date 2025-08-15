@@ -64,7 +64,7 @@ export class PhysicsEngine {
     deltaTime: number,
     friction: number = 0.9995
   ): void {
-    // Apply velocity to position
+    // Apply velocity to position with enhanced precision
     object.position.x += object.velocity.x * deltaTime;
     object.position.y += object.velocity.y * deltaTime;
 
@@ -73,12 +73,23 @@ export class PhysicsEngine {
     object.velocity.x *= frictionFactor;
     object.velocity.y *= frictionFactor;
 
-    // Limit maximum velocity for stability
+    // Enhanced velocity limiting with smooth curves for realistic feel
     const speed = Math.sqrt(object.velocity.x ** 2 + object.velocity.y ** 2);
     if (speed > gameConfig.physics.maxVelocity) {
-      const factor = gameConfig.physics.maxVelocity / speed;
+      // Smooth velocity capping to prevent jarring stops
+      const overspeed = speed - gameConfig.physics.maxVelocity;
+      const dampingFactor = Math.exp(-overspeed * 0.01); // Exponential decay
+      const targetSpeed = gameConfig.physics.maxVelocity * dampingFactor + gameConfig.physics.maxVelocity * (1 - dampingFactor);
+      const factor = targetSpeed / speed;
       object.velocity.x *= factor;
       object.velocity.y *= factor;
+    }
+
+    // Apply micro-turbulence for realistic space movement
+    if (speed > 10) {
+      const turbulence = speed * 0.0001;
+      object.velocity.x += (Math.random() - 0.5) * turbulence * deltaTime;
+      object.velocity.y += (Math.random() - 0.5) * turbulence * deltaTime;
     }
   }
 
@@ -175,6 +186,73 @@ export class PhysicsEngine {
     const magnitude = Math.sqrt(vector.x * vector.x + vector.y * vector.y);
     if (magnitude === 0) return { x: 0, y: 0 };
     return { x: vector.x / magnitude, y: vector.y / magnitude };
+  }
+
+  // Enhanced inertia effects for ships
+  static applyAngularInertia(
+    object: { angle: number; angularVelocity?: number },
+    targetAngularVelocity: number,
+    inertia: number,
+    deltaTime: number
+  ): void {
+    // Initialize angular velocity if not present
+    if (object.angularVelocity === undefined) {
+      (object as any).angularVelocity = 0;
+    }
+    
+    // Apply angular acceleration based on inertia
+    const angularAccel = (targetAngularVelocity - object.angularVelocity) / inertia;
+    object.angularVelocity += angularAccel * deltaTime;
+    
+    // Apply angular damping (space friction on rotation)
+    object.angularVelocity *= Math.pow(0.995, deltaTime);
+    
+    // Update angle
+    object.angle += object.angularVelocity * deltaTime;
+    
+    // Normalize angle
+    while (object.angle > Math.PI * 2) object.angle -= Math.PI * 2;
+    while (object.angle < 0) object.angle += Math.PI * 2;
+  }
+
+  static applyThrustWithInertia(
+    object: { position: Vector2D; velocity: Vector2D; angle: number },
+    thrustMagnitude: number,
+    mass: number,
+    deltaTime: number
+  ): void {
+    // Calculate thrust acceleration (F = ma, a = F/m)
+    const acceleration = thrustMagnitude / mass;
+    
+    // Apply thrust in ship's facing direction
+    const thrustX = Math.cos(object.angle) * acceleration;
+    const thrustY = Math.sin(object.angle) * acceleration;
+    
+    object.velocity.x += thrustX * deltaTime;
+    object.velocity.y += thrustY * deltaTime;
+  }
+
+  static applyGyroscopicEffects(
+    object: { velocity: Vector2D; angle: number; angularVelocity?: number },
+    deltaTime: number
+  ): void {
+    // Simulate gyroscopic effects - resistance to angular changes when moving fast
+    const speed = Math.sqrt(object.velocity.x ** 2 + object.velocity.y ** 2);
+    
+    if (speed > 50 && object.angularVelocity !== undefined) {
+      const gyroscopicFactor = Math.min(0.5, speed / 200); // Stronger effect at higher speeds
+      const velocityAngle = Math.atan2(object.velocity.y, object.velocity.x);
+      const angleDiff = velocityAngle - object.angle;
+      
+      // Normalize angle difference
+      let normalizedDiff = angleDiff;
+      while (normalizedDiff > Math.PI) normalizedDiff -= Math.PI * 2;
+      while (normalizedDiff < -Math.PI) normalizedDiff += Math.PI * 2;
+      
+      // Apply gyroscopic force that tries to align ship with velocity
+      const gyroscopicTorque = normalizedDiff * gyroscopicFactor * deltaTime;
+      object.angularVelocity += gyroscopicTorque * 0.1;
+    }
   }
 }
 

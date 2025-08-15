@@ -7,7 +7,8 @@ import {
   EngineEffect, 
   EffectType, 
   Vector2D, 
-  IRenderer 
+  IRenderer,
+  ICamera
 } from './types';
 
 export class EffectSystem {
@@ -75,9 +76,9 @@ export class EffectSystem {
   /**
    * Render all effects
    */
-  public render(renderer: IRenderer): void {
+  public render(renderer: IRenderer, camera: ICamera): void {
     this.effects.forEach(effect => {
-      this.renderEffect(effect, renderer);
+      this.renderEffect(effect, renderer, camera);
     });
   }
 
@@ -296,41 +297,42 @@ export class EffectSystem {
 
   // Effect Rendering Methods
 
-  private renderEffect(effect: VisualEffect, renderer: IRenderer): void {
+  private renderEffect(effect: VisualEffect, renderer: IRenderer, camera: ICamera): void {
     switch (effect.type) {
       case EffectType.SHIELD_HIT:
       case EffectType.SHIELD_REGENERATE:
-        this.renderShieldEffect(effect as ShieldEffect, renderer);
+        this.renderShieldEffect(effect as ShieldEffect, renderer, camera);
         break;
       case EffectType.ENGINE_THRUST:
       case EffectType.MANEUVERING_THRUST:
-        this.renderEngineEffect(effect as EngineEffect, renderer);
+        this.renderEngineEffect(effect as EngineEffect, renderer, camera);
         break;
       case EffectType.WARP_CHARGE:
       case EffectType.WARP_BUBBLE:
-        this.renderWarpEffect(effect as WarpEffect, renderer);
+        this.renderWarpEffect(effect as WarpEffect, renderer, camera);
         break;
       case EffectType.WEAPON_IMPACT:
-        this.renderWeaponImpact(effect, renderer);
+        this.renderWeaponImpact(effect, renderer, camera);
         break;
       default:
-        this.renderBasicEffect(effect, renderer);
+        this.renderBasicEffect(effect, renderer, camera);
     }
   }
 
-  private renderShieldEffect(effect: ShieldEffect, renderer: IRenderer): void {
+  private renderShieldEffect(effect: ShieldEffect, renderer: IRenderer, camera: ICamera): void {
     const { position, size, intensity, color } = effect;
     
     if (effect.hexagonPattern) {
       // Render hexagonal shield pattern
-      this.renderHexagonalShield(renderer, position, size, intensity, color, effect);
+      this.renderHexagonalShield(renderer, position, size, intensity, color, effect, camera);
     } else {
       // Render bubble shield
-      this.renderBubbleShield(renderer, position, size, intensity, color);
+      this.renderBubbleShield(renderer, position, size, intensity, color, camera);
     }
   }
 
-  private renderHexagonalShield(renderer: IRenderer, pos: Vector2D, size: number, intensity: number, color: string, effect: ShieldEffect): void {
+  private renderHexagonalShield(renderer: IRenderer, pos: Vector2D, size: number, intensity: number, color: string, effect: ShieldEffect, camera: ICamera): void {
+    const screenPos = camera.worldToScreen(pos.x, pos.y);
     const hexRadius = size / 2;
     const hexCount = 6;
     
@@ -346,8 +348,8 @@ export class EffectSystem {
       for (let i = 0; i <= hexCount; i++) {
         const angle = (i / hexCount) * Math.PI * 2;
         points.push({
-          x: pos.x + Math.cos(angle) * currentRadius,
-          y: pos.y + Math.sin(angle) * currentRadius
+          x: screenPos.x + Math.cos(angle) * currentRadius,
+          y: screenPos.y + Math.sin(angle) * currentRadius
         });
       }
       
@@ -360,10 +362,11 @@ export class EffectSystem {
     
     // Render impact ripple if hit
     if (effect.rippleCenter && effect.type === EffectType.SHIELD_HIT) {
+      const rippleScreenPos = camera.worldToScreen(effect.rippleCenter.x, effect.rippleCenter.y);
       const rippleRadius = size * (1 - effect.timeRemaining / effect.duration);
       renderer.strokeCircle(
-        effect.rippleCenter.x, 
-        effect.rippleCenter.y, 
+        rippleScreenPos.x, 
+        rippleScreenPos.y, 
         rippleRadius, 
         `rgba(80, 80, 80, ${effect.intensity})`, 
         3
@@ -371,21 +374,23 @@ export class EffectSystem {
     }
   }
 
-  private renderBubbleShield(renderer: IRenderer, pos: Vector2D, size: number, intensity: number, color: string): void {
+  private renderBubbleShield(renderer: IRenderer, pos: Vector2D, size: number, intensity: number, color: string, camera: ICamera): void {
+    const screenPos = camera.worldToScreen(pos.x, pos.y);
     const radius = size / 2;
     
     // Outer glow
-    renderer.fillCircle(pos.x, pos.y, radius + 10, `rgba(0, 170, 255, ${intensity * 0.1})`);
+    renderer.fillCircle(screenPos.x, screenPos.y, radius + 10, `rgba(0, 170, 255, ${intensity * 0.1})`);
     
     // Main shield bubble
-    renderer.strokeCircle(pos.x, pos.y, radius, `rgba(0, 170, 255, ${intensity * 0.6})`, 2);
+    renderer.strokeCircle(screenPos.x, screenPos.y, radius, `rgba(0, 170, 255, ${intensity * 0.6})`, 2);
     
     // Inner shimmer
-    renderer.strokeCircle(pos.x, pos.y, radius - 5, `rgba(255, 255, 255, ${intensity * 0.3})`, 1);
+    renderer.strokeCircle(screenPos.x, screenPos.y, radius - 5, `rgba(255, 255, 255, ${intensity * 0.3})`, 1);
   }
 
-  private renderEngineEffect(effect: EngineEffect, renderer: IRenderer): void {
+  private renderEngineEffect(effect: EngineEffect, renderer: IRenderer, camera: ICamera): void {
     const { position, intensity, thrustVector, exhaustLength, particleCount } = effect;
+    const screenPos = camera.worldToScreen(position.x, position.y);
     
     // Calculate exhaust direction
     const thrustAngle = Math.atan2(thrustVector.y, thrustVector.x);
@@ -395,8 +400,8 @@ export class EffectSystem {
       const particleDistance = (i / particleCount) * exhaustLength;
       const spread = (i / particleCount) * 0.3; // Expanding cone
       
-      const baseX = position.x + Math.cos(thrustAngle) * particleDistance;
-      const baseY = position.y + Math.sin(thrustAngle) * particleDistance;
+      const baseX = screenPos.x + Math.cos(thrustAngle) * particleDistance;
+      const baseY = screenPos.y + Math.sin(thrustAngle) * particleDistance;
       
       // Add random spread
       const spreadAngle = thrustAngle + (Math.random() - 0.5) * spread;
@@ -423,46 +428,49 @@ export class EffectSystem {
     }
   }
 
-  private renderWarpEffect(effect: WarpEffect, renderer: IRenderer): void {
+  private renderWarpEffect(effect: WarpEffect, renderer: IRenderer, camera: ICamera): void {
     const { position, bubbleRadius, distortionLevel, phase, intensity } = effect;
     
     switch (phase) {
       case 'charging':
-        this.renderWarpCharging(renderer, position, bubbleRadius, intensity);
+        this.renderWarpCharging(renderer, position, bubbleRadius, intensity, camera);
         break;
       case 'bubble':
-        this.renderWarpBubble(renderer, position, bubbleRadius, distortionLevel, intensity);
+        this.renderWarpBubble(renderer, position, bubbleRadius, distortionLevel, intensity, camera);
         break;
       case 'distortion':
-        this.renderWarpDistortion(renderer, position, bubbleRadius, distortionLevel, intensity);
+        this.renderWarpDistortion(renderer, position, bubbleRadius, distortionLevel, intensity, camera);
         break;
       case 'collapse':
-        this.renderWarpCollapse(renderer, position, bubbleRadius, intensity);
+        this.renderWarpCollapse(renderer, position, bubbleRadius, intensity, camera);
         break;
     }
   }
 
-  private renderWarpCharging(renderer: IRenderer, pos: Vector2D, radius: number, intensity: number): void {
+  private renderWarpCharging(renderer: IRenderer, pos: Vector2D, radius: number, intensity: number, camera: ICamera): void {
+    const screenPos = camera.worldToScreen(pos.x, pos.y);
     // Pulsing energy buildup
     const pulseIntensity = intensity * (0.5 + 0.5 * Math.sin(Date.now() * 0.01));
     
-    renderer.strokeCircle(pos.x, pos.y, radius, `rgba(255, 255, 255, ${pulseIntensity})`, 2);
-    renderer.fillCircle(pos.x, pos.y, radius * 0.3, `rgba(255, 255, 255, ${pulseIntensity * 0.3})`);
+    renderer.strokeCircle(screenPos.x, screenPos.y, radius, `rgba(255, 255, 255, ${pulseIntensity})`, 2);
+    renderer.fillCircle(screenPos.x, screenPos.y, radius * 0.3, `rgba(255, 255, 255, ${pulseIntensity * 0.3})`);
   }
 
-  private renderWarpBubble(renderer: IRenderer, pos: Vector2D, radius: number, distortion: number, intensity: number): void {
+  private renderWarpBubble(renderer: IRenderer, pos: Vector2D, radius: number, distortion: number, intensity: number, camera: ICamera): void {
+    const screenPos = camera.worldToScreen(pos.x, pos.y);
     // Semi-transparent warp bubble
-    renderer.strokeCircle(pos.x, pos.y, radius, `rgba(170, 204, 255, ${intensity * 0.8})`, 3);
+    renderer.strokeCircle(screenPos.x, screenPos.y, radius, `rgba(170, 204, 255, ${intensity * 0.8})`, 3);
     
     // Inner shimmer
     for (let i = 0; i < 3; i++) {
       const innerRadius = radius * (0.7 + i * 0.1);
       const alpha = intensity * 0.2 * (1 - i * 0.3);
-      renderer.strokeCircle(pos.x, pos.y, innerRadius, `rgba(255, 255, 255, ${alpha})`, 1);
+      renderer.strokeCircle(screenPos.x, screenPos.y, innerRadius, `rgba(255, 255, 255, ${alpha})`, 1);
     }
   }
 
-  private renderWarpDistortion(renderer: IRenderer, pos: Vector2D, radius: number, distortion: number, intensity: number): void {
+  private renderWarpDistortion(renderer: IRenderer, pos: Vector2D, radius: number, distortion: number, intensity: number, camera: ICamera): void {
+    const screenPos = camera.worldToScreen(pos.x, pos.y);
     // Render gravitational lensing effect approximation
     const rings = 5;
     for (let i = 0; i < rings; i++) {
@@ -470,46 +478,49 @@ export class EffectSystem {
       const alpha = intensity * 0.6 * (1 - i * 0.15);
       
       // Distorted rings
-      renderer.strokeCircle(pos.x, pos.y, ringRadius, `rgba(255, 255, 0, ${alpha})`, 2);
+      renderer.strokeCircle(screenPos.x, screenPos.y, ringRadius, `rgba(255, 255, 0, ${alpha})`, 2);
       
       // Add chromatic aberration effect
-      renderer.strokeCircle(pos.x - 1, pos.y, ringRadius, `rgba(255, 0, 0, ${alpha * 0.5})`, 1);
-      renderer.strokeCircle(pos.x + 1, pos.y, ringRadius, `rgba(0, 0, 255, ${alpha * 0.5})`, 1);
+      renderer.strokeCircle(screenPos.x - 1, screenPos.y, ringRadius, `rgba(255, 0, 0, ${alpha * 0.5})`, 1);
+      renderer.strokeCircle(screenPos.x + 1, screenPos.y, ringRadius, `rgba(0, 0, 255, ${alpha * 0.5})`, 1);
     }
   }
 
-  private renderWarpCollapse(renderer: IRenderer, pos: Vector2D, radius: number, intensity: number): void {
+  private renderWarpCollapse(renderer: IRenderer, pos: Vector2D, radius: number, intensity: number, camera: ICamera): void {
     if (radius <= 0 || intensity <= 0) return;
     
+    const screenPos = camera.worldToScreen(pos.x, pos.y);
     // Collapsing black hole effect
-    renderer.fillCircle(pos.x, pos.y, Math.max(1, radius * 0.1), '#000000');
+    renderer.fillCircle(screenPos.x, screenPos.y, Math.max(1, radius * 0.1), '#000000');
     
     // Accretion disk
     const diskRadius = radius * 0.5;
     for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
-      const x = pos.x + Math.cos(angle) * diskRadius;
-      const y = pos.y + Math.sin(angle) * diskRadius * 0.3; // Flattened disk
+      const x = screenPos.x + Math.cos(angle) * diskRadius;
+      const y = screenPos.y + Math.sin(angle) * diskRadius * 0.3; // Flattened disk
       
       const alpha = intensity * 0.8;
       renderer.fillCircle(x, y, 2, `rgba(255, 150, 0, ${alpha})`);
     }
   }
 
-  private renderWeaponImpact(effect: VisualEffect, renderer: IRenderer): void {
+  private renderWeaponImpact(effect: VisualEffect, renderer: IRenderer, camera: ICamera): void {
     const { position, size, intensity, color } = effect;
+    const screenPos = camera.worldToScreen(position.x, position.y);
     const progress = 1 - (effect.timeRemaining / effect.duration);
     
     // Expanding explosion
     const currentSize = size * (1 + progress * 2);
     const alpha = intensity * (1 - progress);
     
-    renderer.fillCircle(position.x, position.y, currentSize, `rgba(255, 255, 0, ${alpha})`);
-    renderer.fillCircle(position.x, position.y, currentSize * 0.7, `rgba(255, 150, 0, ${alpha})`);
-    renderer.fillCircle(position.x, position.y, currentSize * 0.4, `rgba(255, 255, 255, ${alpha})`);
+    renderer.fillCircle(screenPos.x, screenPos.y, currentSize, `rgba(255, 255, 0, ${alpha})`);
+    renderer.fillCircle(screenPos.x, screenPos.y, currentSize * 0.7, `rgba(255, 150, 0, ${alpha})`);
+    renderer.fillCircle(screenPos.x, screenPos.y, currentSize * 0.4, `rgba(255, 255, 255, ${alpha})`);
   }
 
-  private renderBasicEffect(effect: VisualEffect, renderer: IRenderer): void {
+  private renderBasicEffect(effect: VisualEffect, renderer: IRenderer, camera: ICamera): void {
     const { position, size, intensity, color } = effect;
-    renderer.fillCircle(position.x, position.y, size, color);
+    const screenPos = camera.worldToScreen(position.x, position.y);
+    renderer.fillCircle(screenPos.x, screenPos.y, size, color);
   }
 }

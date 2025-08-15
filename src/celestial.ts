@@ -30,6 +30,12 @@ export class CelestialBody implements ICelestialBody {
   public orbitEccentricity: number = 0; // 0 = perfect circle, 0.99 = very elliptical
   public periapsis: number = 0; // Closest approach distance
   public apoapsis: number = 0;  // Farthest distance
+  
+  // Enhanced orbital parameters for realistic mechanics
+  public semiMajorAxis: number = 0; // Half the long axis of ellipse
+  public meanAnomaly: number = 0; // Position in orbit (0 to 2π)
+  public meanMotion: number = 0; // Radians per second
+  public centralBodyMass: number = 0; // Mass of body being orbited
 
   public hasAtmosphere: boolean = false;
   public atmosphereColor: string | null = null;
@@ -73,78 +79,124 @@ export class CelestialBody implements ICelestialBody {
     }
   }
 
-  // Simple orbit setting with circular orbits only
-  public setOrbit(center: Vector2D, distance: number, speed: number, startAngle: number = 0, eccentricity: number = 0): void {
+  // Realistic orbit setting with proper Kepler mechanics
+  public setOrbit(center: Vector2D, distance: number, centralMass: number, startAngle: number = 0, eccentricity: number = 0): void {
     this.orbitCenter = center;
-    this.orbitDistance = distance;
-    this.orbitSpeed = speed * 0.1; // Reduce speed significantly for smoother movement
+    this.orbitDistance = distance; // This will be periapsis for elliptical orbits
+    this.orbitEccentricity = Math.min(0.95, eccentricity); // Limit eccentricity to prevent extremely elliptical orbits
+    this.centralBodyMass = centralMass;
+    
+    // Calculate semi-major axis based on distance (periapsis) and eccentricity
+    this.semiMajorAxis = distance / (1 - this.orbitEccentricity);
+    this.periapsis = distance;
+    this.apoapsis = this.semiMajorAxis * (1 + this.orbitEccentricity);
+    
+    // Calculate mean motion using Kepler's third law: n = sqrt(GM/a³)
+    const G = 0.001; // Gravitational constant (scaled for game)
+    this.meanMotion = Math.sqrt((G * centralMass) / Math.pow(this.semiMajorAxis, 3));
+    
+    // Set starting position
+    this.meanAnomaly = startAngle;
     this.orbitAngle = startAngle;
-    
-    // Ignore eccentricity for simple circular orbits
-    this.orbitEccentricity = 0;
-    
-    // Set initial position based on circular orbit
-    this.position.x = center.x + Math.cos(startAngle) * distance;
-    this.position.y = center.y + Math.sin(startAngle) * distance;
+    this.updateOrbitalPosition();
   }
 
   private updateOrbitalPosition(): void {
     if (!this.orbitCenter) return;
     
-    // For elliptical orbits, distance varies with angle
-    const currentDistance = this.orbitDistance * (1 - this.orbitEccentricity * this.orbitEccentricity) / 
-                           (1 + this.orbitEccentricity * Math.cos(this.orbitAngle));
+    // Solve Kepler's equation to get true anomaly from mean anomaly
+    const eccentricAnomaly = this.solveKeplerEquation(this.meanAnomaly, this.orbitEccentricity);
     
-    this.position.x = this.orbitCenter.x + Math.cos(this.orbitAngle) * currentDistance;
-    this.position.y = this.orbitCenter.y + Math.sin(this.orbitAngle) * currentDistance;
+    // Calculate true anomaly from eccentric anomaly
+    const trueAnomaly = 2 * Math.atan2(
+      Math.sqrt(1 + this.orbitEccentricity) * Math.sin(eccentricAnomaly / 2),
+      Math.sqrt(1 - this.orbitEccentricity) * Math.cos(eccentricAnomaly / 2)
+    );
+    
+    // Calculate distance from focus using orbital equation
+    const currentDistance = this.semiMajorAxis * (1 - this.orbitEccentricity * this.orbitEccentricity) / 
+                           (1 + this.orbitEccentricity * Math.cos(trueAnomaly));
+    
+    // Update position based on true anomaly
+    this.position.x = this.orbitCenter.x + Math.cos(trueAnomaly) * currentDistance;
+    this.position.y = this.orbitCenter.y + Math.sin(trueAnomaly) * currentDistance;
+    this.orbitAngle = trueAnomaly;
+    
+    // Calculate orbital velocity for smooth movement
+    const velocityMagnitude = Math.sqrt(0.001 * this.centralBodyMass * (2 / currentDistance - 1 / this.semiMajorAxis));
+    const velocityAngle = trueAnomaly + Math.PI / 2; // Velocity is perpendicular to radius
+    this.velocity.x = Math.cos(velocityAngle) * velocityMagnitude * 0.1; // Scale down for smoother visuals
+    this.velocity.y = Math.sin(velocityAngle) * velocityMagnitude * 0.1;
+  }
+  
+  // Solve Kepler's equation using Newton-Raphson method
+  private solveKeplerEquation(meanAnomaly: number, eccentricity: number, tolerance: number = 1e-6): number {
+    let eccentricAnomaly = meanAnomaly; // Initial guess
+    
+    for (let i = 0; i < 10; i++) { // Max 10 iterations
+      const f = eccentricAnomaly - eccentricity * Math.sin(eccentricAnomaly) - meanAnomaly;
+      const df = 1 - eccentricity * Math.cos(eccentricAnomaly);
+      
+      const delta = f / df;
+      eccentricAnomaly -= delta;
+      
+      if (Math.abs(delta) < tolerance) break;
+    }
+    
+    return eccentricAnomaly;
   }
 
   public update(deltaTime: number, game: any): void {
     this.rotation += this.rotationSpeed * deltaTime;
 
-    if (this.orbitCenter && this.orbitDistance > 0) {
-      // Simple, stable orbital motion - no complex elliptical mechanics
-      this.orbitAngle += this.orbitSpeed * deltaTime;
+    if (this.orbitCenter && this.semiMajorAxis > 0) {
+      // Update mean anomaly based on mean motion (Kepler's laws)
+      this.meanAnomaly += this.meanMotion * deltaTime;
       
-      // Keep angle in reasonable range
-      if (this.orbitAngle > Math.PI * 2) {
-        this.orbitAngle -= Math.PI * 2;
+      // Keep mean anomaly in range [0, 2π]
+      if (this.meanAnomaly > Math.PI * 2) {
+        this.meanAnomaly -= Math.PI * 2;
       }
       
-      // Simple circular orbit
-      this.position.x = this.orbitCenter.x + Math.cos(this.orbitAngle) * this.orbitDistance;
-      this.position.y = this.orbitCenter.y + Math.sin(this.orbitAngle) * this.orbitDistance;
-      
-      // Simple velocity calculation for smooth movement
-      this.velocity.x = -Math.sin(this.orbitAngle) * this.orbitDistance * this.orbitSpeed * 0.01;
-      this.velocity.y = Math.cos(this.orbitAngle) * this.orbitDistance * this.orbitSpeed * 0.01;
+      // Update position using realistic orbital mechanics
+      this.updateOrbitalPosition();
     }
 
-    // Remove the mutual gravity system that was causing instability
-    // if (game.sceneManager?.getCurrentScene()?.getCelestialBodies && this.type !== CelestialBodyType.ASTEROID) {
-    //   const otherBodies = game.sceneManager.getCurrentScene().getCelestialBodies();
-    //   this.applyMutualGravity(otherBodies, deltaTime);
-    // }
+    // Apply gravitational perturbations from other massive bodies (optional enhancement)
+    if (game.sceneManager?.getCurrentScene()?.getCelestialBodies && this.type !== CelestialBodyType.ASTEROID) {
+      const otherBodies = game.sceneManager.getCurrentScene().getCelestialBodies();
+      this.applyOrbitalPerturbations(otherBodies, deltaTime);
+    }
   }
 
-  private applyMutualGravity(otherBodies: Array<{ position: Vector2D; mass: number; radius: number }>, deltaTime: number): void {
-    // Simplified mutual gravitational effects (mostly for orbital perturbations)
+  private applyOrbitalPerturbations(otherBodies: Array<{ position: Vector2D; mass: number; radius: number }>, deltaTime: number): void {
+    // Apply subtle gravitational perturbations from other massive bodies
     otherBodies.forEach(other => {
-      if (other === this) return;
+      if (other === this || !this.orbitCenter) return;
       
       const dx = other.position.x - this.position.x;
       const dy = other.position.y - this.position.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      // Only apply for significant masses and at reasonable distances
-      if (distance > (this.radius + other.radius) * 2 && other.mass > this.mass * 0.1) {
-        const force = (other.mass * 0.0001) / (distance * distance); // Much weaker than ship gravity
-        const angle = Math.atan2(dy, dx);
+      // Only apply for significant masses and at reasonable distances (avoid the central body)
+      if (distance > (this.radius + other.radius) * 3 && other.mass > this.centralBodyMass * 0.01) {
+        // Calculate perturbation strength based on mass and distance
+        const perturbationStrength = (other.mass * 0.00001) / (distance * distance);
         
-        // Apply tiny perturbations to orbital motion
-        if (this.orbitCenter) {
-          this.orbitAngle += force * Math.sin(angle - this.orbitAngle) * deltaTime * 0.001;
-          this.orbitSpeed *= (1 + force * deltaTime * 0.0001);
+        // Apply small changes to orbital elements
+        const perturbationAngle = Math.atan2(dy, dx);
+        
+        // Slightly modify mean motion (changes orbital period)
+        this.meanMotion *= (1 + perturbationStrength * Math.sin(perturbationAngle) * deltaTime * 0.0001);
+        
+        // Slightly modify eccentricity (changes orbit shape)
+        const eccentricityChange = perturbationStrength * Math.cos(perturbationAngle) * deltaTime * 0.0001;
+        this.orbitEccentricity = Math.max(0, Math.min(0.95, this.orbitEccentricity + eccentricityChange));
+        
+        // Recalculate orbital parameters if eccentricity changed significantly
+        if (Math.abs(eccentricityChange) > 0.00001) {
+          this.apoapsis = this.semiMajorAxis * (1 + this.orbitEccentricity);
+          this.periapsis = this.semiMajorAxis * (1 - this.orbitEccentricity);
         }
       }
     });
@@ -303,47 +355,127 @@ export class CelestialBody implements ICelestialBody {
     const size = Math.floor(this.radius * 2);
     const centerX = 0;
     const centerY = 0;
+    const seed = this.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     
-    // 16-bit planet color palette
-    const colors = {
-      base: this.color,
-      dark: this.darkenColor(this.color, 0.3),
-      darker: this.darkenColor(this.color, 0.6),
-      light: this.lightenColor(this.color, 0.2),
-      feature: '#2d4a5b'
-    };
+    // Generate diverse planetary color palette based on planet type
+    const planetType = seed % 4;
+    let colors: any;
     
-    // Draw pixelated planet surface
+    switch (planetType) {
+      case 0: // Earth-like
+        colors = {
+          water: '#1e4f72',     // Deep blue oceans
+          land: '#2d5016',      // Green continents
+          mountain: '#4a3728',  // Brown mountains
+          desert: '#8b7355',    // Sandy deserts
+          ice: '#e6f3ff',       // Ice caps
+          cloud: 'rgba(255,255,255,0.4)',
+          city: '#ffff99'       // City lights
+        };
+        break;
+      case 1: // Desert world
+        colors = {
+          sand: '#c19a6b',      // Sandy surface
+          rock: '#8b4513',      // Rocky outcrops
+          dune: '#daa520',      // Sand dunes
+          canyon: '#654321',    // Deep canyons
+          mineral: '#b8860b',   // Mineral deposits
+          storm: 'rgba(139,69,19,0.3)',
+          oasis: '#228b22'      // Rare vegetation
+        };
+        break;
+      case 2: // Ice world
+        colors = {
+          ice: '#f0f8ff',       // Ice surface
+          deepice: '#b0c4de',   // Deep ice
+          rock: '#2f4f4f',      // Exposed rock
+          crevasse: '#483d8b',  // Deep crevasses
+          aurora: '#00ff7f',    // Aurora effects
+          frozen: '#e0e6ff',
+          methane: '#87ceeb'    // Methane lakes
+        };
+        break;
+      case 3: // Volcanic world
+        colors = {
+          lava: '#ff4500',      // Active lava
+          cooling: '#8b0000',   // Cooling lava
+          rock: '#2f2f2f',      // Volcanic rock
+          ash: '#696969',       // Ash fields
+          glow: '#ff6347',      // Volcanic glow
+          sulfur: '#ffff00',    // Sulfur deposits
+          magma: '#dc143c'      // Magma chambers
+        };
+        break;
+    }
+    
+    // Draw realistic planetary surface with geographic features
     for (let x = -size/2; x < size/2; x += 2) {
       for (let y = -size/2; y < size/2; y += 2) {
         const distance = Math.sqrt(x*x + y*y);
         if (distance < this.radius) {
-          let color = colors.base;
+          // Calculate longitude/latitude for realistic features
+          const longitude = Math.atan2(y, x) + this.rotation * 0.1;
+          const latitude = Math.asin(Math.sqrt(x*x + y*y) / this.radius);
           
-          // Create 16-bit terrain patterns
-          const terrainPattern = Math.sin(x * 0.2) * Math.cos(y * 0.2);
-          const craterPattern = Math.sin(x * 0.5 + this.rotation) * Math.cos(y * 0.5 + this.rotation);
+          // Multi-scale noise for realistic terrain
+          const continentNoise = this.noise(longitude * 2, latitude * 2, seed) * 0.8;
+          const mountainNoise = this.noise(longitude * 8, latitude * 8, seed + 100) * 0.4;
+          const detailNoise = this.noise(longitude * 20, latitude * 20, seed + 200) * 0.2;
+          const combined = continentNoise + mountainNoise + detailNoise;
           
-          if (terrainPattern > 0.3) {
-            color = colors.light;
-          } else if (terrainPattern < -0.3) {
-            color = colors.dark;
+          let color = colors[Object.keys(colors)[0]];
+          
+          if (planetType === 0) { // Earth-like
+            if (combined > 0.3) {
+              color = colors.land; // Land masses
+              if (mountainNoise > 0.2) color = colors.mountain; // Mountains
+              if (latitude > 0.8) color = colors.ice; // Polar ice
+              if (detailNoise > 0.15 && combined > 0.5) color = colors.city; // Cities
+            } else {
+              color = colors.water; // Oceans
+              if (latitude > 0.9) color = colors.ice; // Polar ice
+            }
+          } else if (planetType === 1) { // Desert
+            if (combined > 0.2) {
+              color = colors.rock; // Rocky highlands
+              if (mountainNoise > 0.1) color = colors.canyon; // Canyons
+            } else if (combined > -0.2) {
+              color = colors.sand; // Sandy plains
+              if (detailNoise > 0.1) color = colors.dune; // Dunes
+            } else {
+              color = colors.desert; // Low desert
+              if (detailNoise > 0.18) color = colors.oasis; // Rare oases
+            }
+          } else if (planetType === 2) { // Ice world
+            if (combined > 0.1) {
+              color = colors.rock; // Exposed rock
+            } else if (combined > -0.3) {
+              color = colors.ice; // Surface ice
+              if (detailNoise > 0.15) color = colors.aurora; // Aurora zones
+            } else {
+              color = colors.deepice; // Deep ice
+              if (mountainNoise < -0.2) color = colors.crevasse; // Crevasses
+            }
+          } else { // Volcanic
+            if (combined > 0.3) {
+              color = colors.rock; // Solid rock
+              if (detailNoise > 0.18) color = colors.sulfur; // Sulfur
+            } else if (combined > 0.0) {
+              color = colors.ash; // Ash fields
+            } else {
+              color = colors.lava; // Active lava
+              if (mountainNoise < -0.1) color = colors.magma; // Magma
+            }
           }
           
-          // Add crater-like features
-          if (craterPattern > 0.6) {
-            color = colors.darker;
-          }
+          // Proper 3D shading based on angle from sun
+          const sunAngle = Math.atan2(y, x);
+          const shadingIntensity = Math.cos(sunAngle) * 0.3 + 0.7;
+          color = this.adjustBrightness(color, shadingIntensity);
           
-          // Day/night terminator effect
-          const lightAngle = Math.atan2(y, x);
-          if (lightAngle > Math.PI * 0.3 && lightAngle < Math.PI * 0.7) {
-            color = this.darkenColor(color, 0.4);
-          }
-          
-          // Surface details using dithering pattern
-          if ((x + y) % 4 === 0 && Math.random() > 0.8) {
-            color = colors.feature;
+          // Dithering for 16-bit effect
+          if ((x + y) % 4 === 0 && Math.random() > 0.9) {
+            color = this.darkenColor(color, 0.1);
           }
           
           ctx.fillStyle = color;
@@ -372,42 +504,60 @@ export class CelestialBody implements ICelestialBody {
     const size = Math.floor(this.radius * 2);
     const centerX = 0;
     const centerY = 0;
+    const seed = this.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     
-    // 16-bit moon color palette
+    // Realistic moon color palette
     const colors = {
-      base: '#c0c0c0',      // Silver gray
-      dark: '#808080',      // Dark gray
-      darker: '#404040',    // Very dark gray
-      light: '#e0e0e0',     // Light gray
-      crater: '#202020'     // Almost black
+      highlands: '#e0e0e0',    // Bright highland material
+      maria: '#606060',        // Dark basaltic plains (seas)
+      crater: '#404040',       // Fresh crater material
+      ancient: '#c0c0c0',      // Ancient crater material
+      ray: '#ffffff',          // Bright crater rays
+      shadow: '#202020'        // Deep crater shadows
     };
     
-    // Draw pixelated moon surface
+    // Draw realistic lunar surface with geographical features
     for (let x = -size/2; x < size/2; x += 2) {
       for (let y = -size/2; y < size/2; y += 2) {
         const distance = Math.sqrt(x*x + y*y);
         if (distance < this.radius) {
-          let color = colors.base;
+          const longitude = Math.atan2(y, x) + this.rotation * 0.05;
+          const latitude = Math.asin(Math.sqrt(x*x + y*y) / this.radius);
           
-          // Create crater patterns
-          const craterNoise = Math.sin(x * 0.3) * Math.cos(y * 0.3) + 
-                             Math.sin(x * 0.7) * Math.cos(y * 0.7) * 0.5;
+          // Multi-scale crater and terrain features
+          const mariaPattern = this.noise(longitude * 3, latitude * 3, seed) * 0.6;
+          const craterPattern = this.noise(longitude * 12, latitude * 12, seed + 50) * 0.8;
+          const rayPattern = this.noise(longitude * 25, latitude * 25, seed + 100) * 0.3;
           
-          if (craterNoise > 0.5) {
-            color = colors.light;
-          } else if (craterNoise < -0.5) {
-            color = colors.dark;
+          let color = colors.highlands; // Default highland color
+          
+          // Maria (dark plains) - large scale features
+          if (mariaPattern < -0.2) {
+            color = colors.maria;
           }
           
-          // Large crater features
-          const largeCrater = Math.sin(x * 0.1 + this.rotation) * Math.cos(y * 0.1 + this.rotation);
-          if (largeCrater > 0.7) {
-            color = colors.crater;
+          // Crater features
+          if (craterPattern > 0.6) {
+            color = colors.crater; // Fresh crater material
+          } else if (craterPattern > 0.4) {
+            color = colors.ancient; // Older crater material
+          } else if (craterPattern < -0.6) {
+            color = colors.shadow; // Deep crater floors
           }
           
-          // Surface texturing with dithering
-          if ((x + y) % 6 === 0) {
-            color = this.darkenColor(color, 0.2);
+          // Bright crater rays (recent impacts)
+          if (rayPattern > 0.2 && craterPattern > 0.5) {
+            color = colors.ray;
+          }
+          
+          // Realistic lighting based on sun angle
+          const sunAngle = Math.atan2(y, x);
+          const shadingIntensity = Math.max(0.3, Math.cos(sunAngle) * 0.4 + 0.6);
+          color = this.adjustBrightness(color, shadingIntensity);
+          
+          // 16-bit dithering effect
+          if ((x + y) % 4 === 0 && Math.random() > 0.85) {
+            color = this.darkenColor(color, 0.15);
           }
           
           ctx.fillStyle = color;
@@ -421,48 +571,100 @@ export class CelestialBody implements ICelestialBody {
     const size = Math.floor(this.radius * 2);
     const centerX = 0;
     const centerY = 0;
+    const seed = this.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     
-    // 16-bit asteroid color palette
-    const colors = {
-      base: '#8b7355',      // Brown-gray
-      dark: '#5d4e37',      // Dark brown
-      light: '#a0906b',     // Light brown
-      metal: '#696969'      // Metallic gray
-    };
+    // Diverse asteroid types and color palettes
+    const asteroidType = seed % 3;
+    let colors: any;
+    
+    switch (asteroidType) {
+      case 0: // Rocky asteroid (C-type)
+        colors = {
+          base: '#3c3c3c',      // Dark carbonaceous material
+          rock: '#5a5a5a',      // Rocky material
+          crater: '#2a2a2a',    // Impact craters
+          metal: '#696969',     // Metal traces
+          dust: '#4a4a4a'       // Surface dust
+        };
+        break;
+      case 1: // Metallic asteroid (M-type)
+        colors = {
+          base: '#8c7853',      // Iron-nickel base
+          metal: '#b8860b',     // Metallic veins
+          oxide: '#cd853f',     // Oxidized metal
+          pure: '#daa520',      // Pure metal exposures
+          rough: '#696969'      // Rough surfaces
+        };
+        break;
+      case 2: // Stony asteroid (S-type)
+        colors = {
+          base: '#a0522d',      // Silicate rock
+          crystal: '#deb887',   // Crystalline material
+          regolith: '#8b7d6b',  // Surface regolith
+          impact: '#654321',    // Impact melt
+          mineral: '#d2691e'    // Mineral inclusions
+        };
+        break;
+    }
     
     ctx.save();
     ctx.rotate(this.rotation);
     
-    // Create irregular pixelated asteroid shape
+    // Create realistic irregular asteroid shape and surface
     for (let x = -size/2; x < size/2; x += 2) {
       for (let y = -size/2; y < size/2; y += 2) {
         const distance = Math.sqrt(x*x + y*y);
         
-        // Create irregular shape using noise
-        const shapeNoise = Math.sin(x * 0.2) * Math.cos(y * 0.2) * 0.3;
-        const adjustedRadius = this.radius * (0.7 + shapeNoise);
+        // Create highly irregular shape using multiple noise layers
+        const largeNoise = this.noise(x * 0.1, y * 0.1, seed) * 0.4;
+        const mediumNoise = this.noise(x * 0.3, y * 0.3, seed + 50) * 0.2;
+        const smallNoise = this.noise(x * 0.6, y * 0.6, seed + 100) * 0.1;
+        const shapeNoise = largeNoise + mediumNoise + smallNoise;
+        const adjustedRadius = this.radius * (0.6 + shapeNoise);
         
         if (distance < adjustedRadius) {
           let color = colors.base;
           
-          // Surface texture patterns
-          const rockPattern = Math.sin(x * 0.4) * Math.cos(y * 0.4);
-          const metalPattern = Math.sin(x * 0.8) * Math.cos(y * 0.8);
+          // Surface composition based on asteroid type
+          const compositionNoise = this.noise(x * 0.2, y * 0.2, seed + 200);
+          const detailNoise = this.noise(x * 0.8, y * 0.8, seed + 300);
+          const craterNoise = this.noise(x * 1.2, y * 1.2, seed + 400);
           
-          if (rockPattern > 0.4) {
-            color = colors.light;
-          } else if (rockPattern < -0.4) {
-            color = colors.dark;
+          if (asteroidType === 0) { // Rocky asteroid
+            if (compositionNoise > 0.3) {
+              color = colors.rock;
+            } else if (compositionNoise < -0.4) {
+              color = colors.dust;
+            }
+            if (craterNoise > 0.6) color = colors.crater;
+            if (detailNoise > 0.7) color = colors.metal;
+          } else if (asteroidType === 1) { // Metallic asteroid  
+            if (compositionNoise > 0.2) {
+              color = colors.metal;
+              if (detailNoise > 0.4) color = colors.pure;
+            } else if (compositionNoise < -0.2) {
+              color = colors.oxide;
+            }
+            if (craterNoise > 0.5) color = colors.rough;
+          } else { // Stony asteroid
+            if (compositionNoise > 0.3) {
+              color = colors.crystal;
+            } else if (compositionNoise < -0.3) {
+              color = colors.regolith;
+            }
+            if (craterNoise > 0.6) color = colors.impact;
+            if (detailNoise > 0.6) color = colors.mineral;
           }
           
-          // Metallic veins
-          if (metalPattern > 0.7) {
-            color = colors.metal;
-          }
+          // Realistic lighting with rough surface
+          const lightAngle = Math.atan2(y, x);
+          const surfaceRoughness = 1 + smallNoise * 0.3;
+          const shadingIntensity = Math.max(0.2, Math.cos(lightAngle) * 0.5 + 0.5) * surfaceRoughness;
+          color = this.adjustBrightness(color, shadingIntensity);
           
-          // Random surface details
-          if (Math.random() > 0.9) {
-            color = this.darkenColor(color, 0.3);
+          // Enhanced 16-bit dithering for rocky texture
+          if ((x + y) % 4 === 0 && Math.random() > 0.8) {
+            color = this.darkenColor(color, 0.2);
           }
           
           ctx.fillStyle = color;
@@ -488,6 +690,21 @@ export class CelestialBody implements ICelestialBody {
     const g = Math.max(0, parseInt(hex.substr(2, 2), 16) - Math.floor(factor * 255));
     const b = Math.max(0, parseInt(hex.substr(4, 2), 16) - Math.floor(factor * 255));
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  }
+
+  private adjustBrightness(color: string, intensity: number): string {
+    if (color.includes('rgba')) return color; // Skip rgba colors
+    const hex = color.replace('#', '');
+    const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) * intensity));
+    const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) * intensity));
+    const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) * intensity));
+    return `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
+  }
+
+  // Simple noise function for terrain generation
+  private noise(x: number, y: number, seed: number): number {
+    const n = Math.sin(x * 12.9898 + y * 78.233 + seed * 37.719) * 43758.5453;
+    return (n - Math.floor(n)) * 2 - 1; // Return value between -1 and 1
   }
 
   private renderGeneric(renderer: IRenderer): void {

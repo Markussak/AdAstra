@@ -532,6 +532,7 @@ export interface IInputManager {
   getBrakeInput(): number;
   getRotationInput(): number;
   getFireInput(): boolean;
+  getJoystickDirection(): { x: number, y: number };
   getTouchMenuInput(): { up: boolean, down: boolean, select: boolean, back: boolean };
   setTouchControlsEnabled(enabled: boolean): void;
   renderTouchControls(renderer: any): void;
@@ -569,7 +570,7 @@ export interface ICelestialBody extends IGameObject {
   atmosphereColor: string | null;
   surfaceFeatures: SurfaceFeature[];
 
-  setOrbit(center: Vector2D, distance: number, speed: number, startAngle?: number): void;
+  setOrbit(center: Vector2D, distance: number, centralMass: number, startAngle?: number, eccentricity?: number): void;
   isVisible(camera: ICamera, screenWidth: number, screenHeight: number): boolean;
 }
 

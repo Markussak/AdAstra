@@ -383,26 +383,36 @@ export class InputManager implements IInputManager {
 
   public getThrustInput(): number {
     if (this.touchControlsEnabled && this.virtualJoystick.active) {
-      return Math.max(0, -this.virtualJoystick.y);
+      // Calculate joystick magnitude for thrust
+      const magnitude = Math.sqrt(this.virtualJoystick.x * this.virtualJoystick.x + this.virtualJoystick.y * this.virtualJoystick.y);
+      return Math.min(1, magnitude); // Use joystick magnitude as thrust
     }
     return (this.isKeyPressed('w') || this.isKeyPressed('arrowup')) ? 1 : 0;
   }
 
   public getBrakeInput(): number {
     if (this.touchControlsEnabled && this.virtualJoystick.active) {
-      return Math.max(0, this.virtualJoystick.y);
+      return 0; // No brake on joystick for now, space for pure movement
     }
     return (this.isKeyPressed('s') || this.isKeyPressed('arrowdown')) ? 1 : 0;
   }
 
   public getRotationInput(): number {
     if (this.touchControlsEnabled && this.virtualJoystick.active) {
-      return this.virtualJoystick.x;
+      return this.virtualJoystick.x * 2; // Increase rotation sensitivity
     }
     let rotation = 0;
     if (this.isKeyPressed('a') || this.isKeyPressed('arrowleft')) rotation -= 1;
     if (this.isKeyPressed('d') || this.isKeyPressed('arrowright')) rotation += 1;
     return rotation;
+  }
+
+  // New method for joystick direction
+  public getJoystickDirection(): { x: number, y: number } {
+    if (this.touchControlsEnabled && this.virtualJoystick.active) {
+      return { x: this.virtualJoystick.x, y: this.virtualJoystick.y };
+    }
+    return { x: 0, y: 0 };
   }
 
   public getFireInput(): boolean {

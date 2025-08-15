@@ -20,8 +20,10 @@ export class PlayerShip implements IPlayerShip {
   public position: Vector2D;
   public velocity: Vector2D = { x: 0, y: 0 };
   public angle: number = 0;
+  public angularVelocity: number = 0; // For realistic rotation inertia
   public radius: number = 15;
   public active: boolean = true;
+  public mass: number = 100; // Ship mass for inertia calculations
 
   public systems: Map<ShipSystemType, ShipSystem> = new Map();
   public components: ShipComponent[] = [];
@@ -43,11 +45,12 @@ export class PlayerShip implements IPlayerShip {
   public warpCharge: number = 0;
   public maxWarpCharge: number = 100;
   public isWarping: boolean = false;
+  public inertialDampers: boolean = true; // Reduces drift but costs energy
 
   // Movement
   public thrust: number = 0;
-  public maxThrust: number = 0.2;
-  public rotationSpeed: number = 3.0;
+  public maxThrust: number = 0.4; // Increased from 0.2 for better responsiveness
+  public rotationSpeed: number = 4.0; // Increased rotation speed
 
   // Cargo
   public cargoItems: Map<string, CargoItem> = new Map();
@@ -141,6 +144,14 @@ export class PlayerShip implements IPlayerShip {
 
     // Apply enhanced Newtonian motion
     PhysicsEngine.applyNewtonianMotion(this, deltaTime, gameConfig.physics.frictionFactor);
+    
+    // Apply gyroscopic effects for realistic high-speed handling
+    PhysicsEngine.applyGyroscopicEffects(this, deltaTime);
+    
+    // Apply inertial dampening if active
+    if (this.inertialDampers && this.energy > 1) {
+      this.applyInertialDampening(deltaTime);
+    }
 
     // Apply gravitational forces from celestial bodies
     if (game.sceneManager.getCurrentScene()?.getCelestialBodies) {
@@ -175,7 +186,7 @@ export class PlayerShip implements IPlayerShip {
       // Slight angular drift at high speeds (simulating control difficulty)
       const speedFactor = Math.min(1.0, speed / 200);
       const drift = (Math.random() - 0.5) * speedFactor * 0.01 * deltaTime;
-      this.angle += drift;
+      this.angularVelocity += drift; // Apply to angular velocity for more realistic effect
     }
 
     // Fuel consumption based on actual thrust usage and speed
@@ -185,31 +196,100 @@ export class PlayerShip implements IPlayerShip {
     }
   }
 
-  private handleInput(inputManager: IInputManager, deltaTime: number): void {
-    const rotationInput = inputManager.getRotationInput();
-    this.angle += rotationInput * this.rotationSpeed * deltaTime;
-
-    const thrustInput = inputManager.getThrustInput();
-    const enginesActive = this.systems.get(ShipSystemType.ENGINES)?.active;
-
-    if (thrustInput > 0 && enginesActive && this.fuel > 0) {
-      const thrustForce = this.maxThrust * (this.systems.get(ShipSystemType.REACTOR)?.active ? 1.0 : 0.5);
-      this.velocity.x += Math.cos(this.angle) * thrustForce * deltaTime;
-      this.velocity.y += Math.sin(this.angle) * thrustForce * deltaTime;
+  private applyInertialDampening(deltaTime: number): void {
+    // Inertial dampening reduces unwanted drift but consumes energy
+    const speed = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+    const angularSpeed = Math.abs(this.angularVelocity);
+    
+    if (speed > 5 || angularSpeed > 0.1) {
+      // Calculate dampening force needed
+      const linearDampening = Math.min(speed * 0.02, 10); // Max dampening force
+      const angularDampening = Math.min(angularSpeed * 0.1, 1);
       
-      this.fuel = Math.max(0, this.fuel - 0.1 * deltaTime);
-      this.energy = Math.max(0, this.energy - 0.05 * deltaTime);
+      // Apply dampening forces
+      if (speed > 5) {
+        const dampFactor = Math.pow(0.98, deltaTime);
+        this.velocity.x *= dampFactor;
+        this.velocity.y *= dampFactor;
+      }
       
-      this.thrust = Math.min(1.0, this.thrust + 2.0 * deltaTime);
-    } else {
-      this.thrust = Math.max(0, this.thrust - 4.0 * deltaTime);
+      if (angularSpeed > 0.1) {
+        this.angularVelocity *= Math.pow(0.95, deltaTime);
+      }
+      
+      // Energy cost for dampening
+      const energyCost = (linearDampening + angularDampening) * 0.1 * deltaTime;
+      this.energy = Math.max(0, this.energy - energyCost);
+      
+      // Disable dampening if energy too low
+      if (this.energy < 1) {
+        this.inertialDampers = false;
+      }
     }
+  }
 
-    const brakeInput = inputManager.getBrakeInput();
-    if (brakeInput > 0 && enginesActive) {
-      const brakeForce = this.maxThrust * 0.5;
-      this.velocity.x -= Math.cos(this.angle) * brakeForce * deltaTime;
-      this.velocity.y -= Math.sin(this.angle) * brakeForce * deltaTime;
+  private handleInput(inputManager: IInputManager, deltaTime: number): void {
+    const enginesActive = this.systems.get(ShipSystemType.ENGINES)?.active;
+    const thrustForce = this.maxThrust * (this.systems.get(ShipSystemType.REACTOR)?.active ? 1.0 : 0.5) * 3; // Increase base thrust
+    
+    // Check for joystick input (mobile/touch)
+    const joystickDir = inputManager.getJoystickDirection();
+    if (joystickDir.x !== 0 || joystickDir.y !== 0) {
+      // Joystick mode: direct directional control
+      if (enginesActive && this.fuel > 0) {
+        const magnitude = Math.sqrt(joystickDir.x * joystickDir.x + joystickDir.y * joystickDir.y);
+        const normalizedX = joystickDir.x / magnitude;
+        const normalizedY = joystickDir.y / magnitude;
+        
+        // Apply thrust in joystick direction
+        this.velocity.x += normalizedX * thrustForce * magnitude * deltaTime;
+        this.velocity.y += normalizedY * thrustForce * magnitude * deltaTime;
+        
+        // Auto-rotate ship to face movement direction (for visual feedback)
+        const targetAngle = Math.atan2(normalizedY, normalizedX);
+        const angleDiff = targetAngle - this.angle;
+        // Normalize angle difference
+        const normalizedAngleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+        this.angle += normalizedAngleDiff * 3 * deltaTime; // Smooth rotation
+        
+        this.fuel = Math.max(0, this.fuel - 0.1 * magnitude * deltaTime);
+        this.energy = Math.max(0, this.energy - 0.05 * magnitude * deltaTime);
+        this.thrust = Math.min(1.0, this.thrust + 2.0 * deltaTime);
+      }
+    } else {
+             // Keyboard mode: traditional rotation + thrust with enhanced inertia
+       const rotationInput = inputManager.getRotationInput();
+       const targetAngularVelocity = rotationInput * this.rotationSpeed;
+       
+       // Apply angular inertia for realistic rotation
+       PhysicsEngine.applyAngularInertia(this, targetAngularVelocity, 0.5, deltaTime);
+
+       const thrustInput = inputManager.getThrustInput();
+       if (thrustInput > 0 && enginesActive && this.fuel > 0) {
+         // Use enhanced thrust with mass-based inertia
+         PhysicsEngine.applyThrustWithInertia(this, thrustForce * thrustInput, this.mass, deltaTime);
+        
+        this.fuel = Math.max(0, this.fuel - 0.1 * deltaTime);
+        this.energy = Math.max(0, this.energy - 0.05 * deltaTime);
+        this.thrust = Math.min(1.0, this.thrust + 2.0 * deltaTime);
+      } else {
+        this.thrust = Math.max(0, this.thrust - 4.0 * deltaTime);
+      }
+
+             const brakeInput = inputManager.getBrakeInput();
+       if (brakeInput > 0 && enginesActive) {
+         // Realistic reverse thrust braking
+         const reverseAngle = this.angle + Math.PI; // Opposite direction
+         PhysicsEngine.applyThrustWithInertia(
+           { position: this.position, velocity: this.velocity, angle: reverseAngle }, 
+           thrustForce * 0.6 * brakeInput, 
+           this.mass, 
+           deltaTime
+         );
+         
+         this.fuel = Math.max(0, this.fuel - 0.05 * brakeInput * deltaTime);
+         this.energy = Math.max(0, this.energy - 0.025 * brakeInput * deltaTime);
+       }
     }
 
     if (inputManager.getFireInput()) {

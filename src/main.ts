@@ -2142,30 +2142,53 @@ class StatusBar implements IStatusBar {
   public panels: any[] = [];
   private renderer: IRenderer;
   
-  // 16-bit realistic information display color palette
+  // Retro CRT heavy mechanical color palette
   private colors = {
-    panelDark: '#1a1a1a',      // Very dark panel background
-    panelMid: '#2d2d2d',       // Mid-tone for borders
-    panelLight: '#404040',     // Light accent
-    textPrimary: '#e0e0e0',    // Main text color
-    textSecondary: '#a0a0a0',  // Secondary text
-    textDim: '#606060',        // Dimmed text
+    // Main panel colors - darker and more industrial
+    chassisDark: '#0a0a0a',      // Deep black chassis
+    chassisPrimary: '#1a1a1a',   // Primary panel surface
+    chassisMidtone: '#2a2a2a',   // Mid-tone panel
+    chassisLight: '#3a3a3a',     // Light panel accents
     
-    // Status bar colors
-    barBackground: '#0f0f0f',  // Bar background
-    barBorder: '#555555',      // Bar border
+    // Border and structural elements
+    borderDark: '#0f0f0f',       // Dark structural borders
+    borderPrimary: '#404040',    // Primary borders
+    borderLight: '#606060',      // Light accent borders
     
-    // System status colors
-    statusGreen: '#00ff00',    // Good status
-    statusYellow: '#ffff00',   // Warning status  
-    statusOrange: '#ff8000',   // Caution status
-    statusRed: '#ff0000',      // Critical status
+    // Text colors - amber/green CRT styling
+    textAmber: '#ffb000',        // Primary amber text
+    textAmberDim: '#cc8800',     // Dimmed amber
+    textGreen: '#00ff41',        // Green status text
+    textGreenDim: '#00cc33',     // Dimmed green
+    textWhite: '#e8e8e8',        // White technical text
+    textGray: '#888888',         // Gray secondary text
     
-    // Progress bar colors
-    hullBar: '#4080ff',        // Blue for hull
-    shieldBar: '#8040ff',      // Purple for shields
-    energyBar: '#ffff40',      // Yellow for energy
-    fuelBar: '#ff8040'         // Orange for fuel
+    // CRT screen colors
+    screenDark: '#001100',       // Dark CRT background
+    screenGlow: '#003300',       // Screen glow effect
+    scanline: '#002200',         // Scanline color
+    
+    // Status indicator colors
+    statusGreen: '#00ff41',      // Operational
+    statusAmber: '#ffb000',      // Caution
+    statusRed: '#ff4444',        // Critical
+    statusBlue: '#4488ff',       // Info
+    statusOff: '#333333',        // Inactive
+    
+    // Progress bar colors with glow
+    hullBar: '#4488ff',          // Hull integrity
+    hullBarGlow: '#2266dd',      // Hull glow
+    shieldBar: '#bb44ff',        // Shield energy
+    shieldBarGlow: '#9922dd',    // Shield glow
+    energyBar: '#ffbb44',        // Power levels
+    energyBarGlow: '#dd9922',    // Energy glow
+    fuelBar: '#ff6644',          // Fuel reserves
+    fuelBarGlow: '#dd4422',      // Fuel glow
+    
+    // Mechanical details
+    rivetColor: '#666666',       // Rivet details
+    screwColor: '#555555',       // Screw details
+    wireColor: '#777777'         // Wire/cable details
   };
 
   constructor(renderer: IRenderer) {
@@ -2198,167 +2221,375 @@ class StatusBar implements IStatusBar {
   private drawMainPanel(screenWidth: number, statusY: number): void {
     const ctx = this.renderer.getContext();
     
-    // Main panel background
-    ctx.fillStyle = this.colors.panelDark;
+    // Main chassis background with gradient effect
+    ctx.fillStyle = this.colors.chassisDark;
     ctx.fillRect(0, statusY, screenWidth, this.height);
     
-    // Top border line
-    ctx.fillStyle = this.colors.panelMid;
-    ctx.fillRect(0, statusY, screenWidth, 1);
+    // Panel surface with beveled effect
+    ctx.fillStyle = this.colors.chassisPrimary;
+    ctx.fillRect(2, statusY + 2, screenWidth - 4, this.height - 4);
     
-    // Subtle grid pattern
-    ctx.fillStyle = this.colors.panelMid;
-    for (let x = 0; x < screenWidth; x += 40) {
-      ctx.fillRect(x, statusY, 1, this.height);
+    // Top edge highlight
+    ctx.fillStyle = this.colors.chassisLight;
+    ctx.fillRect(2, statusY + 2, screenWidth - 4, 1);
+    
+    // Bottom edge shadow
+    ctx.fillStyle = this.colors.borderDark;
+    ctx.fillRect(2, statusY + this.height - 3, screenWidth - 4, 1);
+    
+    // Industrial rivets along the top
+    for (let x = 20; x < screenWidth - 20; x += 80) {
+      this.drawRivet(ctx, x, statusY + 6);
     }
+    
+    // Section dividers with industrial styling
+    const sectionWidth = screenWidth / 3;
+    for (let i = 1; i < 3; i++) {
+      const dividerX = sectionWidth * i;
+      
+      // Vertical divider line
+      ctx.fillStyle = this.colors.borderDark;
+      ctx.fillRect(dividerX - 1, statusY + 8, 2, this.height - 16);
+      
+      // Divider highlight
+      ctx.fillStyle = this.colors.chassisLight;
+      ctx.fillRect(dividerX, statusY + 8, 1, this.height - 16);
+      
+      // Rivets on dividers
+      this.drawRivet(ctx, dividerX, statusY + 15);
+      this.drawRivet(ctx, dividerX, statusY + this.height - 15);
+    }
+    
+    // Corner reinforcements
+    this.drawCornerReinforcement(ctx, 5, statusY + 5);
+    this.drawCornerReinforcement(ctx, screenWidth - 15, statusY + 5);
+    this.drawCornerReinforcement(ctx, 5, statusY + this.height - 15);
+    this.drawCornerReinforcement(ctx, screenWidth - 15, statusY + this.height - 15);
+  }
+  
+  private drawRivet(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+    // Outer ring
+    ctx.fillStyle = this.colors.borderDark;
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Inner rivet
+    ctx.fillStyle = this.colors.rivetColor;
+    ctx.beginPath();
+    ctx.arc(x, y, 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Highlight
+    ctx.fillStyle = this.colors.chassisLight;
+    ctx.beginPath();
+    ctx.arc(x - 1, y - 1, 1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  private drawCornerReinforcement(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+    // Corner plate
+    ctx.fillStyle = this.colors.chassisMidtone;
+    ctx.fillRect(x, y, 10, 10);
+    
+    // Corner plate border
+    ctx.strokeStyle = this.colors.borderDark;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, 10, 10);
+    
+    // Corner screws
+    ctx.fillStyle = this.colors.screwColor;
+    ctx.fillRect(x + 2, y + 2, 2, 2);
+    ctx.fillRect(x + 6, y + 2, 2, 2);
+    ctx.fillRect(x + 2, y + 6, 2, 2);
+    ctx.fillRect(x + 6, y + 6, 2, 2);
   }
 
   private drawShipStatus(player: IPlayerShip, x: number, y: number): void {
     const ctx = this.renderer.getContext();
     
-    // Section header
-    ctx.fillStyle = this.colors.textPrimary;
-    ctx.font = '8px "Big Apple 3PM", monospace';
+    // CRT monitor bezel
+    this.drawCRTBezel(ctx, x - 5, y - 5, 200, 70);
+    
+    // Section header with CRT glow
+    ctx.fillStyle = this.colors.textAmber;
+    ctx.font = 'bold 8px "Big Apple 3PM", monospace';
     ctx.textAlign = 'left';
-    ctx.fillText('SHIP STATUS', x, y + 8);
+    ctx.fillText('>>> SHIP STATUS <<<', x + 5, y + 10);
     
-    // Status bars
-    this.drawStatusBar('HULL', player.hull, player.maxHull, x, y + 18, this.colors.hullBar, 120);
-    this.drawStatusBar('SHLD', player.shields, player.maxShields, x, y + 30, this.colors.shieldBar, 120);
-    this.drawStatusBar('PWR', player.energy, player.maxEnergy, x, y + 42, this.colors.energyBar, 120);
-    this.drawStatusBar('FUEL', player.fuel, player.maxFuel, x, y + 54, this.colors.fuelBar, 120);
+    // Add header glow effect
+    ctx.shadowBlur = 3;
+    ctx.shadowColor = this.colors.textAmber;
+    ctx.fillText('>>> SHIP STATUS <<<', x + 5, y + 10);
+    ctx.shadowBlur = 0;
     
-    // Numerical readouts
-    ctx.fillStyle = this.colors.textSecondary;
+    // Status bars with enhanced CRT styling
+    this.drawCRTStatusBar('HULL', player.hull, player.maxHull, x + 5, y + 20, this.colors.hullBar, this.colors.hullBarGlow, 140);
+    this.drawCRTStatusBar('SHLD', player.shields, player.maxShields, x + 5, y + 32, this.colors.shieldBar, this.colors.shieldBarGlow, 140);
+    this.drawCRTStatusBar('PWR', player.energy, player.maxEnergy, x + 5, y + 44, this.colors.energyBar, this.colors.energyBarGlow, 140);
+    this.drawCRTStatusBar('FUEL', player.fuel, player.maxFuel, x + 5, y + 56, this.colors.fuelBar, this.colors.fuelBarGlow, 140);
+    
+    // Digital readouts with amber text
+    ctx.fillStyle = this.colors.textAmberDim;
     ctx.font = '6px "Big Apple 3PM", monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(`${Math.floor(player.hull)}/${player.maxHull}`, x + 180, y + 22);
-    ctx.fillText(`${Math.floor(player.shields)}/${player.maxShields}`, x + 180, y + 34);
-    ctx.fillText(`${Math.floor(player.energy)}/${player.maxEnergy}`, x + 180, y + 46);
-    ctx.fillText(`${Math.floor(player.fuel)}/${player.maxFuel}`, x + 180, y + 58);
+    ctx.fillText(`${Math.floor(player.hull).toString().padStart(3, '0')}/${player.maxHull.toString().padStart(3, '0')}`, x + 190, y + 26);
+    ctx.fillText(`${Math.floor(player.shields).toString().padStart(3, '0')}/${player.maxShields.toString().padStart(3, '0')}`, x + 190, y + 38);
+    ctx.fillText(`${Math.floor(player.energy).toString().padStart(3, '0')}/${player.maxEnergy.toString().padStart(3, '0')}`, x + 190, y + 50);
+    ctx.fillText(`${Math.floor(player.fuel).toString().padStart(3, '0')}/${player.maxFuel.toString().padStart(3, '0')}`, x + 190, y + 62);
   }
 
-  private drawStatusBar(label: string, current: number, max: number, x: number, y: number, color: string, width: number): void {
+  private drawCRTBezel(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
+    // Outer bezel
+    ctx.fillStyle = this.colors.chassisDark;
+    ctx.fillRect(x, y, width, height);
+    
+    // Inner bezel
+    ctx.fillStyle = this.colors.chassisMidtone;
+    ctx.fillRect(x + 3, y + 3, width - 6, height - 6);
+    
+    // CRT screen background with scanlines
+    ctx.fillStyle = this.colors.screenDark;
+    ctx.fillRect(x + 5, y + 5, width - 10, height - 10);
+    
+    // Scanlines effect
+    for (let i = y + 6; i < y + height - 5; i += 2) {
+      ctx.fillStyle = this.colors.scanline;
+      ctx.fillRect(x + 5, i, width - 10, 1);
+    }
+    
+    // Screen glow
+    ctx.fillStyle = this.colors.screenGlow;
+    ctx.fillRect(x + 6, y + 6, width - 12, height - 12);
+    
+    // Corner rivets
+    this.drawRivet(ctx, x + 8, y + 8);
+    this.drawRivet(ctx, x + width - 8, y + 8);
+    this.drawRivet(ctx, x + 8, y + height - 8);
+    this.drawRivet(ctx, x + width - 8, y + height - 8);
+  }
+
+  private drawCRTStatusBar(label: string, current: number, max: number, x: number, y: number, color: string, glowColor: string, width: number): void {
     const ctx = this.renderer.getContext();
     const percent = Math.max(0, Math.min(100, (current / max) * 100));
     const barHeight = 8;
     
-    // Label
-    ctx.fillStyle = this.colors.textPrimary;
-    ctx.font = '6px "Big Apple 3PM", monospace';
+    // Status indicator light
+    const indicatorColor = percent > 75 ? this.colors.statusGreen : 
+                          percent > 50 ? this.colors.statusAmber :
+                          percent > 25 ? this.colors.statusRed : this.colors.statusRed;
+    
+    // Indicator housing
+    ctx.fillStyle = this.colors.borderDark;
+    ctx.fillRect(x, y + 1, 8, 6);
+    
+    // Indicator light with glow
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = indicatorColor;
+    ctx.fillStyle = indicatorColor;
+    ctx.fillRect(x + 1, y + 2, 6, 4);
+    ctx.shadowBlur = 0;
+    
+    // Label with amber glow
+    ctx.fillStyle = this.colors.textAmber;
+    ctx.font = 'bold 6px "Big Apple 3PM", monospace';
     ctx.textAlign = 'left';
-    ctx.fillText(label, x, y + 6);
+    ctx.fillText(label, x + 12, y + 6);
+    
+    // Bar housing - recessed industrial style
+    ctx.fillStyle = this.colors.borderDark;
+    ctx.fillRect(x + 42, y - 1, width + 2, barHeight + 2);
     
     // Bar background
-    ctx.fillStyle = this.colors.barBackground;
-    ctx.fillRect(x + 32, y, width, barHeight);
+    ctx.fillStyle = this.colors.screenDark;
+    ctx.fillRect(x + 43, y, width, barHeight);
     
-    // Bar border
-    ctx.strokeStyle = this.colors.barBorder;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x + 32, y, width, barHeight);
-    
-    // Bar fill
+    // Bar fill with glow effect
     const fillWidth = (width - 2) * (percent / 100);
-    ctx.fillStyle = color;
-    ctx.fillRect(x + 33, y + 1, fillWidth, barHeight - 2);
+    if (fillWidth > 0) {
+      // Main bar fill
+      ctx.fillStyle = color;
+      ctx.fillRect(x + 44, y + 1, fillWidth, barHeight - 2);
+      
+      // Bar glow effect
+      ctx.shadowBlur = 2;
+      ctx.shadowColor = glowColor;
+      ctx.fillStyle = glowColor;
+      ctx.fillRect(x + 44, y + 1, fillWidth, barHeight - 2);
+      ctx.shadowBlur = 0;
+      
+      // Highlight on top of bar
+      ctx.fillStyle = this.colors.textWhite;
+      ctx.fillRect(x + 44, y + 1, fillWidth, 1);
+    }
     
-    // Status indicator lights
-    ctx.fillStyle = percent > 75 ? this.colors.statusGreen : 
-                   percent > 50 ? this.colors.statusYellow :
-                   percent > 25 ? this.colors.statusOrange : this.colors.statusRed;
-    ctx.fillRect(x + 24, y + 2, 4, 4);
+    // Bar segmentation lines (for industrial look)
+    for (let i = 0; i < width; i += 10) {
+      ctx.fillStyle = this.colors.borderDark;
+      ctx.fillRect(x + 44 + i, y, 1, barHeight);
+    }
+  }
+
+  private drawStatusBar(label: string, current: number, max: number, x: number, y: number, color: string, width: number): void {
+    // Legacy method - keeping for compatibility
+    this.drawCRTStatusBar(label, current, max, x, y, color, color, width);
   }
 
   private drawSystemInfo(player: IPlayerShip, x: number, y: number): void {
     const ctx = this.renderer.getContext();
     
-    // Section header
-    ctx.fillStyle = this.colors.textPrimary;
-    ctx.font = '8px "Big Apple 3PM", monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText('SYSTEM INFO', x, y + 8);
+    // CRT terminal bezel
+    this.drawCRTBezel(ctx, x - 5, y - 5, 220, 70);
     
-    // Speed and position info
+    // Section header with green CRT glow
+    ctx.fillStyle = this.colors.textGreen;
+    ctx.font = 'bold 8px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'left';
+    ctx.shadowBlur = 3;
+    ctx.shadowColor = this.colors.textGreen;
+    ctx.fillText('>>> NAVIGATION <<<', x + 5, y + 10);
+    ctx.shadowBlur = 0;
+    
+    // Speed and position info with enhanced formatting
     const speed = Math.sqrt(player.velocity.x ** 2 + player.velocity.y ** 2);
-    ctx.fillStyle = this.colors.textSecondary;
+    ctx.fillStyle = this.colors.textGreenDim;
     ctx.font = '6px "Big Apple 3PM", monospace';
     
-    ctx.fillText(`SPEED: ${speed.toFixed(1)} U/S`, x, y + 20);
-    ctx.fillText(`POS X: ${Math.floor(player.position.x)}`, x, y + 30);
-    ctx.fillText(`POS Y: ${Math.floor(player.position.y)}`, x, y + 40);
-    ctx.fillText(`ANGLE: ${Math.floor(player.angle * 180 / Math.PI)}°`, x, y + 50);
+    ctx.fillText(`VEL: ${speed.toFixed(2).padStart(6, '0')} U/S`, x + 5, y + 22);
+    ctx.fillText(`POS: ${Math.floor(player.position.x).toString().padStart(6, '0')},${Math.floor(player.position.y).toString().padStart(6, '0')}`, x + 5, y + 32);
+    ctx.fillText(`HDG: ${Math.floor((player.angle * 180 / Math.PI + 360) % 360).toString().padStart(3, '0')}°`, x + 5, y + 42);
     
-    // System status indicators
-    ctx.fillStyle = this.colors.textDim;
-    ctx.fillText('SYSTEMS:', x, y + 62);
+    // System status matrix
+    ctx.fillStyle = this.colors.textGreen;
+    ctx.fillText('SYS STATUS:', x + 5, y + 54);
     
-    // System status lights
-    const systems = ['NAV', 'COM', 'DEF', 'PWR'];
+    // System status indicators with proper spacing
+    const systems = [
+      { name: 'NAV', active: true },
+      { name: 'COM', active: true },
+      { name: 'DEF', active: player.shields > 0 },
+      { name: 'PWR', active: player.energy > 10 },
+      { name: 'ENG', active: player.fuel > 0 }
+    ];
+    
     for (let i = 0; i < systems.length; i++) {
-      ctx.fillStyle = this.colors.textSecondary;
-      ctx.fillText(systems[i], x + 60 + i * 30, y + 62);
+      const sys = systems[i];
+      const baseX = x + 10 + i * 35;
       
-      // Status light
-      ctx.fillStyle = this.colors.statusGreen;
-      ctx.fillRect(x + 55 + i * 30, y + 58, 3, 3);
+      // System label
+      ctx.fillStyle = sys.active ? this.colors.textGreen : this.colors.textGray;
+      ctx.fillText(sys.name, baseX + 8, y + 62);
+      
+      // Status light housing
+      ctx.fillStyle = this.colors.borderDark;
+      ctx.fillRect(baseX, y + 56, 6, 6);
+      
+      // Status light with glow
+      const lightColor = sys.active ? this.colors.statusGreen : this.colors.statusOff;
+      if (sys.active) {
+        ctx.shadowBlur = 2;
+        ctx.shadowColor = lightColor;
+      }
+      ctx.fillStyle = lightColor;
+      ctx.fillRect(baseX + 1, y + 57, 4, 4);
+      ctx.shadowBlur = 0;
     }
   }
 
   private drawRadarSection(player: IPlayerShip, x: number, y: number): void {
     const ctx = this.renderer.getContext();
     
-    // Section header
-    ctx.fillStyle = this.colors.textPrimary;
-    ctx.font = '8px "Big Apple 3PM", monospace';
+    // Radar CRT monitor bezel
+    this.drawCRTBezel(ctx, x - 5, y - 5, 140, 70);
+    
+    // Section header with blue glow
+    ctx.fillStyle = this.colors.statusBlue;
+    ctx.font = 'bold 8px "Big Apple 3PM", monospace';
     ctx.textAlign = 'left';
-    ctx.fillText('RADAR', x, y + 8);
+    ctx.shadowBlur = 3;
+    ctx.shadowColor = this.colors.statusBlue;
+    ctx.fillText('>>> RADAR <<<', x + 5, y + 10);
+    ctx.shadowBlur = 0;
     
-    // Radar display background
-    const radarSize = 50;
-    ctx.fillStyle = this.colors.barBackground;
-    ctx.fillRect(x, y + 12, radarSize, radarSize);
+    // Radar display background with enhanced CRT styling
+    const radarSize = 60;
+    const radarX = x + 5;
+    const radarY = y + 15;
     
-    // Radar border
-    ctx.strokeStyle = this.colors.barBorder;
+    // Radar housing
+    ctx.fillStyle = this.colors.borderDark;
+    ctx.fillRect(radarX - 2, radarY - 2, radarSize + 4, radarSize + 4);
+    
+    // Radar screen background
+    ctx.fillStyle = this.colors.screenDark;
+    ctx.fillRect(radarX, radarY, radarSize, radarSize);
+    
+    // Radar grid with glowing lines
+    ctx.strokeStyle = this.colors.statusBlue;
     ctx.lineWidth = 1;
-    ctx.strokeRect(x, y + 12, radarSize, radarSize);
-    
-    // Radar grid
-    ctx.strokeStyle = this.colors.panelMid;
-    ctx.lineWidth = 1;
+    ctx.shadowBlur = 1;
+    ctx.shadowColor = this.colors.statusBlue;
     
     // Center cross
-    const centerX = x + radarSize / 2;
-    const centerY = y + 12 + radarSize / 2;
+    const centerX = radarX + radarSize / 2;
+    const centerY = radarY + radarSize / 2;
     ctx.beginPath();
-    ctx.moveTo(centerX, y + 12);
-    ctx.lineTo(centerX, y + 12 + radarSize);
-    ctx.moveTo(x, centerY);
-    ctx.lineTo(x + radarSize, centerY);
+    ctx.moveTo(centerX, radarY);
+    ctx.lineTo(centerX, radarY + radarSize);
+    ctx.moveTo(radarX, centerY);
+    ctx.lineTo(radarX + radarSize, centerY);
     ctx.stroke();
     
-    // Range circles
+    // Range circles with glow
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radarSize / 4, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, radarSize / 6, 0, Math.PI * 2);
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radarSize / 2.5, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, radarSize / 3, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radarSize / 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
     
-    // Player ship indicator (center)
+    // Player ship indicator (center) with enhanced glow
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = this.colors.statusGreen;
     ctx.fillStyle = this.colors.statusGreen;
-    ctx.fillRect(centerX - 1, centerY - 1, 2, 2);
+    ctx.fillRect(centerX - 1, centerY - 1, 3, 3);
     
-    // Radar sweep line (rotating)
-    const sweepAngle = (Date.now() * 0.003) % (Math.PI * 2);
+    // Ship heading indicator
     ctx.strokeStyle = this.colors.statusGreen;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
-    ctx.lineTo(centerX + Math.cos(sweepAngle) * radarSize / 2, 
-               centerY + Math.sin(sweepAngle) * radarSize / 2);
+    ctx.lineTo(centerX + Math.cos(player.angle) * 8, centerY + Math.sin(player.angle) * 8);
     ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    // Radar sweep line (rotating) with trail effect
+    const sweepAngle = (Date.now() * 0.002) % (Math.PI * 2);
+    
+        // Sweep trail (fading effect)
+    for (let i = 0; i < 10; i++) {
+      const trailAngle = sweepAngle - (i * 0.1);
+      const alpha = (10 - i) / 20;
+      ctx.strokeStyle = `rgba(0, 255, 65, ${alpha})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX + Math.cos(trailAngle) * radarSize / 2, 
+                centerY + Math.sin(trailAngle) * radarSize / 2);
+      ctx.stroke();
+    }
+    
+    // Range indicator text
+    ctx.fillStyle = this.colors.statusBlue;
+    ctx.font = '5px "Big Apple 3PM", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('500', radarX + radarSize + 8, radarY + 15);
+    ctx.fillText('1K', radarX + radarSize + 8, radarY + 35);
+    ctx.fillText('2K', radarX + radarSize + 8, radarY + 55);
     
     // Navigation info
     ctx.fillStyle = this.colors.textSecondary;
@@ -2469,7 +2700,7 @@ export class GameEngine implements IGameEngine {
       this.player.render(this.renderer, this.camera);
       
       // Render visual effects
-      this.effectSystem.render(this.renderer);
+      this.effectSystem.render(this.renderer, this.camera);
       
       this.renderHUD();
       this.statusBar.render(this.player);
