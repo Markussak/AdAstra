@@ -55,7 +55,14 @@ export declare enum WeaponType {
     LASER = "laser",
     MISSILES = "missiles",
     RAILGUN = "railgun",
-    MINING_LASER = "miningLaser"
+    MINING_LASER = "miningLaser",
+    PLASMA_CANNON = "plasmaCannon",
+    ION_BEAM = "ionBeam",
+    TORPEDO = "torpedo",
+    PULSE_LASER = "pulseLaser",
+    BEAM_LASER = "beamLaser",
+    FLAK_CANNON = "flakCannon",
+    EMP_WEAPON = "empWeapon"
 }
 export declare enum CelestialBodyType {
     STAR = "star",
@@ -81,7 +88,12 @@ export declare enum ShipType {
     FIGHTER = "fighter",
     EXPLORER = "explorer",
     CARGO = "cargo",
-    BATTLESHIP = "battleship"
+    BATTLESHIP = "battleship",
+    INTERCEPTOR = "interceptor",
+    CRUISER = "cruiser",
+    DREADNOUGHT = "dreadnought",
+    STEALTH = "stealth",
+    MINING = "mining"
 }
 export interface ShipSystem {
     type: ShipSystemType;
@@ -187,6 +199,108 @@ export interface ShipTemplate {
     };
     weapons: WeaponType[];
     specialAbilities: string[];
+    rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
+    cost: number;
+}
+export declare enum QuestType {
+    DELIVERY = "delivery",
+    COMBAT = "combat",
+    EXPLORATION = "exploration",
+    MINING = "mining",
+    ESCORT = "escort",
+    STORY = "story"
+}
+export declare enum QuestStatus {
+    AVAILABLE = "available",
+    ACTIVE = "active",
+    COMPLETED = "completed",
+    FAILED = "failed",
+    TURNED_IN = "turnedIn"
+}
+export interface QuestObjective {
+    id: string;
+    description: string;
+    type: 'kill' | 'collect' | 'deliver' | 'visit' | 'survive';
+    target?: string;
+    quantity: number;
+    currentProgress: number;
+    completed: boolean;
+}
+export interface Quest {
+    id: string;
+    title: string;
+    description: string;
+    type: QuestType;
+    status: QuestStatus;
+    objectives: QuestObjective[];
+    rewards: {
+        credits: number;
+        experience: number;
+        items?: CargoItem[];
+    };
+    timeLimit?: number;
+    timeRemaining?: number;
+    difficulty: number;
+    location?: string;
+    npcGiver?: string;
+}
+export interface SaveData {
+    version: string;
+    timestamp: number;
+    playerData: {
+        name: string;
+        credits: number;
+        experience: number;
+        level: number;
+        position: Vector2D;
+        currentSystem: string;
+    };
+    shipData: {
+        type: ShipType;
+        hull: number;
+        maxHull: number;
+        shields: number;
+        maxShields: number;
+        fuel: number;
+        maxFuel: number;
+        energy: number;
+        maxEnergy: number;
+        cargo: CargoItem[];
+        systems: Record<string, any>;
+        weapons: Record<string, any>;
+    };
+    gameData: {
+        difficulty: DifficultyLevel;
+        playTime: number;
+        currentQuests: Quest[];
+        completedQuests: string[];
+        discoveredSystems: string[];
+        gameSettings: GameSettings;
+    };
+}
+export interface GameSettings {
+    graphics: {
+        fullscreen: boolean;
+        resolution: string;
+        pixelPerfect: boolean;
+        showFPS: boolean;
+    };
+    audio: {
+        masterVolume: number;
+        musicVolume: number;
+        sfxVolume: number;
+        muted: boolean;
+    };
+    controls: {
+        mouseInvert: boolean;
+        keyBindings: Record<string, string>;
+    };
+    gameplay: {
+        autosave: boolean;
+        autosaveInterval: number;
+        showTutorials: boolean;
+        pauseOnFocusLoss: boolean;
+    };
 }
 export interface IGameState {
     enter?(): void;

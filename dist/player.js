@@ -180,6 +180,10 @@ export class PlayerShip {
     }
     createWeaponEffect(weapon) {
         console.log(`Firing ${weapon.type} at angle ${this.angle}`);
+        const game = window.game;
+        if (game && game.questSystem) {
+            game.questSystem.updateProgress('collect', 'fire_tutorial', 1);
+        }
     }
     render(renderer, camera) {
         const screenPos = camera.worldToScreen(this.position.x, this.position.y);

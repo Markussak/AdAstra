@@ -225,6 +225,12 @@ export class PlayerShip implements IPlayerShip {
 
   private createWeaponEffect(weapon: Weapon): void {
     console.log(`Firing ${weapon.type} at angle ${this.angle}`);
+    
+    // Update quest progress for firing weapons
+    const game = (window as any).game;
+    if (game && game.questSystem) {
+      game.questSystem.updateProgress('collect', 'fire_tutorial', 1);
+    }
   }
 
   public render(renderer: IRenderer, camera: ICamera): void {

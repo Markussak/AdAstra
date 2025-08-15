@@ -26,6 +26,13 @@ export var WeaponType;
     WeaponType["MISSILES"] = "missiles";
     WeaponType["RAILGUN"] = "railgun";
     WeaponType["MINING_LASER"] = "miningLaser";
+    WeaponType["PLASMA_CANNON"] = "plasmaCannon";
+    WeaponType["ION_BEAM"] = "ionBeam";
+    WeaponType["TORPEDO"] = "torpedo";
+    WeaponType["PULSE_LASER"] = "pulseLaser";
+    WeaponType["BEAM_LASER"] = "beamLaser";
+    WeaponType["FLAK_CANNON"] = "flakCannon";
+    WeaponType["EMP_WEAPON"] = "empWeapon";
 })(WeaponType || (WeaponType = {}));
 export var CelestialBodyType;
 (function (CelestialBodyType) {
@@ -56,5 +63,27 @@ export var ShipType;
     ShipType["EXPLORER"] = "explorer";
     ShipType["CARGO"] = "cargo";
     ShipType["BATTLESHIP"] = "battleship";
+    ShipType["INTERCEPTOR"] = "interceptor";
+    ShipType["CRUISER"] = "cruiser";
+    ShipType["DREADNOUGHT"] = "dreadnought";
+    ShipType["STEALTH"] = "stealth";
+    ShipType["MINING"] = "mining";
 })(ShipType || (ShipType = {}));
+export var QuestType;
+(function (QuestType) {
+    QuestType["DELIVERY"] = "delivery";
+    QuestType["COMBAT"] = "combat";
+    QuestType["EXPLORATION"] = "exploration";
+    QuestType["MINING"] = "mining";
+    QuestType["ESCORT"] = "escort";
+    QuestType["STORY"] = "story";
+})(QuestType || (QuestType = {}));
+export var QuestStatus;
+(function (QuestStatus) {
+    QuestStatus["AVAILABLE"] = "available";
+    QuestStatus["ACTIVE"] = "active";
+    QuestStatus["COMPLETED"] = "completed";
+    QuestStatus["FAILED"] = "failed";
+    QuestStatus["TURNED_IN"] = "turnedIn";
+})(QuestStatus || (QuestStatus = {}));
 //# sourceMappingURL=types.js.map

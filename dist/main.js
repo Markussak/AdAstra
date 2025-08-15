@@ -6,6 +6,8 @@ import { InputManager } from './input';
 import { PlayerShip } from './player';
 import { StarSystemScene } from './scenes';
 import { SHIP_TEMPLATES, DIFFICULTY_SETTINGS, LOADING_MESSAGES } from './gameData';
+import { SaveSystem, AutoSaveManager } from './saveSystem';
+import { QuestSystem } from './questSystem';
 class StateManager {
     constructor() {
         this.states = new Map();
@@ -19,6 +21,7 @@ class StateManager {
         this.states.set(GameState.NEW_GAME_SETUP, new NewGameSetupState());
         this.states.set(GameState.PLAYING, new PlayingState());
         this.states.set(GameState.PAUSED, new PausedState());
+        this.states.set(GameState.SETTINGS, new SettingsState());
     }
     setState(newState) {
         if (this.transitionInProgress)
@@ -187,10 +190,24 @@ class MainMenuState {
                 game.stateManager.setState(GameState.NEW_GAME_SETUP);
                 break;
             case 1:
-                game.stateManager.setState(GameState.PLAYING);
+                const saveList = SaveSystem.getSaveList();
+                if (saveList.length > 0) {
+                    const mostRecentSave = saveList[0];
+                    const saveData = SaveSystem.loadGame(mostRecentSave.slot);
+                    if (saveData) {
+                        SaveSystem.applySaveData(game, saveData);
+                        game.stateManager.setState(GameState.PLAYING);
+                    }
+                    else {
+                        console.log('Failed to load save');
+                    }
+                }
+                else {
+                    console.log('No saves found');
+                }
                 break;
             case 2:
-                console.log('Settings not implemented yet');
+                game.stateManager.setState(GameState.SETTINGS);
                 break;
             case 3:
                 console.log('Credits not implemented yet');
@@ -445,6 +462,25 @@ class PlayingState {
                 game.stateManager.setState(GameState.PAUSED);
             }
         }
+        if (input.wasKeyJustPressed('F5')) {
+            const game = window.game;
+            if (game && SaveSystem.saveGame(game, 'quicksave')) {
+                console.log('Quick save completed');
+            }
+        }
+        if (input.wasKeyJustPressed('F9')) {
+            const game = window.game;
+            if (game) {
+                const saveData = SaveSystem.loadGame('quicksave');
+                if (saveData) {
+                    SaveSystem.applySaveData(game, saveData);
+                    console.log('Quick load completed');
+                }
+                else {
+                    console.log('No quicksave found');
+                }
+            }
+        }
     }
 }
 class PausedState {
@@ -514,6 +550,229 @@ class PausedState {
             case 3:
                 if (confirm('Opravdu chcete ukončit hru? Neuložený postup bude ztracen.')) {
                     window.close();
+                }
+                break;
+        }
+    }
+}
+class SettingsState {
+    constructor() {
+        this.selectedTab = 0;
+        this.selectedOption = 0;
+        this.tabs = ['GRAFIKA', 'ZVUK', 'OVLÁDÁNÍ', 'GAMEPLAY'];
+        this.isEditing = false;
+    }
+    enter() {
+        console.log('Settings entered');
+        this.selectedTab = 0;
+        this.selectedOption = 0;
+        this.settings = SaveSystem.loadSettings();
+    }
+    update(deltaTime) {
+    }
+    render(renderer) {
+        const width = renderer.getWidth();
+        const height = renderer.getHeight();
+        renderer.clear('#0a0a0f');
+        renderer.drawText('NASTAVENÍ', width / 2, 80, '#00ffff', 'bold 36px monospace');
+        const tabY = 150;
+        this.tabs.forEach((tab, index) => {
+            const x = (width / this.tabs.length) * (index + 0.5);
+            const isActive = index === this.selectedTab;
+            const color = isActive ? '#00ffff' : '#888888';
+            const font = isActive ? 'bold 18px monospace' : '16px monospace';
+            renderer.drawText(tab, x, tabY, color, font);
+            if (isActive) {
+                renderer.drawRect(x - 50, tabY + 10, 100, 2, '#00ffff');
+            }
+        });
+        this.renderSettingsContent(renderer);
+        renderer.drawText('←→ Taby | ↑↓ Možnosti | ENTER Změnit | ESC Zpět', width / 2, height - 50, '#888888', '14px monospace');
+    }
+    renderSettingsContent(renderer) {
+        const width = renderer.getWidth();
+        const startY = 220;
+        const spacing = 50;
+        switch (this.selectedTab) {
+            case 0:
+                this.renderGraphicsSettings(renderer, startY, spacing);
+                break;
+            case 1:
+                this.renderAudioSettings(renderer, startY, spacing);
+                break;
+            case 2:
+                this.renderControlSettings(renderer, startY, spacing);
+                break;
+            case 3:
+                this.renderGameplaySettings(renderer, startY, spacing);
+                break;
+        }
+    }
+    renderGraphicsSettings(renderer, startY, spacing) {
+        const width = renderer.getWidth();
+        const options = [
+            { name: 'Celá obrazovka', value: this.settings.graphics.fullscreen ? 'ZAPNUTO' : 'VYPNUTO' },
+            { name: 'Rozlišení', value: this.settings.graphics.resolution },
+            { name: 'Pixel Perfect', value: this.settings.graphics.pixelPerfect ? 'ZAPNUTO' : 'VYPNUTO' },
+            { name: 'Zobrazit FPS', value: this.settings.graphics.showFPS ? 'ZAPNUTO' : 'VYPNUTO' }
+        ];
+        options.forEach((option, index) => {
+            const y = startY + index * spacing;
+            const isSelected = index === this.selectedOption;
+            const nameColor = isSelected ? '#00ffff' : '#dcd0c0';
+            const valueColor = isSelected ? '#ffff00' : '#5f9e9e';
+            renderer.drawText(option.name, width / 2 - 200, y, nameColor, isSelected ? 'bold 18px monospace' : '16px monospace');
+            renderer.drawText(option.value, width / 2 + 200, y, valueColor, '16px monospace');
+            if (isSelected) {
+                renderer.drawRect(width / 2 - 250, y - 20, 500, 40, 'rgba(0, 255, 255, 0.1)');
+            }
+        });
+    }
+    renderAudioSettings(renderer, startY, spacing) {
+        const width = renderer.getWidth();
+        const options = [
+            { name: 'Hlavní hlasitost', value: `${Math.round(this.settings.audio.masterVolume * 100)}%` },
+            { name: 'Hudba', value: `${Math.round(this.settings.audio.musicVolume * 100)}%` },
+            { name: 'Efekty', value: `${Math.round(this.settings.audio.sfxVolume * 100)}%` },
+            { name: 'Ztlumeno', value: this.settings.audio.muted ? 'ANO' : 'NE' }
+        ];
+        options.forEach((option, index) => {
+            const y = startY + index * spacing;
+            const isSelected = index === this.selectedOption;
+            const nameColor = isSelected ? '#00ffff' : '#dcd0c0';
+            const valueColor = isSelected ? '#ffff00' : '#5f9e9e';
+            renderer.drawText(option.name, width / 2 - 200, y, nameColor, isSelected ? 'bold 18px monospace' : '16px monospace');
+            renderer.drawText(option.value, width / 2 + 200, y, valueColor, '16px monospace');
+            if (isSelected) {
+                renderer.drawRect(width / 2 - 250, y - 20, 500, 40, 'rgba(0, 255, 255, 0.1)');
+            }
+        });
+    }
+    renderControlSettings(renderer, startY, spacing) {
+        const width = renderer.getWidth();
+        renderer.drawText('OVLÁDÁNÍ - Zatím není implementováno', width / 2, startY + 100, '#888888', '18px monospace');
+        renderer.drawText('Plánované funkce:', width / 2, startY + 150, '#dcd0c0', '16px monospace');
+        renderer.drawText('• Změna kláves', width / 2, startY + 180, '#5f9e9e', '14px monospace');
+        renderer.drawText('• Citlivost myši', width / 2, startY + 200, '#5f9e9e', '14px monospace');
+        renderer.drawText('• Gamepad podpora', width / 2, startY + 220, '#5f9e9e', '14px monospace');
+    }
+    renderGameplaySettings(renderer, startY, spacing) {
+        const width = renderer.getWidth();
+        const options = [
+            { name: 'Automatické ukládání', value: this.settings.gameplay.autosave ? 'ZAPNUTO' : 'VYPNUTO' },
+            { name: 'Interval ukládání', value: `${this.settings.gameplay.autosaveInterval}s` },
+            { name: 'Zobrazit návody', value: this.settings.gameplay.showTutorials ? 'ANO' : 'NE' },
+            { name: 'Pauza při ztrátě fokusu', value: this.settings.gameplay.pauseOnFocusLoss ? 'ANO' : 'NE' }
+        ];
+        options.forEach((option, index) => {
+            const y = startY + index * spacing;
+            const isSelected = index === this.selectedOption;
+            const nameColor = isSelected ? '#00ffff' : '#dcd0c0';
+            const valueColor = isSelected ? '#ffff00' : '#5f9e9e';
+            renderer.drawText(option.name, width / 2 - 200, y, nameColor, isSelected ? 'bold 18px monospace' : '16px monospace');
+            renderer.drawText(option.value, width / 2 + 200, y, valueColor, '16px monospace');
+            if (isSelected) {
+                renderer.drawRect(width / 2 - 250, y - 20, 500, 40, 'rgba(0, 255, 255, 0.1)');
+            }
+        });
+    }
+    handleInput(input) {
+        if (input.wasKeyJustPressed('escape')) {
+            SaveSystem.saveSettings(this.settings);
+            const game = window.game;
+            if (game) {
+                game.stateManager.setState(GameState.MAIN_MENU);
+            }
+            return;
+        }
+        if (input.wasKeyJustPressed('arrowleft') && this.selectedTab > 0) {
+            this.selectedTab--;
+            this.selectedOption = 0;
+        }
+        if (input.wasKeyJustPressed('arrowright') && this.selectedTab < this.tabs.length - 1) {
+            this.selectedTab++;
+            this.selectedOption = 0;
+        }
+        const maxOptions = this.getMaxOptionsForTab();
+        if (input.wasKeyJustPressed('arrowup') && this.selectedOption > 0) {
+            this.selectedOption--;
+        }
+        if (input.wasKeyJustPressed('arrowdown') && this.selectedOption < maxOptions - 1) {
+            this.selectedOption++;
+        }
+        if (input.wasKeyJustPressed('enter')) {
+            this.modifySetting();
+        }
+    }
+    getMaxOptionsForTab() {
+        switch (this.selectedTab) {
+            case 0: return 4;
+            case 1: return 4;
+            case 2: return 0;
+            case 3: return 4;
+            default: return 0;
+        }
+    }
+    modifySetting() {
+        switch (this.selectedTab) {
+            case 0:
+                switch (this.selectedOption) {
+                    case 0:
+                        this.settings.graphics.fullscreen = !this.settings.graphics.fullscreen;
+                        break;
+                    case 1:
+                        const resolutions = ['1920x1080', '1680x1050', '1366x768', '1280x720'];
+                        const currentIndex = resolutions.indexOf(this.settings.graphics.resolution);
+                        const nextIndex = (currentIndex + 1) % resolutions.length;
+                        this.settings.graphics.resolution = resolutions[nextIndex];
+                        break;
+                    case 2:
+                        this.settings.graphics.pixelPerfect = !this.settings.graphics.pixelPerfect;
+                        break;
+                    case 3:
+                        this.settings.graphics.showFPS = !this.settings.graphics.showFPS;
+                        break;
+                }
+                break;
+            case 1:
+                switch (this.selectedOption) {
+                    case 0:
+                        this.settings.audio.masterVolume = Math.min(1.0, this.settings.audio.masterVolume + 0.1);
+                        if (this.settings.audio.masterVolume > 0.95)
+                            this.settings.audio.masterVolume = 0;
+                        break;
+                    case 1:
+                        this.settings.audio.musicVolume = Math.min(1.0, this.settings.audio.musicVolume + 0.1);
+                        if (this.settings.audio.musicVolume > 0.95)
+                            this.settings.audio.musicVolume = 0;
+                        break;
+                    case 2:
+                        this.settings.audio.sfxVolume = Math.min(1.0, this.settings.audio.sfxVolume + 0.1);
+                        if (this.settings.audio.sfxVolume > 0.95)
+                            this.settings.audio.sfxVolume = 0;
+                        break;
+                    case 3:
+                        this.settings.audio.muted = !this.settings.audio.muted;
+                        break;
+                }
+                break;
+            case 3:
+                switch (this.selectedOption) {
+                    case 0:
+                        this.settings.gameplay.autosave = !this.settings.gameplay.autosave;
+                        break;
+                    case 1:
+                        const intervals = [60, 180, 300, 600, 900];
+                        const currentIndex = intervals.indexOf(this.settings.gameplay.autosaveInterval);
+                        const nextIndex = (currentIndex + 1) % intervals.length;
+                        this.settings.gameplay.autosaveInterval = intervals[nextIndex];
+                        break;
+                    case 2:
+                        this.settings.gameplay.showTutorials = !this.settings.gameplay.showTutorials;
+                        break;
+                    case 3:
+                        this.settings.gameplay.pauseOnFocusLoss = !this.settings.gameplay.pauseOnFocusLoss;
+                        break;
                 }
                 break;
         }
@@ -592,7 +851,9 @@ export class GameEngine {
         this.camera = new Camera();
         this.statusBar = new StatusBar(this.renderer);
         this.player = new PlayerShip(200, 200);
+        this.questSystem = new QuestSystem();
         console.log('Game engine initialized');
+        AutoSaveManager.start(this);
         this.startGameLoop();
     }
     startGameLoop() {
@@ -614,6 +875,8 @@ export class GameEngine {
         if (this.stateManager.getCurrentState() === GameState.PLAYING) {
             this.player.update(deltaTime, this);
             this.sceneManager.update(deltaTime, this);
+            this.questSystem.updateTimers(deltaTime);
+            this.questSystem.updateProgress('survive', undefined, deltaTime);
             this.camera.followTarget(this.player.position, deltaTime, this.renderer.getWidth(), this.renderer.getHeight());
             this.statusBar.update(this.player);
         }
@@ -640,8 +903,39 @@ export class GameEngine {
         const speed = Math.sqrt(this.player.velocity.x ** 2 + this.player.velocity.y ** 2);
         this.renderer.drawText(`V: ${(speed * 100).toFixed(1)} m/s`, 10, 55, '#5f9e9e', '10px monospace');
         this.renderer.drawText(`SCENE: STAR SYSTEM`, 10, 70, '#5f9e9e', '10px monospace');
+        this.renderActiveQuests();
         const statusBarHeight = this.renderer.getHeight() * gameConfig.ui.statusBarHeight;
-        this.renderer.drawText('WASD: Move | SPACE: Fire | ESC: Menu', 10, this.renderer.getHeight() - statusBarHeight - 20, '#8c8c8c', '8px monospace');
+        this.renderer.drawText('WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests', 10, this.renderer.getHeight() - statusBarHeight - 20, '#8c8c8c', '8px monospace');
+    }
+    renderActiveQuests() {
+        const activeQuests = this.questSystem.getActiveQuests();
+        if (activeQuests.length === 0)
+            return;
+        const width = this.renderer.getWidth();
+        const startX = width - 350;
+        const startY = 20;
+        this.renderer.drawRect(startX - 10, startY - 10, 340, Math.min(200, activeQuests.length * 60 + 40), 'rgba(0, 0, 0, 0.7)');
+        this.renderer.drawText('AKTIVNÍ ÚKOLY', startX + 160, startY + 10, '#00ffff', 'bold 12px monospace');
+        activeQuests.slice(0, 3).forEach((quest, index) => {
+            const y = startY + 40 + index * 60;
+            this.renderer.drawText(quest.title, startX, y, '#dcd0c0', 'bold 10px monospace');
+            const completedObjectives = quest.objectives.filter(obj => obj.completed).length;
+            this.renderer.drawText(`${completedObjectives}/${quest.objectives.length}`, startX + 280, y, '#5f9e9e', '10px monospace');
+            if (quest.timeRemaining !== undefined) {
+                const minutes = Math.floor(quest.timeRemaining / 60);
+                const seconds = Math.floor(quest.timeRemaining % 60);
+                const timeColor = quest.timeRemaining < 300 ? '#ff4444' : '#ffff00';
+                this.renderer.drawText(`${minutes}:${seconds.toString().padStart(2, '0')}`, startX + 280, y + 15, timeColor, '8px monospace');
+            }
+            const currentObjective = quest.objectives.find(obj => !obj.completed);
+            if (currentObjective) {
+                this.renderer.drawText(currentObjective.description, startX, y + 15, '#888888', '8px monospace');
+                const progress = currentObjective.currentProgress / currentObjective.quantity;
+                const barWidth = 250;
+                this.renderer.drawRect(startX, y + 30, barWidth, 4, '#333333');
+                this.renderer.drawRect(startX, y + 30, barWidth * progress, 4, '#00ff00');
+            }
+        });
     }
 }
 export function initializeGame() {

@@ -43,10 +43,31 @@ Ponořte se do nekonečné galaxie plné tajemství, dobrodružství a nekonečn
 - Gravitační síly od nebeských těles
 - Realistické ovládání kosmické lodi
 
-### ⚔️ Bojový Systém
-- Více typů zbraní (lasery, rakety, railgun)
+### ⚔️ Bojový Systém  
+- **11 typů zbraní**: Lasery, Plasma Cannon, Torpéda, Railgun, Ion Beam, EMP
+- **Weapon Data**: Detailní stats pro každou zbraň (damage, range, fire rate)
 - Systém přehřívání zbraní
 - Štíty a damage systém
+
+### 🎯 Quest & Mission Systém
+- **Dynamické úkoly**: Delivery, Combat, Exploration, Mining, Story quests
+- **Objective tracking**: Real-time sledování pokroku
+- **Časové limity**: Některé mise mají deadline
+- **Reward systém**: Credits, XP a special items
+- **Difficulty scaling**: Quests přizpůsobené player level
+
+### 💾 Save/Load Systém
+- **Multiple save slots**: Až 5 save slotů
+- **Auto-save**: Automatické ukládání každých 5 minut
+- **Export/Import**: Možnost zálohování saves jako soubory
+- **Version compatibility**: Migrace saves mezi verzemi
+- **Settings persistence**: Ukládání všech nastavení
+
+### ⚙️ Settings & Customization
+- **Graphics**: Fullscreen, rozlišení, pixel perfect, FPS counter
+- **Audio**: Separátní hlasitosti pro music/SFX, mute option
+- **Gameplay**: Autosave interval, tutorials, pause na focus loss
+- **Controls**: Key bindings (plánováno pro budoucí verze)
 
 ### 🔧 Správa Systémů Lodi
 - Reaktor, motory, štíty, zbraně
@@ -102,6 +123,9 @@ Hra se otevře na `http://localhost:3000`
 - **ESC**: Zpět / zavřít menu
 
 ### Pokročilé Ovládání
+- **Q**: Quest log (aktivní úkoly)
+- **F5**: Quick save
+- **F9**: Quick load
 - **TAB**: Inventář (plánováno)
 - **M**: Mapa (plánováno)
 - **1-4**: Výběr zbraní (plánováno)
@@ -111,8 +135,8 @@ Hra se otevře na `http://localhost:3000`
 ```
 space-explorer-typescript/
 ├── src/                    # TypeScript zdrojové kódy
-│   ├── types.ts           # Typy a interfacy
-│   ├── main.ts            # Hlavní engine a game states
+│   ├── types.ts           # Typy a interfacy + nové Quest/Save typy
+│   ├── main.ts            # Hlavní engine a game states + Settings
 │   ├── renderer.ts        # Rendering systém
 │   ├── input.ts           # Správa vstupů
 │   ├── player.ts          # Player ship implementace
@@ -120,7 +144,9 @@ space-explorer-typescript/
 │   ├── scenes.ts          # Scény a světy
 │   ├── camera.ts          # Kamerový systém
 │   ├── utils.ts           # Utility funkce
-│   └── gameData.ts        # Konfigurační data
+│   ├── gameData.ts        # Konfigurační data + nové lodě a zbraně
+│   ├── saveSystem.ts      # 💾 Save/Load systém + AutoSave
+│   └── questSystem.ts     # 🎯 Quest a Mission systém
 ├── assets/                # Obrázky, zvuky, atd.
 ├── dist/                  # Zkompilované soubory
 ├── index.html            # Hlavní HTML soubor
@@ -173,8 +199,11 @@ npm run type-check     # TypeScript type checking
 - [ ] Tutorial pro nové hráče
 
 ### 🚀 Rozšířené
+- [x] **Quest systém** - ✅ Dokončeno v2.1.0
+- [x] **Save/Load systém** - ✅ Dokončeno v2.1.0  
+- [x] **Pokročilé nastavení** - ✅ Dokončeno v2.1.0
+- [ ] **Sound System** - 🔄 V přípravě v2.2.0
 - [ ] Obchodní systém
-- [ ] Questy a mise
 - [ ] Vícehráčový mód
 - [ ] Modding podpora
 - [ ] Rozšířené customizace lodí
@@ -190,8 +219,9 @@ npm run type-check     # TypeScript type checking
 
 - Textový input v character creation potřebuje vylepšení
 - Obrazce lodí jsou zatím jednoduché (placeholder)
-- Chybí zvukové efekty
+- Chybí zvukové efekty (v přípravě v2.2.0)
 - Performance optimalizace pro starší zařízení
+- Controls settings tab není zatím implementován
 
 ## 🤝 Přispívání
 
