@@ -1,6 +1,6 @@
 // renderer.ts - Rendering system
 
-import { IRenderer, ICamera } from './types';
+import { IRenderer, ICamera, Vector2D } from './types';
 
 export class Renderer implements IRenderer {
   private canvas: HTMLCanvasElement;
@@ -68,6 +68,36 @@ export class Renderer implements IRenderer {
       this.ctx.strokeStyle = color;
       this.ctx.stroke();
     }
+  }
+
+  public fillCircle(x: number, y: number, radius: number, color: string): void {
+    this.ctx.fillStyle = color;
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+    this.ctx.fill();
+  }
+
+  public strokeCircle(x: number, y: number, radius: number, color: string, lineWidth: number = 1): void {
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = lineWidth;
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+    this.ctx.stroke();
+  }
+
+  public strokePath(points: Vector2D[], color: string, lineWidth: number = 1): void {
+    if (points.length < 2) return;
+    
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = lineWidth;
+    this.ctx.beginPath();
+    this.ctx.moveTo(points[0].x, points[0].y);
+    
+    for (let i = 1; i < points.length; i++) {
+      this.ctx.lineTo(points[i].x, points[i].y);
+    }
+    
+    this.ctx.stroke();
   }
 
   public drawLine(x1: number, y1: number, x2: number, y2: number, color: string, width: number = 1): void {

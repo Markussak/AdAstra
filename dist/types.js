@@ -86,4 +86,17 @@ export var QuestStatus;
     QuestStatus["FAILED"] = "failed";
     QuestStatus["TURNED_IN"] = "turnedIn";
 })(QuestStatus || (QuestStatus = {}));
+export var EffectType;
+(function (EffectType) {
+    EffectType["SHIELD_HIT"] = "shieldHit";
+    EffectType["SHIELD_REGENERATE"] = "shieldRegenerate";
+    EffectType["ENGINE_THRUST"] = "engineThrust";
+    EffectType["MANEUVERING_THRUST"] = "maneuveringThrust";
+    EffectType["WARP_CHARGE"] = "warpCharge";
+    EffectType["WARP_BUBBLE"] = "warpBubble";
+    EffectType["WARP_DISTORTION"] = "warpDistortion";
+    EffectType["WARP_COLLAPSE"] = "warpCollapse";
+    EffectType["WEAPON_IMPACT"] = "weaponImpact";
+    EffectType["EXPLOSION"] = "explosion";
+})(EffectType || (EffectType = {}));
 //# sourceMappingURL=types.js.map

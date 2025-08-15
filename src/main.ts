@@ -24,6 +24,7 @@ import { StarSystemScene, InterstellarSpaceScene } from './scenes';
 import { SHIP_TEMPLATES, DIFFICULTY_SETTINGS, LOADING_MESSAGES, WEAPON_DATA } from './gameData';
 import { SaveSystem, AutoSaveManager } from './saveSystem';
 import { QuestSystem } from './questSystem';
+import { EffectSystem } from './effectSystem';
 
 // State Management
 class StateManager implements IStateManager {
@@ -631,6 +632,26 @@ class PlayingState implements IGameState {
         }
       }
     }
+    
+    // Warp drive
+    if (input.wasKeyJustPressed('j')) {
+      const game = (window as any).game;
+      if (game && game.player.canWarp()) {
+        game.player.initiateWarp();
+        console.log('Warp drive initiated!');
+      } else {
+        console.log('Cannot warp: insufficient charge/energy/fuel');
+      }
+    }
+    
+    // Test damage (for testing shield effects)
+    if (input.wasKeyJustPressed('h')) {
+      const game = (window as any).game;
+      if (game && game.player) {
+        game.player.takeDamage(25);
+        console.log('Player took 25 damage');
+      }
+    }
   }
 }
 
@@ -1077,6 +1098,7 @@ export class GameEngine implements IGameEngine {
   public statusBar: IStatusBar;
   public player: IPlayerShip;
   public questSystem: QuestSystem;
+  public effectSystem: EffectSystem;
   public gameTime: number = 0;
   public lastFrameTime: number = 0;
 
@@ -1095,6 +1117,7 @@ export class GameEngine implements IGameEngine {
 
     this.player = new PlayerShip(200, 200);
     this.questSystem = new QuestSystem();
+    this.effectSystem = new EffectSystem();
 
     console.log('Game engine initialized');
     
@@ -1129,6 +1152,7 @@ export class GameEngine implements IGameEngine {
       this.player.update(deltaTime, this);
       this.sceneManager.update(deltaTime, this);
       this.questSystem.updateTimers(deltaTime);
+      this.effectSystem.update(deltaTime);
       
       // Update quest progress based on player actions
       this.questSystem.updateProgress('survive', undefined, deltaTime);
@@ -1149,6 +1173,10 @@ export class GameEngine implements IGameEngine {
     if (this.stateManager.getCurrentState() === GameState.PLAYING) {
       this.sceneManager.render(this.renderer, this.camera);
       this.player.render(this.renderer, this.camera);
+      
+      // Render visual effects
+      this.effectSystem.render(this.renderer);
+      
       this.renderHUD();
       this.statusBar.render(this.player);
     } else {
@@ -1177,9 +1205,18 @@ export class GameEngine implements IGameEngine {
     // Active quests
     this.renderActiveQuests();
 
+    // Warp charge indicator
+    const warpPercent = Math.round((this.player.warpCharge / this.player.maxWarpCharge) * 100);
+    const warpColor = this.player.canWarp() ? '#00ff00' : '#ffaa00';
+    this.renderer.drawText(`WARP: ${warpPercent}%`, 10, 100, warpColor, 'bold 10px monospace');
+    
+    if (this.player.isWarping) {
+      this.renderer.drawText('WARPING...', 10, 115, '#ff0000', 'bold 12px monospace');
+    }
+
     // Instructions
     const statusBarHeight = this.renderer.getHeight() * gameConfig.ui.statusBarHeight;
-    this.renderer.drawText('WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests', 10, 
+    this.renderer.drawText('WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests | J: Warp | H: Test Damage', 10, 
       this.renderer.getHeight() - statusBarHeight - 20, '#8c8c8c', '8px monospace');
   }
 

@@ -13,10 +13,16 @@ export declare class PlayerShip implements IPlayerShip {
     maxHull: number;
     shields: number;
     maxShields: number;
+    shieldRegenRate: number;
+    shieldRegenDelay: number;
+    lastDamageTime: number;
     fuel: number;
     maxFuel: number;
     energy: number;
     maxEnergy: number;
+    warpCharge: number;
+    maxWarpCharge: number;
+    isWarping: boolean;
     thrust: number;
     maxThrust: number;
     rotationSpeed: number;
@@ -33,6 +39,8 @@ export declare class PlayerShip implements IPlayerShip {
     private updateWeapons;
     fireWeapon(): void;
     private createWeaponEffect;
+    private getWeaponColor;
+    private createEngineParticleEffects;
     render(renderer: IRenderer, camera: ICamera): void;
     private renderHull;
     private renderEngineEffects;
@@ -41,4 +49,8 @@ export declare class PlayerShip implements IPlayerShip {
     selectWeapon(weaponType: WeaponType): void;
     getSystemStatus(systemType: ShipSystemType): ShipSystem | undefined;
     getWeaponStatus(weaponType: WeaponType): Weapon | undefined;
+    takeDamage(amount: number): void;
+    rechargeShields(deltaTime: number): void;
+    canWarp(): boolean;
+    initiateWarp(): void;
 }

@@ -11,7 +11,8 @@ import {
   ShipSystem,
   Weapon,
   ShipComponent,
-  CargoItem
+  CargoItem,
+  EffectType
 } from './types';
 import { PhysicsEngine } from './utils';
 
@@ -32,10 +33,16 @@ export class PlayerShip implements IPlayerShip {
   public maxHull: number = 100;
   public shields: number = 85;
   public maxShields: number = 100;
+  public shieldRegenRate: number = 10; // shields per second
+  public shieldRegenDelay: number = 3; // seconds before regen starts
+  public lastDamageTime: number = 0;
   public fuel: number = 75;
   public maxFuel: number = 100;
   public energy: number = 90;
   public maxEnergy: number = 100;
+  public warpCharge: number = 0;
+  public maxWarpCharge: number = 100;
+  public isWarping: boolean = false;
 
   // Movement
   public thrust: number = 0;
@@ -180,12 +187,16 @@ export class PlayerShip implements IPlayerShip {
       this.energy = Math.min(this.maxEnergy, this.energy + 5.0 * deltaTime);
     }
 
+    // New shield regeneration system
     const shields = this.systems.get(ShipSystemType.SHIELDS);
-    if (shields?.active && this.energy > 0) {
+    if (shields?.active) {
+      this.rechargeShields(deltaTime);
       this.energy = Math.max(0, this.energy - 0.5 * deltaTime);
-      if (this.shields < this.maxShields) {
-        this.shields = Math.min(this.maxShields, this.shields + 2.0 * deltaTime);
-      }
+    }
+
+    // Warp charge buildup when not warping
+    if (!this.isWarping && this.warpCharge < this.maxWarpCharge && this.energy > 10) {
+      this.warpCharge = Math.min(this.maxWarpCharge, this.warpCharge + 2.0 * deltaTime);
     }
 
     this.systems.forEach(system => {
@@ -231,6 +242,60 @@ export class PlayerShip implements IPlayerShip {
     if (game && game.questSystem) {
       game.questSystem.updateProgress('collect', 'fire_tutorial', 1);
     }
+    
+    // Create weapon visual effect
+    if (game && game.effectSystem) {
+      const weaponPos = {
+        x: this.position.x + Math.cos(this.angle) * 20,
+        y: this.position.y + Math.sin(this.angle) * 20
+      };
+      
+      game.effectSystem.createEffect(EffectType.WEAPON_IMPACT, weaponPos, {
+        weaponType: weapon.type,
+        color: this.getWeaponColor(weapon.type),
+        size: 8
+      });
+    }
+  }
+  
+  private getWeaponColor(weaponType: WeaponType): string {
+    switch (weaponType) {
+      case WeaponType.LASER: return '#ff0000';
+      case WeaponType.PULSE_LASER: return '#ff6600';
+      case WeaponType.BEAM_LASER: return '#ffff00';
+      case WeaponType.PLASMA_CANNON: return '#00ff88';
+      case WeaponType.ION_BEAM: return '#0088ff';
+      case WeaponType.MISSILES: return '#ff8800';
+      case WeaponType.TORPEDO: return '#ff4400';
+      case WeaponType.RAILGUN: return '#ffffff';
+      case WeaponType.EMP_WEAPON: return '#8800ff';
+      case WeaponType.FLAK_CANNON: return '#ffaa00';
+      default: return '#ffffff';
+    }
+  }
+
+  private createEngineParticleEffects(): void {
+    const game = (window as any).game;
+    if (!game || !game.effectSystem) return;
+    
+    // Create main engine effect
+    const enginePos = {
+      x: this.position.x - Math.cos(this.angle) * 20,
+      y: this.position.y - Math.sin(this.angle) * 20
+    };
+    
+    const thrustVector = {
+      x: -Math.cos(this.angle),
+      y: -Math.sin(this.angle)
+    };
+    
+    game.effectSystem.createEffect(EffectType.ENGINE_THRUST, enginePos, {
+      thrustVector,
+      intensity: this.thrust,
+      exhaustLength: 40 + this.thrust * 30,
+      particleCount: Math.floor(15 + this.thrust * 10),
+      duration: 0.1
+    });
   }
 
   public render(renderer: IRenderer, camera: ICamera): void {
@@ -244,6 +309,7 @@ export class PlayerShip implements IPlayerShip {
 
     if (this.thrust > 0.1) {
       this.renderEngineEffects(renderer);
+      this.createEngineParticleEffects();
     }
 
     if (this.systems.get(ShipSystemType.SHIELDS)?.active && this.shields > 0) {
@@ -357,5 +423,96 @@ export class PlayerShip implements IPlayerShip {
 
   public getWeaponStatus(weaponType: WeaponType): Weapon | undefined {
     return this.weapons.get(weaponType);
+  }
+
+  public takeDamage(amount: number): void {
+    this.lastDamageTime = Date.now() / 1000; // Convert to seconds
+    
+    if (this.shields > 0) {
+      // Shields absorb damage first
+      const shieldDamage = Math.min(amount, this.shields);
+      this.shields -= shieldDamage;
+      amount -= shieldDamage;
+      
+      // Create shield hit effect
+      const game = (window as any).game;
+      if (game && game.effectSystem) {
+        game.effectSystem.createEffect(EffectType.SHIELD_HIT, this.position, {
+          intensity: shieldDamage / 50,
+          impactPoint: this.position
+        });
+      }
+    }
+    
+    if (amount > 0) {
+      // Remaining damage goes to hull
+      this.hull = Math.max(0, this.hull - amount);
+      
+      // Create hull damage effect
+      const game = (window as any).game;
+      if (game && game.effectSystem) {
+        game.effectSystem.createEffect(EffectType.WEAPON_IMPACT, this.position, {
+          intensity: amount / 30,
+          size: 15
+        });
+      }
+    }
+  }
+
+  public rechargeShields(deltaTime: number): void {
+    const currentTime = Date.now() / 1000;
+    
+    // Only regenerate if enough time has passed since last damage
+    if (currentTime - this.lastDamageTime >= this.shieldRegenDelay && this.shields < this.maxShields) {
+      const regenAmount = this.shieldRegenRate * deltaTime;
+      this.shields = Math.min(this.maxShields, this.shields + regenAmount);
+      
+      // Create shield regeneration effect occasionally
+      if (Math.random() < 0.1) {
+        const game = (window as any).game;
+        if (game && game.effectSystem) {
+          game.effectSystem.createEffect(EffectType.SHIELD_REGENERATE, this.position, {
+            size: this.radius * 3
+          });
+        }
+      }
+    }
+  }
+
+  public canWarp(): boolean {
+    return this.warpCharge >= this.maxWarpCharge && 
+           this.energy >= 50 && 
+           !this.isWarping &&
+           this.fuel >= 20;
+  }
+
+  public initiateWarp(): void {
+    if (!this.canWarp()) return;
+    
+    this.isWarping = true;
+    this.energy -= 50;
+    this.fuel -= 20;
+    this.warpCharge = 0;
+    
+    // Create warp effect sequence
+    const game = (window as any).game;
+    if (game && game.effectSystem) {
+      // Start with warp charge effect
+      game.effectSystem.createEffect(EffectType.WARP_CHARGE, this.position);
+      
+      // After 3 seconds, create warp bubble effect
+      setTimeout(() => {
+        if (game.effectSystem) {
+          game.effectSystem.createEffect(EffectType.WARP_BUBBLE, this.position);
+          
+          // Simulate warp jump (teleport to random location)
+          setTimeout(() => {
+            this.position.x += (Math.random() - 0.5) * 2000;
+            this.position.y += (Math.random() - 0.5) * 2000;
+            this.isWarping = false;
+          }, 2000);
+        }
+      }, 3000);
+    }
   }
 }

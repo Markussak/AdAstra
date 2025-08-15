@@ -1,4 +1,4 @@
-import { ShipSystemType, WeaponType } from './types';
+import { ShipSystemType, WeaponType, EffectType } from './types';
 import { PhysicsEngine } from './utils';
 export class PlayerShip {
     constructor(x, y) {
@@ -14,10 +14,16 @@ export class PlayerShip {
         this.maxHull = 100;
         this.shields = 85;
         this.maxShields = 100;
+        this.shieldRegenRate = 10;
+        this.shieldRegenDelay = 3;
+        this.lastDamageTime = 0;
         this.fuel = 75;
         this.maxFuel = 100;
         this.energy = 90;
         this.maxEnergy = 100;
+        this.warpCharge = 0;
+        this.maxWarpCharge = 100;
+        this.isWarping = false;
         this.thrust = 0;
         this.maxThrust = 0.2;
         this.rotationSpeed = 3.0;
@@ -140,11 +146,12 @@ export class PlayerShip {
             this.energy = Math.min(this.maxEnergy, this.energy + 5.0 * deltaTime);
         }
         const shields = this.systems.get(ShipSystemType.SHIELDS);
-        if (shields?.active && this.energy > 0) {
+        if (shields?.active) {
+            this.rechargeShields(deltaTime);
             this.energy = Math.max(0, this.energy - 0.5 * deltaTime);
-            if (this.shields < this.maxShields) {
-                this.shields = Math.min(this.maxShields, this.shields + 2.0 * deltaTime);
-            }
+        }
+        if (!this.isWarping && this.warpCharge < this.maxWarpCharge && this.energy > 10) {
+            this.warpCharge = Math.min(this.maxWarpCharge, this.warpCharge + 2.0 * deltaTime);
         }
         this.systems.forEach(system => {
             system.efficiency = system.health / system.maxHealth;
@@ -184,6 +191,52 @@ export class PlayerShip {
         if (game && game.questSystem) {
             game.questSystem.updateProgress('collect', 'fire_tutorial', 1);
         }
+        if (game && game.effectSystem) {
+            const weaponPos = {
+                x: this.position.x + Math.cos(this.angle) * 20,
+                y: this.position.y + Math.sin(this.angle) * 20
+            };
+            game.effectSystem.createEffect(EffectType.WEAPON_IMPACT, weaponPos, {
+                weaponType: weapon.type,
+                color: this.getWeaponColor(weapon.type),
+                size: 8
+            });
+        }
+    }
+    getWeaponColor(weaponType) {
+        switch (weaponType) {
+            case WeaponType.LASER: return '#ff0000';
+            case WeaponType.PULSE_LASER: return '#ff6600';
+            case WeaponType.BEAM_LASER: return '#ffff00';
+            case WeaponType.PLASMA_CANNON: return '#00ff88';
+            case WeaponType.ION_BEAM: return '#0088ff';
+            case WeaponType.MISSILES: return '#ff8800';
+            case WeaponType.TORPEDO: return '#ff4400';
+            case WeaponType.RAILGUN: return '#ffffff';
+            case WeaponType.EMP_WEAPON: return '#8800ff';
+            case WeaponType.FLAK_CANNON: return '#ffaa00';
+            default: return '#ffffff';
+        }
+    }
+    createEngineParticleEffects() {
+        const game = window.game;
+        if (!game || !game.effectSystem)
+            return;
+        const enginePos = {
+            x: this.position.x - Math.cos(this.angle) * 20,
+            y: this.position.y - Math.sin(this.angle) * 20
+        };
+        const thrustVector = {
+            x: -Math.cos(this.angle),
+            y: -Math.sin(this.angle)
+        };
+        game.effectSystem.createEffect(EffectType.ENGINE_THRUST, enginePos, {
+            thrustVector,
+            intensity: this.thrust,
+            exhaustLength: 40 + this.thrust * 30,
+            particleCount: Math.floor(15 + this.thrust * 10),
+            duration: 0.1
+        });
     }
     render(renderer, camera) {
         const screenPos = camera.worldToScreen(this.position.x, this.position.y);
@@ -193,6 +246,7 @@ export class PlayerShip {
         this.renderHull(renderer);
         if (this.thrust > 0.1) {
             this.renderEngineEffects(renderer);
+            this.createEngineParticleEffects();
         }
         if (this.systems.get(ShipSystemType.SHIELDS)?.active && this.shields > 0) {
             this.renderShieldEffects(renderer);
@@ -284,6 +338,74 @@ export class PlayerShip {
     }
     getWeaponStatus(weaponType) {
         return this.weapons.get(weaponType);
+    }
+    takeDamage(amount) {
+        this.lastDamageTime = Date.now() / 1000;
+        if (this.shields > 0) {
+            const shieldDamage = Math.min(amount, this.shields);
+            this.shields -= shieldDamage;
+            amount -= shieldDamage;
+            const game = window.game;
+            if (game && game.effectSystem) {
+                game.effectSystem.createEffect(EffectType.SHIELD_HIT, this.position, {
+                    intensity: shieldDamage / 50,
+                    impactPoint: this.position
+                });
+            }
+        }
+        if (amount > 0) {
+            this.hull = Math.max(0, this.hull - amount);
+            const game = window.game;
+            if (game && game.effectSystem) {
+                game.effectSystem.createEffect(EffectType.WEAPON_IMPACT, this.position, {
+                    intensity: amount / 30,
+                    size: 15
+                });
+            }
+        }
+    }
+    rechargeShields(deltaTime) {
+        const currentTime = Date.now() / 1000;
+        if (currentTime - this.lastDamageTime >= this.shieldRegenDelay && this.shields < this.maxShields) {
+            const regenAmount = this.shieldRegenRate * deltaTime;
+            this.shields = Math.min(this.maxShields, this.shields + regenAmount);
+            if (Math.random() < 0.1) {
+                const game = window.game;
+                if (game && game.effectSystem) {
+                    game.effectSystem.createEffect(EffectType.SHIELD_REGENERATE, this.position, {
+                        size: this.radius * 3
+                    });
+                }
+            }
+        }
+    }
+    canWarp() {
+        return this.warpCharge >= this.maxWarpCharge &&
+            this.energy >= 50 &&
+            !this.isWarping &&
+            this.fuel >= 20;
+    }
+    initiateWarp() {
+        if (!this.canWarp())
+            return;
+        this.isWarping = true;
+        this.energy -= 50;
+        this.fuel -= 20;
+        this.warpCharge = 0;
+        const game = window.game;
+        if (game && game.effectSystem) {
+            game.effectSystem.createEffect(EffectType.WARP_CHARGE, this.position);
+            setTimeout(() => {
+                if (game.effectSystem) {
+                    game.effectSystem.createEffect(EffectType.WARP_BUBBLE, this.position);
+                    setTimeout(() => {
+                        this.position.x += (Math.random() - 0.5) * 2000;
+                        this.position.y += (Math.random() - 0.5) * 2000;
+                        this.isWarping = false;
+                    }, 2000);
+                }
+            }, 3000);
+        }
     }
 }
 //# sourceMappingURL=player.js.map

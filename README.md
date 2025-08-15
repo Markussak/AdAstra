@@ -38,16 +38,21 @@ Ponořte se do nekonečné galaxie plné tajemství, dobrodružství a nekonečn
 - Unikátní planety, měsíce a asteroidy
 - Realistická orbitální mechanika
 
-### 🚀 Pokročilá Fyzika
+### 🚀 Pokročilá Fyzika & Efekty
 - Newtonovská mechanika pohybu
 - Gravitační síly od nebeských těles
 - Realistické ovládání kosmické lodi
+- **Warp Drive**: Pokročilý FTL systém s multi-fázovou animací
+- **Engine Effects**: Realistické plazmové a ionové motory
+- **Particle Systems**: Pokročilé vizuální efekty pro všechny systémy
 
 ### ⚔️ Bojový Systém  
 - **11 typů zbraní**: Lasery, Plasma Cannon, Torpéda, Railgun, Ion Beam, EMP
 - **Weapon Data**: Detailní stats pro každou zbraň (damage, range, fire rate)
+- **Pokročilé štíty**: Hexagonální energetické štíty s regenerací
+- **Visual Effects**: Realistické efekty dopadů, výbuchů a zásahů štítů
 - Systém přehřívání zbraní
-- Štíty a damage systém
+- Damage systém s prioritou štítů před hull
 
 ### 🎯 Quest & Mission Systém
 - **Dynamické úkoly**: Delivery, Combat, Exploration, Mining, Story quests
@@ -126,6 +131,8 @@ Hra se otevře na `http://localhost:3000`
 - **Q**: Quest log (aktivní úkoly)
 - **F5**: Quick save
 - **F9**: Quick load
+- **J**: Warp Drive (při plném nabití)
+- **H**: Test damage (pro testování štítů)
 - **TAB**: Inventář (plánováno)
 - **M**: Mapa (plánováno)
 - **1-4**: Výběr zbraní (plánováno)
@@ -146,7 +153,8 @@ space-explorer-typescript/
 │   ├── utils.ts           # Utility funkce
 │   ├── gameData.ts        # Konfigurační data + nové lodě a zbraně
 │   ├── saveSystem.ts      # 💾 Save/Load systém + AutoSave
-│   └── questSystem.ts     # 🎯 Quest a Mission systém
+│   ├── questSystem.ts     # 🎯 Quest a Mission systém
+│   └── effectSystem.ts    # ✨ Pokročilé vizuální efekty
 ├── assets/                # Obrázky, zvuky, atd.
 ├── dist/                  # Zkompilované soubory
 ├── index.html            # Hlavní HTML soubor
@@ -202,6 +210,9 @@ npm run type-check     # TypeScript type checking
 - [x] **Quest systém** - ✅ Dokončeno v2.1.0
 - [x] **Save/Load systém** - ✅ Dokončeno v2.1.0  
 - [x] **Pokročilé nastavení** - ✅ Dokončeno v2.1.0
+- [x] **Effect System** - ✅ Dokončeno v2.1.0
+- [x] **Shield Mechanics** - ✅ Dokončeno v2.1.0
+- [x] **Warp Drive** - ✅ Dokončeno v2.1.0
 - [ ] **Sound System** - 🔄 V přípravě v2.2.0
 - [ ] Obchodní systém
 - [ ] Vícehráčový mód

@@ -1,6 +1,6 @@
 {
   "name": "space-explorer-typescript",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Space Explorer 16-Bit game written in TypeScript",
   "main": "dist/main.js",
   "type": "module",

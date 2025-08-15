@@ -8,6 +8,7 @@ import { StarSystemScene } from './scenes';
 import { SHIP_TEMPLATES, DIFFICULTY_SETTINGS, LOADING_MESSAGES } from './gameData';
 import { SaveSystem, AutoSaveManager } from './saveSystem';
 import { QuestSystem } from './questSystem';
+import { EffectSystem } from './effectSystem';
 class StateManager {
     constructor() {
         this.states = new Map();
@@ -481,6 +482,23 @@ class PlayingState {
                 }
             }
         }
+        if (input.wasKeyJustPressed('j')) {
+            const game = window.game;
+            if (game && game.player.canWarp()) {
+                game.player.initiateWarp();
+                console.log('Warp drive initiated!');
+            }
+            else {
+                console.log('Cannot warp: insufficient charge/energy/fuel');
+            }
+        }
+        if (input.wasKeyJustPressed('h')) {
+            const game = window.game;
+            if (game && game.player) {
+                game.player.takeDamage(25);
+                console.log('Player took 25 damage');
+            }
+        }
     }
 }
 class PausedState {
@@ -852,6 +870,7 @@ export class GameEngine {
         this.statusBar = new StatusBar(this.renderer);
         this.player = new PlayerShip(200, 200);
         this.questSystem = new QuestSystem();
+        this.effectSystem = new EffectSystem();
         console.log('Game engine initialized');
         AutoSaveManager.start(this);
         this.startGameLoop();
@@ -876,6 +895,7 @@ export class GameEngine {
             this.player.update(deltaTime, this);
             this.sceneManager.update(deltaTime, this);
             this.questSystem.updateTimers(deltaTime);
+            this.effectSystem.update(deltaTime);
             this.questSystem.updateProgress('survive', undefined, deltaTime);
             this.camera.followTarget(this.player.position, deltaTime, this.renderer.getWidth(), this.renderer.getHeight());
             this.statusBar.update(this.player);
@@ -886,6 +906,7 @@ export class GameEngine {
         if (this.stateManager.getCurrentState() === GameState.PLAYING) {
             this.sceneManager.render(this.renderer, this.camera);
             this.player.render(this.renderer, this.camera);
+            this.effectSystem.render(this.renderer);
             this.renderHUD();
             this.statusBar.render(this.player);
         }
@@ -904,8 +925,14 @@ export class GameEngine {
         this.renderer.drawText(`V: ${(speed * 100).toFixed(1)} m/s`, 10, 55, '#5f9e9e', '10px monospace');
         this.renderer.drawText(`SCENE: STAR SYSTEM`, 10, 70, '#5f9e9e', '10px monospace');
         this.renderActiveQuests();
+        const warpPercent = Math.round((this.player.warpCharge / this.player.maxWarpCharge) * 100);
+        const warpColor = this.player.canWarp() ? '#00ff00' : '#ffaa00';
+        this.renderer.drawText(`WARP: ${warpPercent}%`, 10, 100, warpColor, 'bold 10px monospace');
+        if (this.player.isWarping) {
+            this.renderer.drawText('WARPING...', 10, 115, '#ff0000', 'bold 12px monospace');
+        }
         const statusBarHeight = this.renderer.getHeight() * gameConfig.ui.statusBarHeight;
-        this.renderer.drawText('WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests', 10, this.renderer.getHeight() - statusBarHeight - 20, '#8c8c8c', '8px monospace');
+        this.renderer.drawText('WASD: Move | SPACE: Fire | ESC: Menu | Q: Quests | J: Warp | H: Test Damage', 10, this.renderer.getHeight() - statusBarHeight - 20, '#8c8c8c', '8px monospace');
     }
     renderActiveQuests() {
         const activeQuests = this.questSystem.getActiveQuests();

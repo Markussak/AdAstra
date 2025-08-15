@@ -52,6 +52,31 @@ export class Renderer {
             this.ctx.stroke();
         }
     }
+    fillCircle(x, y, radius, color) {
+        this.ctx.fillStyle = color;
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+        this.ctx.fill();
+    }
+    strokeCircle(x, y, radius, color, lineWidth = 1) {
+        this.ctx.strokeStyle = color;
+        this.ctx.lineWidth = lineWidth;
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+        this.ctx.stroke();
+    }
+    strokePath(points, color, lineWidth = 1) {
+        if (points.length < 2)
+            return;
+        this.ctx.strokeStyle = color;
+        this.ctx.lineWidth = lineWidth;
+        this.ctx.beginPath();
+        this.ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            this.ctx.lineTo(points[i].x, points[i].y);
+        }
+        this.ctx.stroke();
+    }
     drawLine(x1, y1, x2, y2, color, width = 1) {
         this.ctx.strokeStyle = color;
         this.ctx.lineWidth = width;

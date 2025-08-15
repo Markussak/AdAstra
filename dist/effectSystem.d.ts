@@ -1,0 +1,36 @@
+import { EffectType, Vector2D, IRenderer } from './types';
+export declare class EffectSystem {
+    private effects;
+    private nextEffectId;
+    createEffect(type: EffectType, position: Vector2D, options?: any): string;
+    update(deltaTime: number): void;
+    render(renderer: IRenderer): void;
+    removeEffect(id: string): void;
+    clearAllEffects(): void;
+    private createShieldHitEffect;
+    private createShieldRegenEffect;
+    private createEngineEffect;
+    private createManeuveringEffect;
+    private createWarpChargeEffect;
+    private createWarpBubbleEffect;
+    private createWeaponImpactEffect;
+    private createBasicEffect;
+    private updateEffect;
+    private updateShieldHitEffect;
+    private updateShieldRegenEffect;
+    private updateEngineEffect;
+    private updateWarpChargeEffect;
+    private updateWarpBubbleEffect;
+    private renderEffect;
+    private renderShieldEffect;
+    private renderHexagonalShield;
+    private renderBubbleShield;
+    private renderEngineEffect;
+    private renderWarpEffect;
+    private renderWarpCharging;
+    private renderWarpBubble;
+    private renderWarpDistortion;
+    private renderWarpCollapse;
+    private renderWeaponImpact;
+    private renderBasicEffect;
+}

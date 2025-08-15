@@ -331,6 +331,50 @@ export interface GameSettings {
   };
 }
 
+export enum EffectType {
+  SHIELD_HIT = 'shieldHit',
+  SHIELD_REGENERATE = 'shieldRegenerate', 
+  ENGINE_THRUST = 'engineThrust',
+  MANEUVERING_THRUST = 'maneuveringThrust',
+  WARP_CHARGE = 'warpCharge',
+  WARP_BUBBLE = 'warpBubble',
+  WARP_DISTORTION = 'warpDistortion',
+  WARP_COLLAPSE = 'warpCollapse',
+  WEAPON_IMPACT = 'weaponImpact',
+  EXPLOSION = 'explosion'
+}
+
+export interface VisualEffect {
+  id: string;
+  type: EffectType;
+  position: Vector2D;
+  duration: number;
+  timeRemaining: number;
+  intensity: number;
+  color: string;
+  size: number;
+  animationFrame: number;
+  data?: any;
+}
+
+export interface ShieldEffect extends VisualEffect {
+  hexagonPattern: boolean;
+  rippleCenter?: Vector2D;
+  impactIntensity: number;
+}
+
+export interface WarpEffect extends VisualEffect {
+  phase: 'charging' | 'bubble' | 'distortion' | 'collapse' | 'accretion';
+  bubbleRadius: number;
+  distortionLevel: number;
+}
+
+export interface EngineEffect extends VisualEffect {
+  thrustVector: Vector2D;
+  particleCount: number;
+  exhaustLength: number;
+}
+
 // Game state interfaces
 export interface IGameState {
   enter?(): void;
@@ -348,6 +392,9 @@ export interface IRenderer {
   getHeight(): number;
   drawRect(x: number, y: number, width: number, height: number, color: string): void;
   drawCircle(x: number, y: number, radius: number, color: string, filled?: boolean): void;
+  fillCircle(x: number, y: number, radius: number, color: string): void;
+  strokeCircle(x: number, y: number, radius: number, color: string, lineWidth?: number): void;
+  strokePath(points: Vector2D[], color: string, lineWidth?: number): void;
   drawLine(x1: number, y1: number, x2: number, y2: number, color: string, width?: number): void;
   drawText(text: string, x: number, y: number, color?: string, font?: string): void;
   drawStarField(camera: ICamera, layers?: number): void;
@@ -432,10 +479,16 @@ export interface IPlayerShip extends IGameObject {
   maxHull: number;
   shields: number;
   maxShields: number;
+  shieldRegenRate: number;
+  shieldRegenDelay: number;
+  lastDamageTime: number;
   fuel: number;
   maxFuel: number;
   energy: number;
   maxEnergy: number;
+  warpCharge: number;
+  maxWarpCharge: number;
+  isWarping: boolean;
 
   thrust: number;
   maxThrust: number;
@@ -450,6 +503,10 @@ export interface IPlayerShip extends IGameObject {
   getSystemStatus(systemType: ShipSystemType): ShipSystem | undefined;
   getWeaponStatus(weaponType: WeaponType): Weapon | undefined;
   fireWeapon(): void;
+  takeDamage(amount: number): void;
+  rechargeShields(deltaTime: number): void;
+  canWarp(): boolean;
+  initiateWarp(): void;
 }
 
 export interface IScene {
