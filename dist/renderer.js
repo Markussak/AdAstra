@@ -85,7 +85,7 @@ export class Renderer {
         this.ctx.lineTo(x2, y2);
         this.ctx.stroke();
     }
-    drawText(text, x, y, color = '#ffffff', font = '12px monospace') {
+    drawText(text, x, y, color = '#ffffff', font = '12px "Big Apple 3PM", monospace') {
         this.ctx.fillStyle = color;
         this.ctx.font = font;
         this.ctx.textAlign = 'center';

@@ -4,12 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Star Dust Voyager: Galaxy Wanderer</title>
+    <link rel="preload" href="./assets/fonts/Big Apple 3PM.ttf" as="font" type="font/ttf" crossorigin>
     <style>
+        @font-face {
+            font-family: 'Big Apple 3PM';
+            src: url('./assets/fonts/Big Apple 3PM.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        
         body {
             margin: 0;
             padding: 0;
             background: #0a0a0f;
-            font-family: 'Courier New', monospace;
+            font-family: 'Big Apple 3PM', 'Courier New', monospace;
             overflow: hidden;
             display: flex;
             justify-content: center;

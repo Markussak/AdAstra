@@ -109,7 +109,7 @@ export class Renderer implements IRenderer {
     this.ctx.stroke();
   }
 
-  public drawText(text: string, x: number, y: number, color: string = '#ffffff', font: string = '12px monospace'): void {
+  public drawText(text: string, x: number, y: number, color: string = '#ffffff', font: string = '12px "Big Apple 3PM", monospace'): void {
     this.ctx.fillStyle = color;
     this.ctx.font = font;
     this.ctx.textAlign = 'center';

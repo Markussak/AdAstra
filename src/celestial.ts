@@ -110,7 +110,7 @@ export class CelestialBody implements ICelestialBody {
     if ((this.type === CelestialBodyType.STAR || this.type === CelestialBodyType.PLANET) && 
         Math.abs(screenPos.x - renderer.getWidth()/2) < 150 && 
         Math.abs(screenPos.y - renderer.getHeight()/2) < 150) {
-      renderer.drawText(this.name, screenPos.x, screenPos.y + this.radius + 20, '#dcd0c0', '8px monospace');
+      renderer.drawText(this.name, screenPos.x, screenPos.y + this.radius + 20, '#dcd0c0', '8px "Big Apple 3PM", monospace');
     }
   }
 

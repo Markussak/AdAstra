@@ -178,8 +178,8 @@ export class InterstellarSpaceScene {
         }
         if (Math.abs(screenPos.x - renderer.getWidth() / 2) < 200 &&
             Math.abs(screenPos.y - renderer.getHeight() / 2) < 200) {
-            renderer.drawText(system.name, screenPos.x, screenPos.y + system.size + 15, '#dcd0c0', '6px monospace');
-            renderer.drawText(system.type, screenPos.x, screenPos.y + system.size + 25, '#dcd0c0', '6px monospace');
+            renderer.drawText(system.name, screenPos.x, screenPos.y + system.size + 15, '#dcd0c0', '6px "Big Apple 3PM", monospace');
+            renderer.drawText(system.type, screenPos.x, screenPos.y + system.size + 25, '#dcd0c0', '6px "Big Apple 3PM", monospace');
         }
     }
     getSceneType() {
