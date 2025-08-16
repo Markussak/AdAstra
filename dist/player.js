@@ -1,5 +1,6 @@
 import { ShipSystemType, WeaponType, EffectType } from './types';
 import { PhysicsEngine, gameConfig } from './utils';
+import { SpriteRenderer } from './sprites';
 export class PlayerShip {
     constructor(x, y) {
         this.velocity = { x: 0, y: 0 };
@@ -8,6 +9,7 @@ export class PlayerShip {
         this.radius = 15;
         this.active = true;
         this.mass = 100;
+        this.spriteKey = 'ship_explorer';
         this.systems = new Map();
         this.components = [];
         this.weapons = new Map();
@@ -314,7 +316,12 @@ export class PlayerShip {
         renderer.save();
         renderer.translate(screenPos.x, screenPos.y);
         renderer.rotate(this.angle);
-        this.renderHull(renderer);
+        if (this.spriteKey) {
+            SpriteRenderer.drawSprite(renderer, this.spriteKey, 2);
+        }
+        else {
+            this.renderHull(renderer);
+        }
         if (this.thrust > 0.1) {
             this.renderEngineEffects(renderer);
             this.createEngineParticleEffects();

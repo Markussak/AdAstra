@@ -7,6 +7,7 @@ export declare class PlayerShip implements IPlayerShip {
     radius: number;
     active: boolean;
     mass: number;
+    spriteKey: string | null;
     systems: Map<ShipSystemType, ShipSystem>;
     components: ShipComponent[];
     weapons: Map<WeaponType, Weapon>;

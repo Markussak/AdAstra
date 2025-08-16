@@ -458,6 +458,7 @@ class NewGameSetupState {
         this.skipNameButton = { x: 0, y: 0, width: 100, height: 40, hovered: false };
         this.ageInputButton = { x: 0, y: 0, width: 100, height: 40, hovered: false };
         this.startGameButton = { x: 0, y: 0, width: 200, height: 50, hovered: false, pressed: false };
+        this.launching = { active: false, start: 0, duration: 800 };
     }
     enter() {
         console.log('New game setup entered');
@@ -477,6 +478,7 @@ class NewGameSetupState {
         Object.values(CharacterSkill).forEach(skill => {
             this.character.skills.set(skill, 1);
         });
+        this.launching = { active: false, start: 0, duration: 800 };
     }
     update(deltaTime) {
         this.animations.stepTransition += deltaTime * 3.0;
@@ -488,6 +490,13 @@ class NewGameSetupState {
             this.animations.buttonPulse = 0;
         if (this.animations.starField > 1000)
             this.animations.starField = 0;
+        if (this.launching.active) {
+            const now = performance.now();
+            if (now - this.launching.start >= this.launching.duration) {
+                this.launching.active = false;
+                this.startGame();
+            }
+        }
     }
     render(renderer) {
         const width = renderer.getWidth();
@@ -591,6 +600,24 @@ class NewGameSetupState {
         }
         this.renderNavigationButtons(renderer, width, height);
         this.renderTooltip(renderer);
+        if (this.launching.active) {
+            ctx.save();
+            ctx.globalAlpha = 0.85;
+            renderer.drawRect(0, 0, width, height, 'rgba(0,0,0,0.85)');
+            ctx.globalAlpha = 1;
+            const elapsed = performance.now() - this.launching.start;
+            const progress = Math.min(1, elapsed / this.launching.duration);
+            const barW = Math.floor(width * 0.4);
+            const barH = 12;
+            const barX = Math.floor((width - barW) / 2);
+            const barY = Math.floor(height * 0.65);
+            renderer.drawRect(barX - 2, barY - 2, barW + 4, barH + 4, '#221100');
+            renderer.strokeRect(barX - 2, barY - 2, barW + 4, barH + 4, '#664400', 2);
+            renderer.drawRect(barX, barY, Math.max(2, Math.floor(barW * progress)), barH, '#F97300');
+            renderer.drawText('INITIATING LAUNCH SEQUENCE…', width / 2, barY - 16, '#E2DFD0', 'bold 16px "Big Apple 3PM", monospace');
+            renderer.drawText('CALIBRATING SYSTEMS • PRESSURIZING • IGNITION', width / 2, barY + 28, '#A27B5C', '10px "Big Apple 3PM", monospace');
+            ctx.restore();
+        }
     }
     drawSetupTerminalFrame(renderer, x, y, w, h) {
         const ctx = renderer.getContext();
@@ -1924,7 +1951,8 @@ class NewGameSetupState {
                     case 6:
                         if (this.isPointInRect(clickX, clickY, this.startGameButton)) {
                             this.startGameButton.pressed = true;
-                            this.startGame();
+                            this.launching.active = true;
+                            this.launching.start = performance.now();
                             handled = true;
                         }
                         break;
@@ -1934,6 +1962,10 @@ class NewGameSetupState {
         return handled;
     }
     handleInput(input) {
+        if (this.launching.active) {
+            this.updateHoverStates(input);
+            return;
+        }
         this.updateHoverStates(input);
         if (this.handleTouchAndMouseClicks(input)) {
             return;
@@ -2011,7 +2043,8 @@ class NewGameSetupState {
                 break;
             case 6:
                 if (input.wasKeyJustPressed('enter')) {
-                    this.startGame();
+                    this.launching.active = true;
+                    this.launching.start = performance.now();
                 }
                 break;
         }
@@ -2049,6 +2082,13 @@ class PlayingState {
             game.player.maxShields = shipTemplate.baseStats.shields;
             game.player.shields = shipTemplate.baseStats.shields;
             game.player.maxCargoWeight = shipTemplate.baseStats.cargo;
+            const shipTypeToSprite = {
+                explorer: 'ship_explorer',
+                fighter: 'ship_fighter',
+                cargo: 'ship_cargo'
+            };
+            const spriteKey = shipTypeToSprite[String(gameSetup.shipType)] || 'ship_explorer';
+            game.player.spriteKey = spriteKey;
             console.log(`Game started as ${gameSetup.character.name} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
         }
         else {

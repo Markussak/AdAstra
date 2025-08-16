@@ -1,0 +1,102 @@
+# Curated 16-bit Retro Palette (edit as needed)
+
+# Chassis / UI grays
+#0a0a0a
+#141418
+#1a1a1a
+#222228
+#2a2a2e
+#3a3a3f
+#404040
+#4a4a50
+#505050
+#5a5a60
+#7a7a82
+#b8b8b8
+#e8e8e8
+
+# CRT amber/green/red (muted)
+#d4a574
+#b88964
+#906c50
+#74a574
+#5e8b60
+#a57474
+#8c5f5f
+
+# Accents / buttons
+#A27B5C
+#F6B17A
+#F97300
+#be794f
+#664400
+#443300
+#221100
+#3F4F44
+#7077A1
+#6aaf9d
+#355d68
+
+# Stars / whites
+#FFFFFF
+#E6E6FA
+#F0F8FF
+#FFF8DC
+#F5F5DC
+#FFFAF0
+#FAF0E6
+#E0E6FF
+
+# Nebulae purples/reds
+#2D1B3D
+#4A2C4A
+#3D1A3D
+#5D2E5D
+#4D1F4D
+#3A2A5A
+#2E1E4E
+#4A3A6A
+#3D2D5D
+#2F1F2F
+#1F1F2F
+#2A1A2A
+#251525
+
+# Ship metals
+#2b323a
+#434c55
+#5a6978
+#6d4c4c
+#e0e3e6
+
+# Effects / VFX
+#e8732c
+#ffc357
+#ff4444
+#ffff00
+#00ffff
+#000088
+
+# Planet palette
+#4169E1
+#CD853F
+#8B4513
+#228B22
+#DC143C
+#9370DB
+#FF6347
+#4682B4
+#DDA0DD
+#32CD32
+#FF8C00
+#8A2BE2
+#C0C0C0
+#8B7355
+#696969
+#A0522D
+#BC8F8F
+#D2691E
+#F4A460
+#708090
+#778899
+#B8860B
