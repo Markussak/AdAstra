@@ -3,6 +3,7 @@ export declare class InputManager implements IInputManager {
     keys: Map<string, KeyState>;
     mouse: MouseState;
     touches: Map<number, TouchData>;
+    private touchesJustEnded;
     isMobile: boolean;
     touchControlsEnabled: boolean;
     virtualJoystick: VirtualJoystick;
@@ -77,6 +78,7 @@ export declare class InputManager implements IInputManager {
         back: boolean;
     };
     setTouchControlsEnabled(enabled: boolean): void;
+    getJustEndedTouches(): Map<number, TouchData>;
     renderTouchControls(renderer: any): void;
     private draw16BitButton;
     update(): void;

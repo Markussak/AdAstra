@@ -219,6 +219,12 @@ class MainMenuState {
     }
     handleInput(input) {
         const touchInput = input.getTouchMenuInput();
+        const directMenuClick = this.checkDirectMenuClick(input);
+        if (directMenuClick !== -1) {
+            this.selectedOption = directMenuClick;
+            this.handleMenuSelection();
+            return;
+        }
         if (input.wasKeyJustPressed('arrowup') || input.wasKeyJustPressed('w') || touchInput.up) {
             this.selectedOption = Math.max(0, this.selectedOption - 1);
         }
@@ -228,6 +234,40 @@ class MainMenuState {
         if (input.wasKeyJustPressed('enter') || touchInput.select) {
             this.handleMenuSelection();
         }
+    }
+    checkDirectMenuClick(input) {
+        const game = window.game;
+        if (!game || !game.renderer)
+            return -1;
+        const width = game.renderer.getWidth();
+        const height = game.renderer.getHeight();
+        const startY = height / 2 + 50;
+        const spacing = 60;
+        if (input.mouse.justPressed) {
+            const clickX = input.mouse.x;
+            const clickY = input.mouse.y;
+            for (let i = 0; i < this.menuOptions.length; i++) {
+                const menuY = startY + i * spacing;
+                if (clickX >= width / 2 - 250 && clickX <= width / 2 + 250 &&
+                    clickY >= menuY - 30 && clickY <= menuY + 30) {
+                    return i;
+                }
+            }
+        }
+        let clickedIndex = -1;
+        input.getJustEndedTouches().forEach((touch) => {
+            const tapX = touch.x;
+            const tapY = touch.y;
+            for (let i = 0; i < this.menuOptions.length; i++) {
+                const menuY = startY + i * spacing;
+                if (tapX >= width / 2 - 250 && tapX <= width / 2 + 250 &&
+                    tapY >= menuY - 30 && tapY <= menuY + 30) {
+                    clickedIndex = i;
+                    return;
+                }
+            }
+        });
+        return clickedIndex;
     }
     handleMenuSelection() {
         const game = window.game;
