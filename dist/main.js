@@ -1237,11 +1237,12 @@ class NewGameSetupState {
         renderer.drawText('SELECT STARSHIP CLASS', width / 2, startY + 25, '#DCD7C9', '14px "Big Apple 3PM", monospace');
         const ships = Object.values(ShipType);
         const shipsPerRow = 2;
-        const shipWidth = 380;
-        const shipHeight = 160;
+        const shipWidth = 350;
+        const shipHeight = 140;
+        const detailsPanelWidth = 320;
         const panelX = 40;
         const panelY = startY + 50;
-        const panelW = width - 80;
+        const panelW = width - 80 - detailsPanelWidth - 30;
         const panelH = height - startY - 150;
         this.drawSelectionPanel(renderer, panelX, panelY, panelW, panelH, 'STARSHIP REGISTRY');
         this.shipButtons = [];
@@ -1249,8 +1250,8 @@ class NewGameSetupState {
             const template = SHIP_TEMPLATES[shipType];
             const row = Math.floor(index / shipsPerRow);
             const col = index % shipsPerRow;
-            const x = panelX + 50 + col * (shipWidth + 30);
-            const y = panelY + 60 + row * (shipHeight + 30);
+            const x = panelX + 30 + col * (shipWidth + 20);
+            const y = panelY + 60 + row * (shipHeight + 20);
             const isSelected = shipType === this.selectedShip;
             const buttonArea = {
                 x: x,
@@ -1264,7 +1265,8 @@ class NewGameSetupState {
             this.drawShipCard(renderer, x, y, shipWidth, shipHeight, isSelected, buttonArea.hovered, template, index);
         });
         if (this.selectedShip) {
-            this.drawShipDetailsPanel(renderer, width - 350, panelY + 60, 320, panelH - 120);
+            const detailsX = width - detailsPanelWidth - 40;
+            this.drawShipDetailsPanel(renderer, detailsX, panelY + 60, detailsPanelWidth, panelH - 120);
         }
     }
     drawShipCard(renderer, x, y, w, h, selected, hovered, template, index) {
@@ -1287,20 +1289,20 @@ class NewGameSetupState {
         const silhouetteW = 120;
         const silhouetteH = 80;
         this.drawShipSilhouette(renderer, silhouetteX, silhouetteY, silhouetteW, silhouetteH, template, shipColor, selected);
-        const infoX = x + 160;
-        const infoY = y + 25;
+        const infoX = x + 140;
+        const infoY = y + 20;
         const textColor = selected ? shipColor : (hovered ? '#a0a0a0' : '#707070');
-        const titleSize = selected ? 'bold 16px' : '14px';
+        const titleSize = selected ? 'bold 14px' : '12px';
         if (selected || hovered) {
             ctx.shadowColor = textColor;
             ctx.shadowBlur = selected ? 6 : 4;
         }
         renderer.drawText(template.name, infoX, infoY, textColor, `${titleSize} "Big Apple 3PM", monospace`);
         ctx.shadowBlur = 0;
-        renderer.drawText(`CLASS: ${template.type || 'MULTI-ROLE'}`, infoX, infoY + 25, textColor, '11px "Big Apple 3PM", monospace');
-        const statY = infoY + 50;
-        const statHeight = 12;
-        const statSpacing = 20;
+        renderer.drawText(`CLASS: ${template.type || 'MULTI-ROLE'}`, infoX, infoY + 20, textColor, '10px "Big Apple 3PM", monospace');
+        const statY = infoY + 40;
+        const statHeight = 10;
+        const statSpacing = 16;
         const stats = [
             { name: 'HULL', value: template.baseStats.hull, max: 1000, color: '#909090' },
             { name: 'SHIELDS', value: template.baseStats.shields, max: 1000, color: '#808080' },
@@ -1309,17 +1311,17 @@ class NewGameSetupState {
         ];
         stats.forEach((stat, i) => {
             const barY = statY + i * statSpacing;
-            const barW = 140;
+            const barW = 120;
             const barFill = Math.min(barW * (stat.value / stat.max), barW);
-            renderer.drawText(`${stat.name}:`, infoX, barY, textColor, '9px "Big Apple 3PM", monospace');
+            renderer.drawText(`${stat.name}:`, infoX, barY, textColor, '8px "Big Apple 3PM", monospace');
             ctx.fillStyle = '#221100';
-            ctx.fillRect(infoX + 50, barY - 6, barW, statHeight);
+            ctx.fillRect(infoX + 45, barY - 5, barW, statHeight);
             ctx.fillStyle = stat.color;
-            ctx.fillRect(infoX + 50, barY - 6, barFill, statHeight);
+            ctx.fillRect(infoX + 45, barY - 5, barFill, statHeight);
             ctx.strokeStyle = '#404040';
             ctx.lineWidth = 1;
-            ctx.strokeRect(infoX + 50, barY - 6, barW, statHeight);
-            renderer.drawText(stat.value.toString(), infoX + 200, barY, textColor, '9px "Big Apple 3PM", monospace');
+            ctx.strokeRect(infoX + 45, barY - 5, barW, statHeight);
+            renderer.drawText(stat.value.toString(), infoX + 170, barY, textColor, '8px "Big Apple 3PM", monospace');
         });
         if (selected) {
             const pulseAlpha = Math.sin(this.animations.buttonPulse * 4) * 0.3 + 0.7;
@@ -1441,17 +1443,20 @@ class NewGameSetupState {
         const shipTemplate = SHIP_TEMPLATES[this.selectedShip];
         const raceData = RACE_DATA[this.character.race];
         const backgroundData = BACKGROUND_DATA[this.character.background];
+        const panelGap = 20;
+        const totalPanelWidth = width - 100;
+        const panelWidth = (totalPanelWidth - (2 * panelGap)) / 3;
         const leftPanelX = 50;
         const leftPanelY = startY + 60;
-        const leftPanelW = (width - 160) / 3;
-        const leftPanelH = height - startY - 170;
-        const middlePanelX = leftPanelX + leftPanelW + 30;
+        const leftPanelW = panelWidth;
+        const leftPanelH = height - startY - 180;
+        const middlePanelX = leftPanelX + leftPanelW + panelGap;
         const middlePanelY = startY + 60;
-        const middlePanelW = leftPanelW;
+        const middlePanelW = panelWidth;
         const middlePanelH = leftPanelH;
-        const rightPanelX = middlePanelX + middlePanelW + 30;
+        const rightPanelX = middlePanelX + middlePanelW + panelGap;
         const rightPanelY = startY + 60;
-        const rightPanelW = leftPanelW;
+        const rightPanelW = panelWidth;
         const rightPanelH = leftPanelH;
         this.drawSelectionPanel(renderer, leftPanelX, leftPanelY, leftPanelW, leftPanelH, 'COMMANDER PROFILE');
         let leftY = leftPanelY + 50;
@@ -2013,8 +2018,10 @@ class NewGameSetupState {
     }
     startGame() {
         const game = window.game;
-        if (!game)
+        if (!game) {
+            console.error('Game instance not found!');
             return;
+        }
         this.gameSetup = {
             character: this.character,
             difficulty: this.selectedDifficulty,
@@ -2043,6 +2050,9 @@ class PlayingState {
             game.player.shields = shipTemplate.baseStats.shields;
             game.player.maxCargoWeight = shipTemplate.baseStats.cargo;
             console.log(`Game started as ${gameSetup.character.name} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
+        }
+        else {
+            console.warn('Missing gameSetup or player - using defaults');
         }
     }
     update(deltaTime) {
