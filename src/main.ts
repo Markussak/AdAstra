@@ -1771,13 +1771,14 @@ class NewGameSetupState implements IGameState {
     
     const ships = Object.values(ShipType);
     const shipsPerRow = 2;
-    const shipWidth = 380;
-    const shipHeight = 160;
+    const shipWidth = 350; // Reduced from 380
+    const shipHeight = 140; // Reduced from 160
     
-    // Main ship selection panel
+    // Main ship selection panel - adjusted to leave space for details panel
+    const detailsPanelWidth = 320;
     const panelX = 40;
     const panelY = startY + 50;
-    const panelW = width - 80;
+    const panelW = width - 80 - detailsPanelWidth - 30; // Leave space for details panel
     const panelH = height - startY - 150;
     
     this.drawSelectionPanel(renderer, panelX, panelY, panelW, panelH, 'STARSHIP REGISTRY');
@@ -1790,8 +1791,8 @@ class NewGameSetupState implements IGameState {
       const row = Math.floor(index / shipsPerRow);
       const col = index % shipsPerRow;
       
-      const x = panelX + 50 + col * (shipWidth + 30);
-      const y = panelY + 60 + row * (shipHeight + 30);
+      const x = panelX + 30 + col * (shipWidth + 20); // Reduced spacing
+      const y = panelY + 60 + row * (shipHeight + 20); // Reduced spacing
       
       const isSelected = shipType === this.selectedShip;
       
@@ -1809,9 +1810,10 @@ class NewGameSetupState implements IGameState {
       this.drawShipCard(renderer, x, y, shipWidth, shipHeight, isSelected, buttonArea.hovered, template, index);
     });
     
-    // Selected ship details panel
+    // Selected ship details panel - positioned to not overlap
     if (this.selectedShip) {
-      this.drawShipDetailsPanel(renderer, width - 350, panelY + 60, 320, panelH - 120);
+      const detailsX = width - detailsPanelWidth - 40;
+      this.drawShipDetailsPanel(renderer, detailsX, panelY + 60, detailsPanelWidth, panelH - 120);
     }
   }
 
@@ -1850,12 +1852,12 @@ class NewGameSetupState implements IGameState {
     
     this.drawShipSilhouette(renderer, silhouetteX, silhouetteY, silhouetteW, silhouetteH, template, shipColor, selected);
     
-    // Ship information
-    const infoX = x + 160;
-    const infoY = y + 25;
+    // Ship information - adjusted for smaller card size
+    const infoX = x + 140; // Moved closer
+    const infoY = y + 20; // Moved up slightly
     
     const textColor = selected ? shipColor : (hovered ? '#a0a0a0' : '#707070');
-    const titleSize = selected ? 'bold 16px' : '14px';
+    const titleSize = selected ? 'bold 14px' : '12px'; // Smaller font
     
     if (selected || hovered) {
       ctx.shadowColor = textColor;
@@ -1866,12 +1868,12 @@ class NewGameSetupState implements IGameState {
     ctx.shadowBlur = 0;
     
     // Ship class designation
-    renderer.drawText(`CLASS: ${template.type || 'MULTI-ROLE'}`, infoX, infoY + 25, textColor, '11px "Big Apple 3PM", monospace');
+    renderer.drawText(`CLASS: ${template.type || 'MULTI-ROLE'}`, infoX, infoY + 20, textColor, '10px "Big Apple 3PM", monospace'); // Reduced spacing
     
-    // Stats display with bars
-    const statY = infoY + 50;
-    const statHeight = 12;
-    const statSpacing = 20;
+    // Stats display with bars - adjusted for smaller card
+    const statY = infoY + 40; // Moved up
+    const statHeight = 10; // Smaller bars
+    const statSpacing = 16; // Tighter spacing
     
     const stats = [
       { name: 'HULL', value: template.baseStats.hull, max: 1000, color: '#909090' },
@@ -1882,27 +1884,27 @@ class NewGameSetupState implements IGameState {
     
     stats.forEach((stat, i) => {
       const barY = statY + i * statSpacing;
-      const barW = 140;
+      const barW = 120; // Smaller bar width
       const barFill = Math.min(barW * (stat.value / stat.max), barW);
       
       // Stat label
-      renderer.drawText(`${stat.name}:`, infoX, barY, textColor, '9px "Big Apple 3PM", monospace');
+      renderer.drawText(`${stat.name}:`, infoX, barY, textColor, '8px "Big Apple 3PM", monospace'); // Smaller font
       
       // Stat bar background
       ctx.fillStyle = '#221100';
-      ctx.fillRect(infoX + 50, barY - 6, barW, statHeight);
+      ctx.fillRect(infoX + 45, barY - 5, barW, statHeight); // Adjusted position
       
       // Stat bar fill
       ctx.fillStyle = stat.color;
-      ctx.fillRect(infoX + 50, barY - 6, barFill, statHeight);
+      ctx.fillRect(infoX + 45, barY - 5, barFill, statHeight);
       
       // Stat bar frame
       ctx.strokeStyle = '#404040';
       ctx.lineWidth = 1;
-      ctx.strokeRect(infoX + 50, barY - 6, barW, statHeight);
+      ctx.strokeRect(infoX + 45, barY - 5, barW, statHeight);
       
       // Stat value
-      renderer.drawText(stat.value.toString(), infoX + 200, barY, textColor, '9px "Big Apple 3PM", monospace');
+      renderer.drawText(stat.value.toString(), infoX + 170, barY, textColor, '8px "Big Apple 3PM", monospace'); // Adjusted position
     });
     
     // Selection indicator
@@ -2066,20 +2068,24 @@ class NewGameSetupState implements IGameState {
     const raceData = RACE_DATA[this.character.race];
     const backgroundData = BACKGROUND_DATA[this.character.background];
     
-    // Create three panels for organized information
+    // Create three panels for organized information - improved layout
+    const panelGap = 20;
+    const totalPanelWidth = width - 100; // Leave margins on sides
+    const panelWidth = (totalPanelWidth - (2 * panelGap)) / 3; // Three equal panels with gaps
+    
     const leftPanelX = 50;
     const leftPanelY = startY + 60;
-    const leftPanelW = (width - 160) / 3;
-    const leftPanelH = height - startY - 170;
+    const leftPanelW = panelWidth;
+    const leftPanelH = height - startY - 180; // More space for launch button
     
-    const middlePanelX = leftPanelX + leftPanelW + 30;
+    const middlePanelX = leftPanelX + leftPanelW + panelGap;
     const middlePanelY = startY + 60;
-    const middlePanelW = leftPanelW;
+    const middlePanelW = panelWidth;
     const middlePanelH = leftPanelH;
     
-    const rightPanelX = middlePanelX + middlePanelW + 30;
+    const rightPanelX = middlePanelX + middlePanelW + panelGap;
     const rightPanelY = startY + 60;
-    const rightPanelW = leftPanelW;
+    const rightPanelW = panelWidth;
     const rightPanelH = leftPanelH;
     
     // Left panel - Commander Profile
@@ -2817,7 +2823,10 @@ class NewGameSetupState implements IGameState {
 
   private startGame(): void {
     const game = (window as any).game;
-    if (!game) return;
+    if (!game) {
+      console.error('Game instance not found!');
+      return;
+    }
 
     // Apply setup to game
     this.gameSetup = {
@@ -2861,6 +2870,8 @@ class PlayingState implements IGameState {
       game.player.maxCargoWeight = shipTemplate.baseStats.cargo;
       
       console.log(`Game started as ${gameSetup.character.name} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
+    } else {
+      console.warn('Missing gameSetup or player - using defaults');
     }
   }
 
