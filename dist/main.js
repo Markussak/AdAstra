@@ -492,7 +492,9 @@ class NewGameSetupState {
             this.animations.starField = 0;
         if (this.launching.active) {
             const now = performance.now();
-            if (now - this.launching.start >= this.launching.duration) {
+            const elapsed = now - this.launching.start;
+            if (elapsed >= this.launching.duration) {
+                console.log('🚀 Launch sequence complete, calling startGame()');
                 this.launching.active = false;
                 this.startGame();
             }
@@ -596,6 +598,9 @@ class NewGameSetupState {
                 break;
             case 6:
                 this.renderSummary(renderer);
+                break;
+            default:
+                console.warn(`Unknown step: ${this.currentStep}`);
                 break;
         }
         this.renderNavigationButtons(renderer, width, height);
@@ -1831,9 +1836,12 @@ class NewGameSetupState {
                 handled = true;
             }
             else if (this.canProceedFromCurrentStep() && this.isPointInRect(clickX, clickY, this.nextButton)) {
+                console.log(`Next button clicked on step ${this.currentStep}`);
                 this.nextButton.pressed = true;
                 if (this.currentStep === this.steps.length - 1) {
-                    this.startGame();
+                    console.log('🚀 Next button on final step - starting launch sequence');
+                    this.launching.active = true;
+                    this.launching.start = performance.now();
                 }
                 else {
                     this.currentStep++;
@@ -1949,11 +1957,17 @@ class NewGameSetupState {
                         });
                         break;
                     case 6:
+                        console.log(`Summary step: click at ${clickX}, ${clickY}`);
+                        console.log(`Start button area: x=${this.startGameButton.x}, y=${this.startGameButton.y}, w=${this.startGameButton.width}, h=${this.startGameButton.height}`);
                         if (this.isPointInRect(clickX, clickY, this.startGameButton)) {
+                            console.log('Start button clicked! Starting launch sequence...');
                             this.startGameButton.pressed = true;
                             this.launching.active = true;
                             this.launching.start = performance.now();
                             handled = true;
+                        }
+                        else {
+                            console.log('Click missed start button');
                         }
                         break;
                 }
@@ -1962,6 +1976,12 @@ class NewGameSetupState {
         return handled;
     }
     handleInput(input) {
+        if (input.mouse.justPressed || input.touches.size > 0) {
+            console.log(`NewGameSetup handleInput: mouse=${input.mouse.justPressed}, touches=${input.touches.size}, currentStep=${this.currentStep}`);
+            if (input.mouse.justPressed) {
+                console.log(`Mouse click at: ${input.mouse.x}, ${input.mouse.y}`);
+            }
+        }
         if (this.launching.active) {
             this.updateHoverStates(input);
             return;
@@ -2043,6 +2063,7 @@ class NewGameSetupState {
                 break;
             case 6:
                 if (input.wasKeyJustPressed('enter')) {
+                    console.log('🎯 ENTER key pressed in summary - starting launch sequence');
                     this.launching.active = true;
                     this.launching.start = performance.now();
                 }
@@ -2050,6 +2071,7 @@ class NewGameSetupState {
         }
     }
     startGame() {
+        console.log('🚀 Starting game...');
         const game = window.game;
         if (!game) {
             console.error('Game instance not found!');
@@ -2064,6 +2086,7 @@ class NewGameSetupState {
             startingResources: DIFFICULTY_SETTINGS[this.selectedDifficulty].startingResources
         };
         window.gameSetup = this.gameSetup;
+        console.log('🎮 Switching to PLAYING state...');
         game.stateManager.setState(GameState.PLAYING);
     }
 }

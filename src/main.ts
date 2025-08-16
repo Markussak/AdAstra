@@ -687,7 +687,9 @@ class NewGameSetupState implements IGameState {
     
     if (this.launching.active) {
       const now = performance.now();
-      if (now - this.launching.start >= this.launching.duration) {
+      const elapsed = now - this.launching.start;
+      if (elapsed >= this.launching.duration) {
+        console.log('🚀 Launch sequence complete, calling startGame()');
         this.launching.active = false;
         this.startGame();
       }
@@ -825,6 +827,9 @@ class NewGameSetupState implements IGameState {
         break;
       case 6:
         this.renderSummary(renderer);
+        break;
+      default:
+        console.warn(`Unknown step: ${this.currentStep}`);
         break;
     }
 
@@ -2596,9 +2601,12 @@ class NewGameSetupState implements IGameState {
         this.currentStep--;
         handled = true;
       } else if (this.canProceedFromCurrentStep() && this.isPointInRect(clickX, clickY, this.nextButton)) {
+        console.log(`Next button clicked on step ${this.currentStep}`);
         this.nextButton.pressed = true;
         if (this.currentStep === this.steps.length - 1) {
-          this.startGame();
+          console.log('🚀 Next button on final step - starting launch sequence');
+          this.launching.active = true;
+          this.launching.start = performance.now();
         } else {
           this.currentStep++;
         }
@@ -2739,12 +2747,17 @@ class NewGameSetupState implements IGameState {
             break;
             
           case 6: // Summary
+            console.log(`Summary step: click at ${clickX}, ${clickY}`);
+            console.log(`Start button area: x=${this.startGameButton.x}, y=${this.startGameButton.y}, w=${this.startGameButton.width}, h=${this.startGameButton.height}`);
             if (this.isPointInRect(clickX, clickY, this.startGameButton)) {
+              console.log('Start button clicked! Starting launch sequence...');
               this.startGameButton.pressed = true;
               // Start short launch overlay instead of immediate state switch
               this.launching.active = true;
               this.launching.start = performance.now();
               handled = true;
+            } else {
+              console.log('Click missed start button');
             }
             break;
         }
@@ -2755,6 +2768,14 @@ class NewGameSetupState implements IGameState {
   }
 
   public handleInput(input: IInputManager): void {
+    // Debug logging
+    if (input.mouse.justPressed || input.touches.size > 0) {
+      console.log(`NewGameSetup handleInput: mouse=${input.mouse.justPressed}, touches=${input.touches.size}, currentStep=${this.currentStep}`);
+      if (input.mouse.justPressed) {
+        console.log(`Mouse click at: ${input.mouse.x}, ${input.mouse.y}`);
+      }
+    }
+    
     // Prevent interaction during launching overlay
     if (this.launching.active) {
       // Still update hover to keep cursor responsive, but ignore clicks/keys
@@ -2857,6 +2878,7 @@ class NewGameSetupState implements IGameState {
         
       case 6: // Summary
         if (input.wasKeyJustPressed('enter')) {
+          console.log('🎯 ENTER key pressed in summary - starting launch sequence');
           this.launching.active = true;
           this.launching.start = performance.now();
         }
@@ -2865,6 +2887,7 @@ class NewGameSetupState implements IGameState {
   }
 
   private startGame(): void {
+    console.log('🚀 Starting game...');
     const game = (window as any).game;
     if (!game) {
       console.error('Game instance not found!');
@@ -2884,6 +2907,7 @@ class NewGameSetupState implements IGameState {
     // Store setup globally for game initialization
     (window as any).gameSetup = this.gameSetup;
 
+    console.log('🎮 Switching to PLAYING state...');
     game.stateManager.setState(GameState.PLAYING);
   }
 }
