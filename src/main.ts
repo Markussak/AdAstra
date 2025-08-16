@@ -275,27 +275,27 @@ class MainMenuState implements IGameState {
     
     // CRT phosphor glow background
     const phosphorGradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, Math.max(width, height)/2);
-    phosphorGradient.addColorStop(0, 'rgba(40, 40, 40, 0.15)');
-    phosphorGradient.addColorStop(0.7, 'rgba(20, 20, 20, 0.08)');
-    phosphorGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    phosphorGradient.addColorStop(0, 'rgba(24, 30, 52, 0.15)');
+    phosphorGradient.addColorStop(0.7, 'rgba(16, 24, 46, 0.08)');
+    phosphorGradient.addColorStop(1, 'rgba(6, 11, 17, 0)');
     ctx.fillStyle = phosphorGradient;
     ctx.fillRect(0, 0, width, height);
     
-    // Stars background with muted tint
+    // Stars background with vintage tint
     for (let i = 0; i < 150; i++) {
       const x = (i * 123.456) % width;
       const y = (i * 789.123) % height;
       const alpha = Math.sin(Date.now() * 0.001 + i) * 0.3 + 0.7;
       ctx.globalAlpha = alpha * 0.3;
       const size = Math.random() > 0.8 ? 2 : 1;
-      renderer.drawRect(x, y, size, size, '#606060');
+      renderer.drawRect(x, y, size, size, '#7077A1');
     }
     ctx.globalAlpha = 1.0;
     
     // CRT scan lines
     ctx.globalAlpha = 0.08;
     for (let y = 0; y < height; y += 4) {
-      ctx.strokeStyle = '#505050';
+      ctx.strokeStyle = '#3F4F44';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, y);
@@ -309,11 +309,11 @@ class MainMenuState implements IGameState {
 
     // Title with CRT glow effect
     const titleGlow = Math.sin(this.animationTime * 3) * 0.3 + 0.7;
-    ctx.shadowColor = '#808080';
+    ctx.shadowColor = '#F6B17A';
     ctx.shadowBlur = 15 * titleGlow;
-    renderer.drawText('STAR DUST VOYAGER', width/2, height/4, `rgba(160, 160, 160, ${titleGlow})`, 'bold 48px "Big Apple 3PM", monospace');
+    renderer.drawText('STAR DUST VOYAGER', width/2, height/4, `rgba(255, 235, 153, ${titleGlow})`, 'bold 48px "Big Apple 3PM", monospace');
     ctx.shadowBlur = 8;
-    renderer.drawText('GALAXY WANDERER', width/2, height/4 + 50, '#909090', '24px "Big Apple 3PM", monospace');
+    renderer.drawText('GALAXY WANDERER', width/2, height/4 + 50, '#E2DFD0', '24px "Big Apple 3PM", monospace');
     ctx.shadowBlur = 0;
 
     // Menu options with mechanical button styling
@@ -332,11 +332,11 @@ class MainMenuState implements IGameState {
     this.drawTerminalDetails(renderer);
 
     // Version info with terminal styling
-    renderer.drawText('VER 2.0.0', width - 100, height - 40, '#909090', 'bold 10px "Big Apple 3PM", monospace');
-    renderer.drawText('SYSTEM READY', width - 120, height - 25, '#909090', '8px "Big Apple 3PM", monospace');
+    renderer.drawText('VER 2.0.0', width - 100, height - 40, '#6aaf9d', 'bold 10px "Big Apple 3PM", monospace');
+    renderer.drawText('SYSTEM READY', width - 120, height - 25, '#6aaf9d', '8px "Big Apple 3PM", monospace');
     
     // Controls hint with retro styling
-    renderer.drawText('↑↓ NAVIGATE | ENTER SELECT | ESC BACK', width/2, height - 30, '#909090', '12px "Big Apple 3PM", monospace');
+    renderer.drawText('↑↓ NAVIGATE | ENTER SELECT | ESC BACK', width/2, height - 30, '#94c5ac', '12px "Big Apple 3PM", monospace');
     
     // CRT screen curvature effect (subtle vignette)
     const vignetteGradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, Math.max(width, height)/2);
@@ -351,18 +351,18 @@ class MainMenuState implements IGameState {
     const ctx = renderer.getContext();
     
     // Main frame
-    ctx.strokeStyle = '#505050';
+    ctx.strokeStyle = '#3F4F44';
     ctx.lineWidth = 3;
     ctx.strokeRect(x, y, w, h);
     
     // Inner frame
-    ctx.strokeStyle = '#707070';
+    ctx.strokeStyle = '#6aaf9d';
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 5, y + 5, w - 10, h - 10);
     
     // Corner brackets
     const bracketSize = 20;
-    ctx.strokeStyle = '#909090';
+    ctx.strokeStyle = '#94c5ac';
     ctx.lineWidth = 2;
     
     // Top-left bracket
@@ -410,29 +410,29 @@ class MainMenuState implements IGameState {
     
     // Button highlights
     if (selected) {
-      ctx.strokeStyle = '#b0b0b0';
+      ctx.strokeStyle = '#F97300';
       ctx.lineWidth = 2;
       ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
       
       // Selection glow
       const pulseAlpha = Math.sin(this.animationTime * 8) * 0.3 + 0.7;
-      ctx.shadowColor = '#909090';
+      ctx.shadowColor = '#F97300';
       ctx.shadowBlur = 12 * pulseAlpha;
     } else {
-      ctx.strokeStyle = '#404040';
+      ctx.strokeStyle = '#524C42';
       ctx.lineWidth = 1;
       ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
     }
     
     // Button text
-    const textColor = selected ? '#c0c0c0' : '#707070';
+    const textColor = selected ? '#ffeb99' : '#A27B5C';
     const textSize = selected ? 'bold 18px' : '16px';
     renderer.drawText(text, x + w/2, y + h/2 + 3, textColor, `${textSize} "Big Apple 3PM", monospace`);
     
     if (selected) {
       // Add selection indicators
-      renderer.drawText('►', x + 20, y + h/2 + 3, '#b0b0b0', 'bold 16px "Big Apple 3PM", monospace');
-      renderer.drawText('◄', x + w - 20, y + h/2 + 3, '#b0b0b0', 'bold 16px "Big Apple 3PM", monospace');
+      renderer.drawText('►', x + 20, y + h/2 + 3, '#F97300', 'bold 16px "Big Apple 3PM", monospace');
+      renderer.drawText('◄', x + w - 20, y + h/2 + 3, '#F97300', 'bold 16px "Big Apple 3PM", monospace');
     }
     
     ctx.shadowBlur = 0;
@@ -451,13 +451,13 @@ class MainMenuState implements IGameState {
       const lightX = statusX + i * 25;
       const isActive = Math.sin(this.animationTime * 2 + i) > 0.5;
       
-      ctx.fillStyle = isActive ? '#a0a0a0' : '#303030';
+      ctx.fillStyle = isActive ? '#6aaf9d' : '#201127';
       ctx.beginPath();
       ctx.arc(lightX, statusY, 4, 0, Math.PI * 2);
       ctx.fill();
       
       if (isActive) {
-        ctx.shadowColor = '#808080';
+        ctx.shadowColor = '#6aaf9d';
         ctx.shadowBlur = 6;
         ctx.beginPath();
         ctx.arc(lightX, statusY, 4, 0, Math.PI * 2);
@@ -467,9 +467,9 @@ class MainMenuState implements IGameState {
     }
     
     // Terminal text details
-    renderer.drawText('SYSTEM STATUS: ONLINE', 70, statusY + 25, '#909090', '10px "Big Apple 3PM", monospace');
-    renderer.drawText('GALAXY MAP: LOADED', 70, statusY + 40, '#909090', '10px "Big Apple 3PM", monospace');
-    renderer.drawText('NAVIGATION: READY', 70, statusY + 55, '#909090', '10px "Big Apple 3PM", monospace');
+    renderer.drawText('SYSTEM STATUS: ONLINE', 70, statusY + 25, '#94c5ac', '10px "Big Apple 3PM", monospace');
+    renderer.drawText('GALAXY MAP: LOADED', 70, statusY + 40, '#94c5ac', '10px "Big Apple 3PM", monospace');
+    renderer.drawText('NAVIGATION: READY', 70, statusY + 55, '#94c5ac', '10px "Big Apple 3PM", monospace');
   }
 
   public handleInput(input: IInputManager): void {
@@ -692,18 +692,18 @@ class NewGameSetupState implements IGameState {
     // CRT-style background with retro colors
     renderer.clear('#0a0a0a');
     
-    // CRT phosphor background with muted tint
+    // CRT phosphor background with vintage tint
     const phosphorGradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, Math.max(width, height)/2);
-    phosphorGradient.addColorStop(0, 'rgba(30, 30, 30, 0.15)');
-    phosphorGradient.addColorStop(0.7, 'rgba(15, 15, 15, 0.08)');
-    phosphorGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    phosphorGradient.addColorStop(0, 'rgba(32, 20, 51, 0.15)');
+    phosphorGradient.addColorStop(0.7, 'rgba(16, 12, 35, 0.08)');
+    phosphorGradient.addColorStop(1, 'rgba(6, 11, 17, 0)');
     ctx.fillStyle = phosphorGradient;
     ctx.fillRect(0, 0, width, height);
     
     // Animated CRT scan lines
     ctx.globalAlpha = 0.06;
     for (let y = 0; y < height; y += 3) {
-      ctx.strokeStyle = '#404040';
+      ctx.strokeStyle = '#424769';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(0, y + Math.sin(this.animations.starField * 0.1 + y * 0.01) * 2);
@@ -717,11 +717,11 @@ class NewGameSetupState implements IGameState {
 
     // Enhanced title with CRT glow
     const titleGlow = Math.sin(this.animations.buttonPulse) * 0.3 + 0.7;
-    ctx.shadowColor = '#707070';
+    ctx.shadowColor = '#ffc27a';
     ctx.shadowBlur = 12 * titleGlow;
-    renderer.drawText('MISSION SETUP TERMINAL', width/2, 110, `rgba(160, 160, 160, ${titleGlow})`, 'bold 32px "Big Apple 3PM", monospace');
+    renderer.drawText('MISSION SETUP TERMINAL', width/2, 110, `rgba(255, 235, 153, ${titleGlow})`, 'bold 32px "Big Apple 3PM", monospace');
     ctx.shadowBlur = 6;
-    renderer.drawText('GALACTIC CONFIGURATION SYSTEM', width/2, 140, '#808080', '16px "Big Apple 3PM", monospace');
+    renderer.drawText('GALACTIC CONFIGURATION SYSTEM', width/2, 140, '#DCD7C9', '16px "Big Apple 3PM", monospace');
     ctx.shadowBlur = 0;
 
     // Enhanced step indicator with retro progress display
@@ -752,7 +752,7 @@ class NewGameSetupState implements IGameState {
       const isCompleted = index < this.currentStep;
       
       // Step indicator light
-      const lightColor = isCompleted ? '#a0a0a0' : (isActive ? '#808080' : '#303030');
+      const lightColor = isCompleted ? '#6aaf9d' : (isActive ? '#F97300' : '#201127');
       const lightSize = isActive ? 8 : 6;
       
       ctx.fillStyle = lightColor;
@@ -770,15 +770,15 @@ class NewGameSetupState implements IGameState {
       }
       
       // Step text
-      let color = '#404040';
+      let color = '#524C42';
       let glowIntensity = 0;
       
       if (isCompleted) {
-        color = '#a0a0a0';
+        color = '#94c5ac';
         glowIntensity = 0.4;
       }
       if (isActive) {
-        color = '#c0c0c0';
+        color = '#ffeb99';
         glowIntensity = Math.sin(this.animations.buttonPulse) * 0.4 + 0.6;
       }
       
@@ -892,10 +892,10 @@ class NewGameSetupState implements IGameState {
     
     if (isActive) {
       // Active segment
-      const color = isCurrent ? '#808080' : '#a0a0a0';
+      const color = isCurrent ? '#F97300' : '#6aaf9d';
       const pulseIntensity = isCurrent ? Math.sin(this.animations.buttonPulse * 2) * 0.3 + 0.7 : 1.0;
       
-      ctx.fillStyle = `rgba(${isCurrent ? '128, 128, 128' : '160, 160, 160'}, ${0.6 * pulseIntensity})`;
+      ctx.fillStyle = `rgba(${isCurrent ? '249, 115, 0' : '106, 175, 157'}, ${0.6 * pulseIntensity})`;
       ctx.fillRect(x, y, w, h);
       
       // Glow effect for current segment
@@ -912,10 +912,10 @@ class NewGameSetupState implements IGameState {
       ctx.strokeRect(x, y, w, h);
     } else {
       // Inactive segment
-      ctx.fillStyle = '#1a1a1a';
+      ctx.fillStyle = '#201127';
       ctx.fillRect(x, y, w, h);
       
-      ctx.strokeStyle = '#303030';
+      ctx.strokeStyle = '#424769';
       ctx.lineWidth = 1;
       ctx.strokeRect(x, y, w, h);
     }
@@ -952,9 +952,9 @@ class NewGameSetupState implements IGameState {
     }
     
     // Control hint with retro styling
-    ctx.shadowColor = '#707070';
+    ctx.shadowColor = '#355d68';
     ctx.shadowBlur = 3;
-    renderer.drawText('USE ARROW KEYS OR CLICK TO NAVIGATE', width/2, height - 35, '#909090', 'bold 12px "Big Apple 3PM", monospace');
+    renderer.drawText('USE ARROW KEYS OR CLICK TO NAVIGATE', width/2, height - 35, '#6aaf9d', 'bold 12px "Big Apple 3PM", monospace');
     ctx.shadowBlur = 0;
   }
 
@@ -971,21 +971,21 @@ class NewGameSetupState implements IGameState {
     ctx.fillRect(x + offset + 2, y + offset + 2, w - 4, h - 4);
     
     // Button frame
-    ctx.strokeStyle = hovered ? '#a0a0a0' : '#404040';
+    ctx.strokeStyle = hovered ? '#F6B17A' : '#3F4F44';
     ctx.lineWidth = pressed ? 1 : 2;
     ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
     
     // Inner highlight
     if (!pressed) {
-      ctx.strokeStyle = '#808080';
+      ctx.strokeStyle = '#A27B5C';
       ctx.lineWidth = 1;
       ctx.strokeRect(x + 4, y + 4, w - 8, h - 8);
     }
     
     // Button text
-    const textColor = hovered ? '#c0c0c0' : '#909090';
+    const textColor = hovered ? '#ffeb99' : '#E2DFD0';
     if (hovered) {
-      ctx.shadowColor = '#a0a0a0';
+      ctx.shadowColor = '#F6B17A';
       ctx.shadowBlur = 6;
     }
     
@@ -1026,12 +1026,12 @@ class NewGameSetupState implements IGameState {
     const startY = 280;
     
     // Section title with retro styling
-    ctx.shadowColor = '#707070';
+    ctx.shadowColor = '#ec9a6d';
     ctx.shadowBlur = 8;
-    renderer.drawText('DIFFICULTY CONFIGURATION', width/2, startY, '#b0b0b0', 'bold 22px "Big Apple 3PM", monospace');
+    renderer.drawText('DIFFICULTY CONFIGURATION', width/2, startY, '#ffeb99', 'bold 22px "Big Apple 3PM", monospace');
     ctx.shadowBlur = 0;
     
-    renderer.drawText('SELECT MISSION PARAMETERS', width/2, startY + 25, '#808080', '14px "Big Apple 3PM", monospace');
+    renderer.drawText('SELECT MISSION PARAMETERS', width/2, startY + 25, '#DCD7C9', '14px "Big Apple 3PM", monospace');
     
     // Clear difficulty buttons array
     this.difficultyButtons = [];
@@ -1075,33 +1075,33 @@ class NewGameSetupState implements IGameState {
     const ctx = renderer.getContext();
     
     // Panel background
-    ctx.fillStyle = 'rgba(20, 10, 0, 0.8)';
+    ctx.fillStyle = 'rgba(32, 20, 51, 0.8)';
     ctx.fillRect(x, y, w, h);
     
     // Panel frame
-    ctx.strokeStyle = '#606060';
+    ctx.strokeStyle = '#3F4F44';
     ctx.lineWidth = 2;
     ctx.strokeRect(x, y, w, h);
     
     // Inner frame
-    ctx.strokeStyle = '#404040';
+    ctx.strokeStyle = '#7077A1';
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 5, y + 5, w - 10, h - 10);
     
     // Panel title bar
-    ctx.fillStyle = '#2a2a2a';
+    ctx.fillStyle = '#201127';
     ctx.fillRect(x + 1, y + 1, w - 2, 25);
     
-    ctx.strokeStyle = '#808080';
+    ctx.strokeStyle = '#A27B5C';
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 1, y + 1, w - 2, 25);
     
     // Title text
-    renderer.drawText(title, x + w/2, y + 18, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+    renderer.drawText(title, x + w/2, y + 18, '#DCD7C9', 'bold 12px "Big Apple 3PM", monospace');
     
     // Corner brackets
     const bracketSize = 15;
-    ctx.strokeStyle = '#909090';
+    ctx.strokeStyle = '#F6B17A';
     ctx.lineWidth = 2;
     
     // Draw corner brackets
@@ -1138,20 +1138,20 @@ class NewGameSetupState implements IGameState {
     const ctx = renderer.getContext();
     const offset = selected ? 0 : 2;
     
-    // Difficulty colors - muted grays
-    const difficultyColors = ['#a0a0a0', '#909090', '#808080', '#707070', '#606060'];
-    const baseColor = difficultyColors[index] || '#808080';
+    // Difficulty colors - vintage palette
+    const difficultyColors = ['#6aaf9d', '#F6B17A', '#F97300', '#d9626b', '#c24b6e'];
+    const baseColor = difficultyColors[index] || '#F97300';
     
     // Button housing
-    ctx.fillStyle = '#221100';
+    ctx.fillStyle = '#201127';
     ctx.fillRect(x + offset, y + offset, w, h);
     
     // Button surface
-    ctx.fillStyle = selected ? 'rgba(68, 34, 0, 0.9)' : 'rgba(34, 17, 0, 0.7)';
+    ctx.fillStyle = selected ? 'rgba(32, 17, 39, 0.9)' : 'rgba(16, 18, 46, 0.7)';
     ctx.fillRect(x + offset + 2, y + offset + 2, w - 4, h - 4);
     
     // Button frame
-    ctx.strokeStyle = selected ? baseColor : (hovered ? '#808080' : '#404040');
+    ctx.strokeStyle = selected ? baseColor : (hovered ? '#7077A1' : '#3F4F44');
     ctx.lineWidth = selected ? 3 : (hovered ? 2 : 1);
     ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
     
@@ -1171,7 +1171,7 @@ class NewGameSetupState implements IGameState {
     const barY = y + h - 18;
     
     // Bar background
-    ctx.fillStyle = '#221100';
+    ctx.fillStyle = '#201127';
     ctx.fillRect(barX, barY, barWidth, barHeight);
     
     // Bar fill (difficulty level)
@@ -1180,12 +1180,12 @@ class NewGameSetupState implements IGameState {
     ctx.fillRect(barX, barY, fillWidth, barHeight);
     
     // Bar frame
-    ctx.strokeStyle = '#404040';
+    ctx.strokeStyle = '#524C42';
     ctx.lineWidth = 1;
     ctx.strokeRect(barX, barY, barWidth, barHeight);
     
     // Text content
-    const textColor = selected ? baseColor : (hovered ? '#909090' : '#707070');
+    const textColor = selected ? baseColor : (hovered ? '#E2DFD0' : '#A27B5C');
     const nameSize = selected ? 'bold 18px' : '16px';
     const descSize = selected ? '13px' : '12px';
     
@@ -1372,12 +1372,12 @@ class NewGameSetupState implements IGameState {
     const startY = 280;
     
     // Section title with retro styling
-    ctx.shadowColor = '#707070';
+    ctx.shadowColor = '#a73169';
     ctx.shadowBlur = 8;
-    renderer.drawText('PERSONNEL FILE CREATION', width/2, startY, '#b0b0b0', 'bold 22px "Big Apple 3PM", monospace');
+    renderer.drawText('PERSONNEL FILE CREATION', width/2, startY, '#ffc27a', 'bold 22px "Big Apple 3PM", monospace');
     ctx.shadowBlur = 0;
     
-    renderer.drawText('COMMANDER PROFILE CONFIGURATION', width/2, startY + 25, '#808080', '14px "Big Apple 3PM", monospace');
+    renderer.drawText('COMMANDER PROFILE CONFIGURATION', width/2, startY + 25, '#E2DFD0', '14px "Big Apple 3PM", monospace');
     
     // Create two main panels
     const leftPanelX = 60;
@@ -1400,7 +1400,7 @@ class NewGameSetupState implements IGameState {
     let leftY = leftPanelY + 50;
     
     // Name input section
-    renderer.drawText('DESIGNATION:', leftPanelX + 20, leftY, '#b0b0b0', 'bold 14px "Big Apple 3PM", monospace');
+    renderer.drawText('DESIGNATION:', leftPanelX + 20, leftY, '#DCD7C9', 'bold 14px "Big Apple 3PM", monospace');
     leftY += 30;
     
     // Name input terminal
@@ -1423,7 +1423,7 @@ class NewGameSetupState implements IGameState {
     leftY += 50;
     
     // Age input
-    renderer.drawText('AGE:', leftPanelX + 20, leftY, '#b0b0b0', 'bold 14px "Big Apple 3PM", monospace');
+    renderer.drawText('AGE:', leftPanelX + 20, leftY, '#DCD7C9', 'bold 14px "Big Apple 3PM", monospace');
     leftY += 30;
     
     this.drawInputTerminal(renderer, leftPanelX + 20, leftY, 100, 35, 
@@ -1431,7 +1431,7 @@ class NewGameSetupState implements IGameState {
     leftY += 60;
     
     // Gender selection
-    renderer.drawText('GENDER:', leftPanelX + 20, leftY, '#b0b0b0', 'bold 14px "Big Apple 3PM", monospace');
+    renderer.drawText('GENDER:', leftPanelX + 20, leftY, '#DCD7C9', 'bold 14px "Big Apple 3PM", monospace');
     leftY += 30;
     
     this.genderButtons = [];
@@ -1461,7 +1461,7 @@ class NewGameSetupState implements IGameState {
     let rightY = rightPanelY + 50;
     
     // Species selection
-    renderer.drawText('SPECIES:', rightPanelX + 20, rightY, '#b0b0b0', 'bold 14px "Big Apple 3PM", monospace');
+    renderer.drawText('SPECIES:', rightPanelX + 20, rightY, '#DCD7C9', 'bold 14px "Big Apple 3PM", monospace');
     rightY += 40;
     
     this.raceButtons = [];
@@ -1493,7 +1493,7 @@ class NewGameSetupState implements IGameState {
     rightY += Math.ceil(raceKeys.length / racesPerRow) * 70 + 30;
     
     // Background selection
-    renderer.drawText('BACKGROUND:', rightPanelX + 20, rightY, '#b0b0b0', 'bold 14px "Big Apple 3PM", monospace');
+    renderer.drawText('BACKGROUND:', rightPanelX + 20, rightY, '#DCD7C9', 'bold 14px "Big Apple 3PM", monospace');
     rightY += 40;
     
     this.backgroundButtons = [];
@@ -1534,34 +1534,34 @@ class NewGameSetupState implements IGameState {
     buttonArea.height = h;
     
     // Terminal background
-    ctx.fillStyle = '#001100';
+    ctx.fillStyle = '#201127';
     ctx.fillRect(x, y, w, h);
     
     // Terminal frame
-    ctx.strokeStyle = editing ? '#b0b0b0' : (buttonArea.hovered ? '#808080' : '#404040');
+    ctx.strokeStyle = editing ? '#F97300' : (buttonArea.hovered ? '#7077A1' : '#3F4F44');
     ctx.lineWidth = editing ? 2 : 1;
     ctx.strokeRect(x, y, w, h);
     
     // Inner border
-    ctx.strokeStyle = '#303030';
+    ctx.strokeStyle = '#424769';
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
     
     // Text content
-    const textColor = text.includes('ENTER_') ? '#707070' : '#a0a0a0';
+    const textColor = text.includes('ENTER_') ? '#A27B5C' : '#E2DFD0';
     renderer.drawText(text, x + 10, y + h/2 + 4, textColor, '12px "Big Apple 3PM", monospace');
     
     // Cursor for editing
     if (editing && Math.floor(Date.now() / 500) % 2 === 0) {
       const cursorX = x + 10 + (text.length * 7);
-      renderer.drawText('█', cursorX, y + h/2 + 4, '#c0c0c0', '12px "Big Apple 3PM", monospace');
+      renderer.drawText('█', cursorX, y + h/2 + 4, '#ffc27a', '12px "Big Apple 3PM", monospace');
     }
     
     // Scan line effect
     if (editing) {
       ctx.globalAlpha = 0.2;
       const scanY = y + (Date.now() % 1000) / 1000 * h;
-      ctx.strokeStyle = '#909090';
+      ctx.strokeStyle = '#F97300';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(x, scanY);
@@ -1577,21 +1577,21 @@ class NewGameSetupState implements IGameState {
     const offset = selected ? 0 : 1;
     
     // Button housing
-    ctx.fillStyle = '#221100';
+    ctx.fillStyle = '#201127';
     ctx.fillRect(x + offset, y + offset, w, h);
     
     // Button surface
-    ctx.fillStyle = selected ? '#443300' : (hovered ? '#332200' : '#2a1800');
+    ctx.fillStyle = selected ? '#424769' : (hovered ? '#355d68' : '#1b1e34');
     ctx.fillRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
     
     // Button frame
-    const frameColor = selected ? '#b0b0b0' : (hovered ? '#909090' : '#404040');
+    const frameColor = selected ? '#F97300' : (hovered ? '#7077A1' : '#3F4F44');
     ctx.strokeStyle = frameColor;
     ctx.lineWidth = selected ? 2 : 1;
     ctx.strokeRect(x + offset, y + offset, w, h);
     
     // Text
-    const textColor = selected ? '#c0c0c0' : (hovered ? '#a0a0a0' : '#707070');
+    const textColor = selected ? '#ffc27a' : (hovered ? '#E2DFD0' : '#A27B5C');
     renderer.drawText(text, x + w/2, y + h/2 + 3, textColor, selected ? 'bold 10px "Big Apple 3PM", monospace' : '10px "Big Apple 3PM", monospace');
   }
 
@@ -1601,15 +1601,15 @@ class NewGameSetupState implements IGameState {
     const offset = selected ? 0 : 2;
     
     // Button housing
-    ctx.fillStyle = '#221100';
+    ctx.fillStyle = '#201127';
     ctx.fillRect(x + offset, y + offset, w, h);
     
     // Button surface
-    ctx.fillStyle = selected ? 'rgba(68, 34, 0, 0.9)' : 'rgba(34, 17, 0, 0.7)';
+    ctx.fillStyle = selected ? 'rgba(66, 71, 105, 0.9)' : 'rgba(27, 30, 52, 0.7)';
     ctx.fillRect(x + offset + 2, y + offset + 2, w - 4, h - 4);
     
     // Button frame
-    ctx.strokeStyle = selected ? '#b0b0b0' : (hovered ? '#808080' : '#404040');
+    ctx.strokeStyle = selected ? '#6aaf9d' : (hovered ? '#7077A1' : '#3F4F44');
     ctx.lineWidth = selected ? 3 : (hovered ? 2 : 1);
     ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
     
@@ -1618,15 +1618,15 @@ class NewGameSetupState implements IGameState {
     const portraitY = y + 8;
     const portraitSize = 30;
     
-    ctx.fillStyle = data.portraitColor || '#808080';
+    ctx.fillStyle = data.portraitColor || '#A27B5C';
     ctx.fillRect(portraitX, portraitY, portraitSize, portraitSize);
     
-    ctx.strokeStyle = '#303030';
+    ctx.strokeStyle = '#524C42';
     ctx.lineWidth = 1;
     ctx.strokeRect(portraitX, portraitY, portraitSize, portraitSize);
     
     // Species name
-    const textColor = selected ? '#c0c0c0' : (hovered ? '#a0a0a0' : '#707070');
+    const textColor = selected ? '#ffc27a' : (hovered ? '#E2DFD0' : '#A27B5C');
     renderer.drawText(data.name, x + 50, y + 20, textColor, selected ? 'bold 12px "Big Apple 3PM", monospace' : '11px "Big Apple 3PM", monospace');
     
     // Traits indicator
@@ -1634,9 +1634,9 @@ class NewGameSetupState implements IGameState {
     
     // Selection indicator
     if (selected) {
-      ctx.shadowColor = '#c0c0c0';
+      ctx.shadowColor = '#6aaf9d';
       ctx.shadowBlur = 6;
-      renderer.drawText('✓', x + w - 20, y + h/2 + 3, '#c0c0c0', 'bold 16px "Big Apple 3PM", monospace');
+      renderer.drawText('✓', x + w - 20, y + h/2 + 3, '#6aaf9d', 'bold 16px "Big Apple 3PM", monospace');
       ctx.shadowBlur = 0;
     }
   }
@@ -1647,20 +1647,20 @@ class NewGameSetupState implements IGameState {
     const offset = selected ? 0 : 2;
     
     // Button housing
-    ctx.fillStyle = '#221100';
+    ctx.fillStyle = '#201127';
     ctx.fillRect(x + offset, y + offset, w, h);
     
     // Button surface
-    ctx.fillStyle = selected ? 'rgba(68, 34, 0, 0.9)' : 'rgba(34, 17, 0, 0.7)';
+    ctx.fillStyle = selected ? 'rgba(66, 71, 105, 0.9)' : 'rgba(27, 30, 52, 0.7)';
     ctx.fillRect(x + offset + 2, y + offset + 2, w - 4, h - 4);
     
     // Button frame
-    ctx.strokeStyle = selected ? '#a0a0a0' : (hovered ? '#808080' : '#404040');
+    ctx.strokeStyle = selected ? '#c24b6e' : (hovered ? '#7077A1' : '#3F4F44');
     ctx.lineWidth = selected ? 3 : (hovered ? 2 : 1);
     ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
     
     // Background name
-    const textColor = selected ? '#b0b0b0' : (hovered ? '#909090' : '#707070');
+    const textColor = selected ? '#ffeb99' : (hovered ? '#E2DFD0' : '#A27B5C');
     renderer.drawText(data.name, x + 10, y + h/2 - 5, textColor, selected ? 'bold 12px "Big Apple 3PM", monospace' : '11px "Big Apple 3PM", monospace');
     
     // Skills indicator
@@ -1669,9 +1669,9 @@ class NewGameSetupState implements IGameState {
     
     // Selection indicator
     if (selected) {
-      ctx.shadowColor = '#b0b0b0';
+      ctx.shadowColor = '#c24b6e';
       ctx.shadowBlur = 6;
-      renderer.drawText('►', x + w - 20, y + h/2 + 3, '#b0b0b0', 'bold 14px "Big Apple 3PM", monospace');
+      renderer.drawText('►', x + w - 20, y + h/2 + 3, '#c24b6e', 'bold 14px "Big Apple 3PM", monospace');
       ctx.shadowBlur = 0;
     }
   }
@@ -1741,12 +1741,12 @@ class NewGameSetupState implements IGameState {
     const startY = 280;
     
     // Section title with retro styling
-    ctx.shadowColor = '#707070';
+    ctx.shadowColor = '#8d402f';
     ctx.shadowBlur = 8;
-    renderer.drawText('FLEET CONFIGURATION', width/2, startY, '#b0b0b0', 'bold 22px "Big Apple 3PM", monospace');
+    renderer.drawText('FLEET CONFIGURATION', width/2, startY, '#e3b47a', 'bold 22px "Big Apple 3PM", monospace');
     ctx.shadowBlur = 0;
     
-    renderer.drawText('SELECT STARSHIP CLASS', width/2, startY + 25, '#808080', '14px "Big Apple 3PM", monospace');
+    renderer.drawText('SELECT STARSHIP CLASS', width/2, startY + 25, '#DCD7C9', '14px "Big Apple 3PM", monospace');
     
     const ships = Object.values(ShipType);
     const shipsPerRow = 2;
@@ -1799,16 +1799,16 @@ class NewGameSetupState implements IGameState {
     const ctx = renderer.getContext();
     const offset = selected ? 0 : 3;
     
-    // Ship class colors - muted grays
-    const shipColors = ['#a0a0a0', '#909090', '#808080', '#707070', '#606060'];
-    const shipColor = shipColors[index] || '#808080';
+    // Ship class colors - vintage palette
+    const shipColors = ['#be794f', '#F6B17A', '#6aaf9d', '#7077A1', '#d9626b'];
+    const shipColor = shipColors[index] || '#be794f';
     
     // Card housing
-    ctx.fillStyle = '#221100';
+    ctx.fillStyle = '#201127';
     ctx.fillRect(x + offset, y + offset, w, h);
     
     // Card background
-    ctx.fillStyle = selected ? 'rgba(68, 34, 0, 0.9)' : 'rgba(34, 17, 0, 0.7)';
+    ctx.fillStyle = selected ? 'rgba(66, 71, 105, 0.9)' : 'rgba(27, 30, 52, 0.7)';
     ctx.fillRect(x + offset + 3, y + offset + 3, w - 6, h - 6);
     
     // Card frame
@@ -2033,12 +2033,12 @@ class NewGameSetupState implements IGameState {
     const startY = 280;
     
     // Section title with retro styling
-    ctx.shadowColor = '#707070';
+    ctx.shadowColor = '#5e1a20';
     ctx.shadowBlur = 8;
-    renderer.drawText('MISSION DEPLOYMENT SUMMARY', width/2, startY, '#b0b0b0', 'bold 22px "Big Apple 3PM", monospace');
+    renderer.drawText('MISSION DEPLOYMENT SUMMARY', width/2, startY, '#ec9a6d', 'bold 22px "Big Apple 3PM", monospace');
     ctx.shadowBlur = 0;
     
-    renderer.drawText('FINAL CONFIGURATION REVIEW', width/2, startY + 25, '#808080', '14px "Big Apple 3PM", monospace');
+    renderer.drawText('FINAL CONFIGURATION REVIEW', width/2, startY + 25, '#E2DFD0', '14px "Big Apple 3PM", monospace');
 
     const difficultySettings = DIFFICULTY_SETTINGS[this.selectedDifficulty];
     const shipTemplate = SHIP_TEMPLATES[this.selectedShip];
@@ -2067,19 +2067,19 @@ class NewGameSetupState implements IGameState {
     let leftY = leftPanelY + 50;
     const lineHeight = 18;
     
-    renderer.drawText('DESIGNATION:', leftPanelX + 15, leftY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+    renderer.drawText('DESIGNATION:', leftPanelX + 15, leftY, '#DCD7C9', 'bold 12px "Big Apple 3PM", monospace');
     leftY += lineHeight;
-    renderer.drawText(this.character.name || 'CLASSIFIED', leftPanelX + 15, leftY, '#808080', '11px "Big Apple 3PM", monospace');
+    renderer.drawText(this.character.name || 'CLASSIFIED', leftPanelX + 15, leftY, '#A27B5C', '11px "Big Apple 3PM", monospace');
     leftY += lineHeight * 1.5;
     
-    renderer.drawText('SPECIES:', leftPanelX + 15, leftY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+    renderer.drawText('SPECIES:', leftPanelX + 15, leftY, '#DCD7C9', 'bold 12px "Big Apple 3PM", monospace');
     leftY += lineHeight;
-    renderer.drawText(raceData.name, leftPanelX + 15, leftY, '#808080', '11px "Big Apple 3PM", monospace');
+    renderer.drawText(raceData.name, leftPanelX + 15, leftY, '#A27B5C', '11px "Big Apple 3PM", monospace');
     leftY += lineHeight * 1.5;
     
-    renderer.drawText('BACKGROUND:', leftPanelX + 15, leftY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+    renderer.drawText('BACKGROUND:', leftPanelX + 15, leftY, '#DCD7C9', 'bold 12px "Big Apple 3PM", monospace');
     leftY += lineHeight;
-    renderer.drawText(backgroundData.name, leftPanelX + 15, leftY, '#808080', '11px "Big Apple 3PM", monospace');
+    renderer.drawText(backgroundData.name, leftPanelX + 15, leftY, '#A27B5C', '11px "Big Apple 3PM", monospace');
     leftY += lineHeight * 1.5;
     
     renderer.drawText('AGE/GENDER:', leftPanelX + 15, leftY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
@@ -2209,29 +2209,29 @@ class NewGameSetupState implements IGameState {
     ctx.fillRect(this.startGameButton.x + offset + 3, this.startGameButton.y + offset + 3, this.startGameButton.width - 6, this.startGameButton.height - 6);
     
     // Button frame
-    const frameColor = '#a0a0a0';
+    const frameColor = '#F97300';
     ctx.strokeStyle = frameColor;
     ctx.lineWidth = pressed ? 2 : 4;
     ctx.strokeRect(this.startGameButton.x + offset + 1, this.startGameButton.y + offset + 1, this.startGameButton.width - 2, this.startGameButton.height - 2);
     
     // Inner frame
-    ctx.strokeStyle = '#808080';
+    ctx.strokeStyle = '#be794f';
     ctx.lineWidth = 1;
     ctx.strokeRect(this.startGameButton.x + offset + 8, this.startGameButton.y + offset + 8, this.startGameButton.width - 16, this.startGameButton.height - 16);
     
     // Button glow effect
     if (hovered || pressed) {
       const pulseAlpha = Math.sin(this.animations.buttonPulse * 6) * 0.3 + 0.7;
-      ctx.shadowColor = '#a0a0a0';
+      ctx.shadowColor = '#F97300';
       ctx.shadowBlur = 15 * pulseAlpha;
-      ctx.strokeStyle = '#a0a0a0';
+      ctx.strokeStyle = '#F97300';
       ctx.lineWidth = 3;
       ctx.strokeRect(this.startGameButton.x + 2, this.startGameButton.y + 2, this.startGameButton.width - 4, this.startGameButton.height - 4);
       ctx.shadowBlur = 0;
     }
     
     // Button text
-    const textColor = hovered ? '#c0c0c0' : '#909090';
+    const textColor = hovered ? '#ffeb99' : '#e3b47a';
     if (hovered) {
       ctx.shadowColor = '#a0a0a0';
       ctx.shadowBlur = 8;
