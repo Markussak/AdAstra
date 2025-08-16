@@ -2344,15 +2344,8 @@ class NewGameSetupState implements IGameState {
     // Check for hovers (mouse only, not touch)
     if (!input.isMobile) {
       const mousePos = input.getMousePosition();
+      // Mouse coordinates are already in canvas coordinates from input manager
       let mouseX = mousePos.x, mouseY = mousePos.y;
-      
-      // Convert mouse coordinates to canvas coordinates
-      const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-      if (canvas) {
-        const rect = canvas.getBoundingClientRect();
-        mouseX = mousePos.x - rect.left;
-        mouseY = mousePos.y - rect.top;
-      }
       
       this.backButton.hovered = this.isPointInRect(mouseX, mouseY, this.backButton);
       this.nextButton.hovered = this.isPointInRect(mouseX, mouseY, this.nextButton);
@@ -2432,13 +2425,9 @@ class NewGameSetupState implements IGameState {
       let clickX = 0, clickY = 0;
       
       if (mousePressed) {
-        // Convert mouse coordinates to canvas coordinates
-        const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-        if (canvas) {
-          const rect = canvas.getBoundingClientRect();
-          clickX = input.mouse.x - rect.left;
-          clickY = input.mouse.y - rect.top;
-        }
+        // Mouse coordinates are already in canvas coordinates from input manager
+        clickX = input.mouse.x;
+        clickY = input.mouse.y;
       } else if (touchPressed) {
         const touch = input.touches.values().next().value;
         if (touch) {
