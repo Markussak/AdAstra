@@ -66,7 +66,7 @@ class StateManager implements IStateManager {
   }
 
   private registerStates(): void {
-    this.states.set(GameState.LOADING, new LoadingState());
+    this.states.set(GameState.LOADING, new LoadingState(this));
     this.states.set(GameState.MAIN_MENU, new MainMenuState());
     this.states.set(GameState.NEW_GAME_SETUP, new NewGameSetupState());
     this.states.set(GameState.PLAYING, new PlayingState());
@@ -128,6 +128,12 @@ class LoadingState implements IGameState {
   private currentTextIndex: number = 0;
   private lastUpdate: number = 0;
   private startTime: number = 0;
+  private stateManager: IStateManager;
+  private hasTransitioned: boolean = false;
+
+  constructor(stateManager: IStateManager) {
+    this.stateManager = stateManager;
+  }
 
   public enter(): void {
     console.log('Loading state entered');
@@ -135,6 +141,7 @@ class LoadingState implements IGameState {
     this.currentTextIndex = 0;
     this.lastUpdate = Date.now();
     this.startTime = Date.now();
+    this.hasTransitioned = false;
     
     // Initialize HTML loading display
     this.updateHTMLLoadingDisplay();
@@ -158,13 +165,12 @@ class LoadingState implements IGameState {
       
       this.lastUpdate = now;
       
-      if (this.progress >= 100 && elapsed > 2000) {
+      if (this.progress >= 100 && elapsed > 2000 && !this.hasTransitioned) {
+        this.hasTransitioned = true;
         setTimeout(() => {
           console.log('Loading complete, switching to main menu');
           this.hideHTMLLoadingOverlay();
-          if ((window as any).game?.stateManager) {
-            (window as any).game.stateManager.setState(GameState.MAIN_MENU);
-          }
+          this.stateManager.setState(GameState.MAIN_MENU);
         }, 500);
       }
     }
