@@ -22,7 +22,7 @@ class StateManager {
         }
     }
     registerStates() {
-        this.states.set(GameState.LOADING, new LoadingState());
+        this.states.set(GameState.LOADING, new LoadingState(this));
         this.states.set(GameState.MAIN_MENU, new MainMenuState());
         this.states.set(GameState.NEW_GAME_SETUP, new NewGameSetupState());
         this.states.set(GameState.PLAYING, new PlayingState());
@@ -68,12 +68,13 @@ class StateManager {
     }
 }
 class LoadingState {
-    constructor() {
+    constructor(stateManager) {
         this.progress = 0;
         this.loadingTexts = LOADING_MESSAGES;
         this.currentTextIndex = 0;
         this.lastUpdate = 0;
         this.startTime = 0;
+        this.stateManager = stateManager;
     }
     enter() {
         console.log('Loading state entered');
@@ -99,9 +100,7 @@ class LoadingState {
                 setTimeout(() => {
                     console.log('Loading complete, switching to main menu');
                     this.hideHTMLLoadingOverlay();
-                    if (window.game?.stateManager) {
-                        window.game.stateManager.setState(GameState.MAIN_MENU);
-                    }
+                    this.stateManager.setState(GameState.MAIN_MENU);
                 }, 500);
             }
         }
@@ -2124,9 +2123,6 @@ class PlayingState {
         console.log('🎮 Entering playing state');
         const game = window.game;
         const gameSetup = window.gameSetup;
-        console.log('🎯 Initializing scene manager...');
-        const scene = game.sceneManager.getCurrentScene();
-        console.log('✅ Scene obtained:', scene ? 'SUCCESS' : 'FAILED');
         if (gameSetup && game.player) {
             const difficultySettings = DIFFICULTY_SETTINGS[gameSetup.difficulty];
             const shipTemplate = SHIP_TEMPLATES[gameSetup.shipType];
