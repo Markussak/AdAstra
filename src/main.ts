@@ -1532,26 +1532,31 @@ class NewGameSetupState implements IGameState {
     const raceKeys = Object.keys(RACE_DATA) as CharacterRace[];
     const racesPerRow = 2;
     
+    // Calculate responsive button spacing for species
+    const availableRaceWidth = rightPanelW - 40; // 40 for left/right margins
+    const raceButtonWidth = Math.min(150, (availableRaceWidth - 20) / racesPerRow); // 20 for spacing between buttons
+    const raceSpacing = availableRaceWidth / racesPerRow;
+    
     raceKeys.forEach((race, index) => {
       const data = RACE_DATA[race];
       const row = Math.floor(index / racesPerRow);
       const col = index % racesPerRow;
       
-      const buttonX = rightPanelX + 20 + col * 160;
+      const buttonX = rightPanelX + 20 + col * raceSpacing;
       const buttonY = rightY + row * 70;
       const isSelected = race === this.character.race;
       
       const buttonArea = {
         x: buttonX,
         y: buttonY,
-        width: 150,
+        width: raceButtonWidth,
         height: 60,
         race: race,
         hovered: false
       };
       this.raceButtons.push(buttonArea);
       
-      this.drawSpeciesOption(renderer, buttonX, buttonY, 150, 60, isSelected, buttonArea.hovered, data);
+      this.drawSpeciesOption(renderer, buttonX, buttonY, raceButtonWidth, 60, isSelected, buttonArea.hovered, data);
     });
     
     rightY += Math.ceil(raceKeys.length / racesPerRow) * 70 + 30;
@@ -1564,26 +1569,31 @@ class NewGameSetupState implements IGameState {
     const backgroundKeys = Object.keys(BACKGROUND_DATA) as CharacterBackground[];
     const backgroundsPerRow = 2;
     
+    // Calculate responsive button spacing for backgrounds
+    const availableBackgroundWidth = rightPanelW - 40; // 40 for left/right margins
+    const backgroundButtonWidth = Math.min(150, (availableBackgroundWidth - 20) / backgroundsPerRow); // 20 for spacing between buttons
+    const backgroundSpacing = availableBackgroundWidth / backgroundsPerRow;
+    
     backgroundKeys.forEach((background, index) => {
       const data = BACKGROUND_DATA[background];
       const row = Math.floor(index / backgroundsPerRow);
       const col = index % backgroundsPerRow;
       
-      const buttonX = rightPanelX + 20 + col * 160;
+      const buttonX = rightPanelX + 20 + col * backgroundSpacing;
       const buttonY = rightY + row * 50;
       const isSelected = background === this.character.background;
       
       const buttonArea = {
         x: buttonX,
         y: buttonY,
-        width: 150,
+        width: backgroundButtonWidth,
         height: 40,
         background: background,
         hovered: false
       };
       this.backgroundButtons.push(buttonArea);
       
-      this.drawBackgroundOption(renderer, buttonX, buttonY, 150, 40, isSelected, buttonArea.hovered, data);
+      this.drawBackgroundOption(renderer, buttonX, buttonY, backgroundButtonWidth, 40, isSelected, buttonArea.hovered, data);
     });
   }
 
@@ -1764,12 +1774,14 @@ class NewGameSetupState implements IGameState {
       const y = startY + 80 + row * 60;
       const currentLevel = this.character.skills.get(skill) || 1;
       
-      // Skill name and icon
-      renderer.drawText(`${data.icon} ${data.name}:`, x - 200, y, '#606060', '16px "Big Apple 3PM", monospace');
+      // Skill name and icon - properly positioned to avoid off-screen issues
+      const skillNameX = Math.max(20, x - 180); // Ensure minimum 20px from left edge
+      renderer.drawText(`${data.icon} ${data.name}:`, skillNameX, y, '#606060', '16px "Big Apple 3PM", monospace');
       
-      // Level indicators (1-10)
+      // Level indicators (1-10) - adjust based on available space
+      const levelStartX = Math.max(skillNameX + 120, x - 100); // Ensure buttons don't overlap with text
       for (let level = 1; level <= 10; level++) {
-        const buttonX = x - 100 + (level - 1) * 25;
+        const buttonX = levelStartX + (level - 1) * 25;
         const buttonY = y - 10;
         const isActive = level <= currentLevel;
         
@@ -1794,8 +1806,9 @@ class NewGameSetupState implements IGameState {
         renderer.drawText(level.toString(), buttonX, buttonY + 5, color, '10px "Big Apple 3PM", monospace');
       }
       
-      // Current level display
-      renderer.drawText(`Úroveň: ${currentLevel}`, x + 160, y, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+      // Current level display - ensure it fits on screen
+      const levelDisplayX = Math.min(width - 120, levelStartX + 260); // Ensure minimum 120px from right edge
+      renderer.drawText(`Úroveň: ${currentLevel}`, levelDisplayX, y, '#dcd0c0', '14px "Big Apple 3PM", monospace');
     });
     
     renderer.drawText('Klepněte na čísla pro změnu úrovně dovedností', width/2, startY + 380, '#505050', '12px "Big Apple 3PM", monospace');
@@ -1817,8 +1830,6 @@ class NewGameSetupState implements IGameState {
     
     const ships = Object.values(ShipType);
     const shipsPerRow = 2;
-    const shipWidth = 350; // Reduced from 380
-    const shipHeight = 140; // Reduced from 160
     
     // Main ship selection panel - adjusted to leave space for details panel
     const detailsPanelWidth = 320;
@@ -1826,6 +1837,11 @@ class NewGameSetupState implements IGameState {
     const panelY = startY + 50;
     const panelW = width - 80 - detailsPanelWidth - 30; // Leave space for details panel
     const panelH = height - startY - 150;
+    
+    // Calculate responsive ship card size to fit in available space
+    const availableCardWidth = (panelW - 60 - 20) / shipsPerRow; // 60 for margins, 20 for spacing
+    const shipWidth = Math.min(350, availableCardWidth); // Max 350px, but fit in available space
+    const shipHeight = Math.min(140, shipWidth * 0.4); // Maintain aspect ratio
     
     this.drawSelectionPanel(renderer, panelX, panelY, panelW, panelH, 'STARSHIP REGISTRY');
     
@@ -1837,8 +1853,8 @@ class NewGameSetupState implements IGameState {
       const row = Math.floor(index / shipsPerRow);
       const col = index % shipsPerRow;
       
-      const x = panelX + 30 + col * (shipWidth + 20); // Reduced spacing
-      const y = panelY + 60 + row * (shipHeight + 20); // Reduced spacing
+      const x = panelX + 30 + col * (shipWidth + 20);
+      const y = panelY + 60 + row * (shipHeight + 20);
       
       const isSelected = shipType === this.selectedShip;
       
@@ -2936,7 +2952,7 @@ class NewGameSetupState implements IGameState {
 
 class PlayingState implements IGameState {
   public enter(): void {
-    console.log('Entering playing state');
+    console.log('🎮 Entering playing state');
     
     // Initialize game with setup if available
     const game = (window as any).game;
@@ -2967,10 +2983,12 @@ class PlayingState implements IGameState {
       const spriteKey = shipTypeToSprite[String(gameSetup.shipType)] || 'ship_explorer';
       (game.player as any).spriteKey = spriteKey;
       
-      console.log(`Game started as ${gameSetup.character.name} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
+      console.log(`🚀 Game started as ${gameSetup.character.name} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
     } else {
-      console.warn('Missing gameSetup or player - using defaults');
+      console.warn('⚠️ Missing gameSetup or player - using defaults');
     }
+    
+    console.log('🎮 PlayingState initialization complete');
   }
 
   public update(deltaTime: number): void {
@@ -3555,15 +3573,22 @@ class SceneManager implements ISceneManager {
     
     // Cache scenes to avoid recreation on every frame
     if (!this.cachedScenes.has(sceneType)) {
+      console.log(`🏗️ Creating new scene: ${sceneType}`);
       switch (sceneType) {
         case 'starSystem':
-          this.cachedScenes.set(sceneType, new StarSystemScene());
+          const starScene = new StarSystemScene();
+          this.cachedScenes.set(sceneType, starScene);
+          console.log('✅ StarSystemScene created successfully');
           break;
         case 'interstellarSpace':
-          this.cachedScenes.set(sceneType, new InterstellarSpaceScene());
+          const spaceScene = new InterstellarSpaceScene();
+          this.cachedScenes.set(sceneType, spaceScene);
+          console.log('✅ InterstellarSpaceScene created successfully');
           break;
         default:
-          this.cachedScenes.set(sceneType, new StarSystemScene());
+          const defaultScene = new StarSystemScene();
+          this.cachedScenes.set(sceneType, defaultScene);
+          console.log('✅ Default StarSystemScene created successfully');
       }
     }
     

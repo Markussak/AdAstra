@@ -3,7 +3,7 @@ import { Renderer } from './renderer';
 import { Camera } from './camera';
 import { InputManager } from './input';
 import { PlayerShip } from './player';
-import { StarSystemScene } from './scenes';
+import { StarSystemScene, InterstellarSpaceScene } from './scenes';
 import { SHIP_TEMPLATES, DIFFICULTY_SETTINGS, LOADING_MESSAGES, WEAPON_DATA, RACE_DATA, BACKGROUND_DATA, SKILL_DATA, GALAXY_SIZE_DATA, GALAXY_DENSITY_DATA, ECONOMY_COMPLEXITY_DATA } from './gameData';
 import { NameGenerator } from './utils';
 import { SaveSystem } from './saveSystem';
@@ -459,6 +459,8 @@ class NewGameSetupState {
         this.ageInputButton = { x: 0, y: 0, width: 100, height: 40, hovered: false };
         this.startGameButton = { x: 0, y: 0, width: 200, height: 50, hovered: false, pressed: false };
         this.launching = { active: false, start: 0, duration: 800 };
+        this.lastNavigationClickTime = 0;
+        this.navigationClickCooldown = 300;
     }
     enter() {
         console.log('New game setup entered');
@@ -769,9 +771,10 @@ class NewGameSetupState {
         ctx.shadowBlur = 0;
         renderer.drawText('SELECT MISSION PARAMETERS', width / 2, startY + 25, '#DCD7C9', '14px "Big Apple 3PM", monospace');
         this.difficultyButtons = [];
-        const panelX = width / 2 - 450;
+        const panelMargin = Math.max(50, (width - 1000) / 2);
+        const panelX = panelMargin;
         const panelY = startY + 50;
-        const panelW = 900;
+        const panelW = width - (panelMargin * 2);
         const panelH = 400;
         this.drawSelectionPanel(renderer, panelX, panelY, panelW, panelH, 'DIFFICULTY MATRIX');
         Object.values(DifficultyLevel).forEach((difficulty, index) => {
@@ -790,7 +793,9 @@ class NewGameSetupState {
             this.drawDifficultyOption(renderer, buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, isSelected, buttonArea.hovered, settings, index);
         });
         if (this.selectedDifficulty) {
-            this.drawDifficultyDetailsPanel(renderer, width - 320, startY + 50, 300, 350);
+            const detailPanelW = Math.min(300, width - panelX - panelW - 40);
+            const detailPanelX = Math.min(width - detailPanelW - 20, panelX + panelW + 20);
+            this.drawDifficultyDetailsPanel(renderer, detailPanelX, startY + 50, detailPanelW, 350);
         }
     }
     drawSelectionPanel(renderer, x, y, w, h, title) {
@@ -1077,23 +1082,26 @@ class NewGameSetupState {
         this.raceButtons = [];
         const raceKeys = Object.keys(RACE_DATA);
         const racesPerRow = 2;
+        const availableRaceWidth = rightPanelW - 40;
+        const raceButtonWidth = Math.min(150, (availableRaceWidth - 20) / racesPerRow);
+        const raceSpacing = availableRaceWidth / racesPerRow;
         raceKeys.forEach((race, index) => {
             const data = RACE_DATA[race];
             const row = Math.floor(index / racesPerRow);
             const col = index % racesPerRow;
-            const buttonX = rightPanelX + 20 + col * 160;
+            const buttonX = rightPanelX + 20 + col * raceSpacing;
             const buttonY = rightY + row * 70;
             const isSelected = race === this.character.race;
             const buttonArea = {
                 x: buttonX,
                 y: buttonY,
-                width: 150,
+                width: raceButtonWidth,
                 height: 60,
                 race: race,
                 hovered: false
             };
             this.raceButtons.push(buttonArea);
-            this.drawSpeciesOption(renderer, buttonX, buttonY, 150, 60, isSelected, buttonArea.hovered, data);
+            this.drawSpeciesOption(renderer, buttonX, buttonY, raceButtonWidth, 60, isSelected, buttonArea.hovered, data);
         });
         rightY += Math.ceil(raceKeys.length / racesPerRow) * 70 + 30;
         renderer.drawText('BACKGROUND:', rightPanelX + 20, rightY, '#DCD7C9', 'bold 14px "Big Apple 3PM", monospace');
@@ -1101,23 +1109,26 @@ class NewGameSetupState {
         this.backgroundButtons = [];
         const backgroundKeys = Object.keys(BACKGROUND_DATA);
         const backgroundsPerRow = 2;
+        const availableBackgroundWidth = rightPanelW - 40;
+        const backgroundButtonWidth = Math.min(150, (availableBackgroundWidth - 20) / backgroundsPerRow);
+        const backgroundSpacing = availableBackgroundWidth / backgroundsPerRow;
         backgroundKeys.forEach((background, index) => {
             const data = BACKGROUND_DATA[background];
             const row = Math.floor(index / backgroundsPerRow);
             const col = index % backgroundsPerRow;
-            const buttonX = rightPanelX + 20 + col * 160;
+            const buttonX = rightPanelX + 20 + col * backgroundSpacing;
             const buttonY = rightY + row * 50;
             const isSelected = background === this.character.background;
             const buttonArea = {
                 x: buttonX,
                 y: buttonY,
-                width: 150,
+                width: backgroundButtonWidth,
                 height: 40,
                 background: background,
                 hovered: false
             };
             this.backgroundButtons.push(buttonArea);
-            this.drawBackgroundOption(renderer, buttonX, buttonY, 150, 40, isSelected, buttonArea.hovered, data);
+            this.drawBackgroundOption(renderer, buttonX, buttonY, backgroundButtonWidth, 40, isSelected, buttonArea.hovered, data);
         });
     }
     drawInputTerminal(renderer, x, y, w, h, text, editing, buttonArea) {
@@ -1227,12 +1238,16 @@ class NewGameSetupState {
             const data = SKILL_DATA[skill];
             const row = Math.floor(index / skillsPerRow);
             const col = index % skillsPerRow;
-            const x = width / 2 - 300 + col * 600;
+            const skillPanelWidth = Math.min(600, width - 100);
+            const skillSpacing = skillPanelWidth / skillsPerRow;
+            const x = (width / 2) - (skillPanelWidth / 2) + (col * skillSpacing) + (skillSpacing / 2);
             const y = startY + 80 + row * 60;
             const currentLevel = this.character.skills.get(skill) || 1;
-            renderer.drawText(`${data.icon} ${data.name}:`, x - 200, y, '#606060', '16px "Big Apple 3PM", monospace');
+            const skillNameX = Math.max(20, x - 180);
+            renderer.drawText(`${data.icon} ${data.name}:`, skillNameX, y, '#606060', '16px "Big Apple 3PM", monospace');
+            const levelStartX = Math.max(skillNameX + 120, x - 100);
             for (let level = 1; level <= 10; level++) {
-                const buttonX = x - 100 + (level - 1) * 25;
+                const buttonX = levelStartX + (level - 1) * 25;
                 const buttonY = y - 10;
                 const isActive = level <= currentLevel;
                 const buttonArea = {
@@ -1253,7 +1268,8 @@ class NewGameSetupState {
                 const color = isActive ? '#dcd0c0' : '#404040';
                 renderer.drawText(level.toString(), buttonX, buttonY + 5, color, '10px "Big Apple 3PM", monospace');
             }
-            renderer.drawText(`Úroveň: ${currentLevel}`, x + 160, y, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+            const levelDisplayX = Math.min(width - 120, levelStartX + 260);
+            renderer.drawText(`Úroveň: ${currentLevel}`, levelDisplayX, y, '#dcd0c0', '14px "Big Apple 3PM", monospace');
         });
         renderer.drawText('Klepněte na čísla pro změnu úrovně dovedností', width / 2, startY + 380, '#505050', '12px "Big Apple 3PM", monospace');
     }
@@ -1269,13 +1285,14 @@ class NewGameSetupState {
         renderer.drawText('SELECT STARSHIP CLASS', width / 2, startY + 25, '#DCD7C9', '14px "Big Apple 3PM", monospace');
         const ships = Object.values(ShipType);
         const shipsPerRow = 2;
-        const shipWidth = 350;
-        const shipHeight = 140;
         const detailsPanelWidth = 320;
         const panelX = 40;
         const panelY = startY + 50;
         const panelW = width - 80 - detailsPanelWidth - 30;
         const panelH = height - startY - 150;
+        const availableCardWidth = (panelW - 60 - 20) / shipsPerRow;
+        const shipWidth = Math.min(350, availableCardWidth);
+        const shipHeight = Math.min(140, shipWidth * 0.4);
         this.drawSelectionPanel(renderer, panelX, panelY, panelW, panelH, 'STARSHIP REGISTRY');
         this.shipButtons = [];
         ships.forEach((shipType, index) => {
@@ -1830,23 +1847,29 @@ class NewGameSetupState {
                     clickY = touch.y;
                 }
             }
-            if (this.currentStep > 0 && this.isPointInRect(clickX, clickY, this.backButton)) {
-                this.backButton.pressed = true;
-                this.currentStep--;
-                handled = true;
-            }
-            else if (this.canProceedFromCurrentStep() && this.isPointInRect(clickX, clickY, this.nextButton)) {
-                console.log(`Next button clicked on step ${this.currentStep}`);
-                this.nextButton.pressed = true;
-                if (this.currentStep === this.steps.length - 1) {
-                    console.log('🚀 Next button on final step - starting launch sequence');
-                    this.launching.active = true;
-                    this.launching.start = performance.now();
+            const currentTime = performance.now();
+            const timeSinceLastClick = currentTime - this.lastNavigationClickTime;
+            if (timeSinceLastClick >= this.navigationClickCooldown) {
+                if (this.currentStep > 0 && this.isPointInRect(clickX, clickY, this.backButton)) {
+                    this.backButton.pressed = true;
+                    this.currentStep--;
+                    this.lastNavigationClickTime = currentTime;
+                    handled = true;
                 }
-                else {
-                    this.currentStep++;
+                else if (this.canProceedFromCurrentStep() && this.isPointInRect(clickX, clickY, this.nextButton)) {
+                    console.log(`Next button clicked on step ${this.currentStep}`);
+                    this.nextButton.pressed = true;
+                    if (this.currentStep === this.steps.length - 1) {
+                        console.log('🚀 Next button on final step - starting launch sequence');
+                        this.launching.active = true;
+                        this.launching.start = performance.now();
+                    }
+                    else {
+                        this.currentStep++;
+                    }
+                    this.lastNavigationClickTime = currentTime;
+                    handled = true;
                 }
-                handled = true;
             }
             if (!handled) {
                 switch (this.currentStep) {
@@ -2027,11 +2050,17 @@ class NewGameSetupState {
                 return;
             }
         }
-        if (input.wasKeyJustPressed('arrowleft') && this.currentStep > 0) {
-            this.currentStep--;
-        }
-        if (input.wasKeyJustPressed('arrowright') && this.canProceedFromCurrentStep() && this.currentStep < this.steps.length - 1) {
-            this.currentStep++;
+        const currentTime = performance.now();
+        const timeSinceLastClick = currentTime - this.lastNavigationClickTime;
+        if (timeSinceLastClick >= this.navigationClickCooldown) {
+            if (input.wasKeyJustPressed('arrowleft') && this.currentStep > 0) {
+                this.currentStep--;
+                this.lastNavigationClickTime = currentTime;
+            }
+            if (input.wasKeyJustPressed('arrowright') && this.canProceedFromCurrentStep() && this.currentStep < this.steps.length - 1) {
+                this.currentStep++;
+                this.lastNavigationClickTime = currentTime;
+            }
         }
         switch (this.currentStep) {
             case 0:
@@ -2092,9 +2121,12 @@ class NewGameSetupState {
 }
 class PlayingState {
     enter() {
-        console.log('Entering playing state');
+        console.log('🎮 Entering playing state');
         const game = window.game;
         const gameSetup = window.gameSetup;
+        console.log('🎯 Initializing scene manager...');
+        const scene = game.sceneManager.getCurrentScene();
+        console.log('✅ Scene obtained:', scene ? 'SUCCESS' : 'FAILED');
         if (gameSetup && game.player) {
             const difficultySettings = DIFFICULTY_SETTINGS[gameSetup.difficulty];
             const shipTemplate = SHIP_TEMPLATES[gameSetup.shipType];
@@ -2112,11 +2144,12 @@ class PlayingState {
             };
             const spriteKey = shipTypeToSprite[String(gameSetup.shipType)] || 'ship_explorer';
             game.player.spriteKey = spriteKey;
-            console.log(`Game started as ${gameSetup.character.name} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
+            console.log(`🚀 Game started as ${gameSetup.character.name} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
         }
         else {
-            console.warn('Missing gameSetup or player - using defaults');
+            console.warn('⚠️ Missing gameSetup or player - using defaults');
         }
+        console.log('🎮 PlayingState initialization complete');
     }
     update(deltaTime) {
     }
@@ -2581,6 +2614,7 @@ class SceneManager {
         this.scenes = new Map();
         this.currentScene = 'starSystem';
         this.transitionInProgress = false;
+        this.cachedScenes = new Map();
     }
     switchScene(newScene) {
         if (this.transitionInProgress)
@@ -2592,7 +2626,27 @@ class SceneManager {
         }, 500);
     }
     getCurrentScene() {
-        return new StarSystemScene();
+        const sceneType = this.currentScene;
+        if (!this.cachedScenes.has(sceneType)) {
+            console.log(`🏗️ Creating new scene: ${sceneType}`);
+            switch (sceneType) {
+                case 'starSystem':
+                    const starScene = new StarSystemScene();
+                    this.cachedScenes.set(sceneType, starScene);
+                    console.log('✅ StarSystemScene created successfully');
+                    break;
+                case 'interstellarSpace':
+                    const spaceScene = new InterstellarSpaceScene();
+                    this.cachedScenes.set(sceneType, spaceScene);
+                    console.log('✅ InterstellarSpaceScene created successfully');
+                    break;
+                default:
+                    const defaultScene = new StarSystemScene();
+                    this.cachedScenes.set(sceneType, defaultScene);
+                    console.log('✅ Default StarSystemScene created successfully');
+            }
+        }
+        return this.cachedScenes.get(sceneType);
     }
     getCurrentSceneType() {
         return this.currentScene;
