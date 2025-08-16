@@ -650,6 +650,8 @@ class NewGameSetupState implements IGameState {
   private ageInputButton = { x: 0, y: 0, width: 100, height: 40, hovered: false };
   private startGameButton = { x: 0, y: 0, width: 200, height: 50, hovered: false, pressed: false };
   private launching: { active: boolean; start: number; duration: number } = { active: false, start: 0, duration: 800 };
+  private lastNavigationClickTime: number = 0;
+  private navigationClickCooldown: number = 300; // 300ms cooldown between navigation clicks
 
   public enter(): void {
     console.log('New game setup entered');
@@ -1074,10 +1076,11 @@ class NewGameSetupState implements IGameState {
     // Clear difficulty buttons array
     this.difficultyButtons = [];
     
-    // Draw difficulty selection panel
-    const panelX = width/2 - 450;
+    // Draw difficulty selection panel - responsive layout
+    const panelMargin = Math.max(50, (width - 1000) / 2); // Minimum 50px margin, centered for larger screens
+    const panelX = panelMargin;
     const panelY = startY + 50;
-    const panelW = 900;
+    const panelW = width - (panelMargin * 2);
     const panelH = 400;
     
     this.drawSelectionPanel(renderer, panelX, panelY, panelW, panelH, 'DIFFICULTY MATRIX');
@@ -1103,9 +1106,11 @@ class NewGameSetupState implements IGameState {
                                 isSelected, buttonArea.hovered, settings, index);
     });
     
-    // Additional difficulty info panel
+    // Additional difficulty info panel - responsive positioning
     if (this.selectedDifficulty) {
-      this.drawDifficultyDetailsPanel(renderer, width - 320, startY + 50, 300, 350);
+      const detailPanelW = Math.min(300, width - panelX - panelW - 40); // Fit within available space
+      const detailPanelX = Math.min(width - detailPanelW - 20, panelX + panelW + 20);
+      this.drawDifficultyDetailsPanel(renderer, detailPanelX, startY + 50, detailPanelW, 350);
     }
   }
 
@@ -1752,7 +1757,10 @@ class NewGameSetupState implements IGameState {
       const row = Math.floor(index / skillsPerRow);
       const col = index % skillsPerRow;
       
-      const x = width/2 - 300 + col * 600;
+      // Responsive layout for skills
+      const skillPanelWidth = Math.min(600, width - 100); // Max 600px, but fit in available space
+      const skillSpacing = skillPanelWidth / skillsPerRow;
+      const x = (width / 2) - (skillPanelWidth / 2) + (col * skillSpacing) + (skillSpacing / 2);
       const y = startY + 80 + row * 60;
       const currentLevel = this.character.skills.get(skill) || 1;
       
@@ -2595,22 +2603,29 @@ class NewGameSetupState implements IGameState {
         }
       }
       
-      // Check navigation buttons
-      if (this.currentStep > 0 && this.isPointInRect(clickX, clickY, this.backButton)) {
-        this.backButton.pressed = true;
-        this.currentStep--;
-        handled = true;
-      } else if (this.canProceedFromCurrentStep() && this.isPointInRect(clickX, clickY, this.nextButton)) {
-        console.log(`Next button clicked on step ${this.currentStep}`);
-        this.nextButton.pressed = true;
-        if (this.currentStep === this.steps.length - 1) {
-          console.log('🚀 Next button on final step - starting launch sequence');
-          this.launching.active = true;
-          this.launching.start = performance.now();
-        } else {
-          this.currentStep++;
+      // Check navigation buttons with cooldown to prevent rapid clicking
+      const currentTime = performance.now();
+      const timeSinceLastClick = currentTime - this.lastNavigationClickTime;
+      
+      if (timeSinceLastClick >= this.navigationClickCooldown) {
+        if (this.currentStep > 0 && this.isPointInRect(clickX, clickY, this.backButton)) {
+          this.backButton.pressed = true;
+          this.currentStep--;
+          this.lastNavigationClickTime = currentTime;
+          handled = true;
+        } else if (this.canProceedFromCurrentStep() && this.isPointInRect(clickX, clickY, this.nextButton)) {
+          console.log(`Next button clicked on step ${this.currentStep}`);
+          this.nextButton.pressed = true;
+          if (this.currentStep === this.steps.length - 1) {
+            console.log('🚀 Next button on final step - starting launch sequence');
+            this.launching.active = true;
+            this.launching.start = performance.now();
+          } else {
+            this.currentStep++;
+          }
+          this.lastNavigationClickTime = currentTime;
+          handled = true;
         }
-        handled = true;
       }
       
       // Step-specific click handling
@@ -2838,13 +2853,20 @@ class NewGameSetupState implements IGameState {
       }
     }
 
-    // Keyboard navigation between steps
-    if (input.wasKeyJustPressed('arrowleft') && this.currentStep > 0) {
-      this.currentStep--;
-    }
+    // Keyboard navigation between steps with cooldown
+    const currentTime = performance.now();
+    const timeSinceLastClick = currentTime - this.lastNavigationClickTime;
     
-    if (input.wasKeyJustPressed('arrowright') && this.canProceedFromCurrentStep() && this.currentStep < this.steps.length - 1) {
-      this.currentStep++;
+    if (timeSinceLastClick >= this.navigationClickCooldown) {
+      if (input.wasKeyJustPressed('arrowleft') && this.currentStep > 0) {
+        this.currentStep--;
+        this.lastNavigationClickTime = currentTime;
+      }
+      
+      if (input.wasKeyJustPressed('arrowright') && this.canProceedFromCurrentStep() && this.currentStep < this.steps.length - 1) {
+        this.currentStep++;
+        this.lastNavigationClickTime = currentTime;
+      }
     }
 
     // Step-specific keyboard input
@@ -3515,6 +3537,7 @@ class SceneManager implements ISceneManager {
   public scenes: Map<any, any> = new Map();
   public currentScene: any = 'starSystem';
   public transitionInProgress: boolean = false;
+  private cachedScenes: Map<string, any> = new Map();
 
   public switchScene(newScene: any): void {
     if (this.transitionInProgress) return;
@@ -3528,7 +3551,23 @@ class SceneManager implements ISceneManager {
   }
 
   public getCurrentScene(): any {
-    return new StarSystemScene();
+    const sceneType = this.currentScene;
+    
+    // Cache scenes to avoid recreation on every frame
+    if (!this.cachedScenes.has(sceneType)) {
+      switch (sceneType) {
+        case 'starSystem':
+          this.cachedScenes.set(sceneType, new StarSystemScene());
+          break;
+        case 'interstellarSpace':
+          this.cachedScenes.set(sceneType, new InterstellarSpaceScene());
+          break;
+        default:
+          this.cachedScenes.set(sceneType, new StarSystemScene());
+      }
+    }
+    
+    return this.cachedScenes.get(sceneType);
   }
 
   public getCurrentSceneType(): any {
