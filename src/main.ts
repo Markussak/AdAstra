@@ -649,6 +649,7 @@ class NewGameSetupState implements IGameState {
   private skipNameButton = { x: 0, y: 0, width: 100, height: 40, hovered: false };
   private ageInputButton = { x: 0, y: 0, width: 100, height: 40, hovered: false };
   private startGameButton = { x: 0, y: 0, width: 200, height: 50, hovered: false, pressed: false };
+  private launching: { active: boolean; start: number; duration: number } = { active: false, start: 0, duration: 800 };
 
   public enter(): void {
     console.log('New game setup entered');
@@ -670,6 +671,7 @@ class NewGameSetupState implements IGameState {
     Object.values(CharacterSkill).forEach(skill => {
       this.character.skills.set(skill, 1);
     });
+    this.launching = { active: false, start: 0, duration: 800 };
   }
 
   public update(deltaTime: number): void {
@@ -682,6 +684,14 @@ class NewGameSetupState implements IGameState {
     if (this.animations.stepTransition > Math.PI * 2) this.animations.stepTransition = 0;
     if (this.animations.buttonPulse > Math.PI * 2) this.animations.buttonPulse = 0;
     if (this.animations.starField > 1000) this.animations.starField = 0;
+    
+    if (this.launching.active) {
+      const now = performance.now();
+      if (now - this.launching.start >= this.launching.duration) {
+        this.launching.active = false;
+        this.startGame();
+      }
+    }
   }
 
   public render(renderer: IRenderer): void {
@@ -823,6 +833,29 @@ class NewGameSetupState implements IGameState {
     
     // Render tooltip last (on top)
     this.renderTooltip(renderer);
+    
+    // Render launching overlay if active
+    if (this.launching.active) {
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      renderer.drawRect(0, 0, width, height, 'rgba(0,0,0,0.85)');
+      ctx.globalAlpha = 1;
+      const elapsed = performance.now() - this.launching.start;
+      const progress = Math.min(1, elapsed / this.launching.duration);
+      const barW = Math.floor(width * 0.4);
+      const barH = 12;
+      const barX = Math.floor((width - barW) / 2);
+      const barY = Math.floor(height * 0.65);
+      // Frame
+      renderer.drawRect(barX - 2, barY - 2, barW + 4, barH + 4, '#221100');
+      renderer.strokeRect(barX - 2, barY - 2, barW + 4, barH + 4, '#664400', 2);
+      // Fill
+      renderer.drawRect(barX, barY, Math.max(2, Math.floor(barW * progress)), barH, '#F97300');
+      // Text
+      renderer.drawText('INITIATING LAUNCH SEQUENCE…', width/2, barY - 16, '#E2DFD0', 'bold 16px "Big Apple 3PM", monospace');
+      renderer.drawText('CALIBRATING SYSTEMS • PRESSURIZING • IGNITION', width/2, barY + 28, '#A27B5C', '10px "Big Apple 3PM", monospace');
+      ctx.restore();
+    }
   }
 
   private drawSetupTerminalFrame(renderer: IRenderer, x: number, y: number, w: number, h: number): void {
@@ -2708,7 +2741,9 @@ class NewGameSetupState implements IGameState {
           case 6: // Summary
             if (this.isPointInRect(clickX, clickY, this.startGameButton)) {
               this.startGameButton.pressed = true;
-              this.startGame();
+              // Start short launch overlay instead of immediate state switch
+              this.launching.active = true;
+              this.launching.start = performance.now();
               handled = true;
             }
             break;
@@ -2720,6 +2755,13 @@ class NewGameSetupState implements IGameState {
   }
 
   public handleInput(input: IInputManager): void {
+    // Prevent interaction during launching overlay
+    if (this.launching.active) {
+      // Still update hover to keep cursor responsive, but ignore clicks/keys
+      this.updateHoverStates(input);
+      return;
+    }
+    
     this.updateHoverStates(input);
     
     // Handle touch/mouse input first
@@ -2815,7 +2857,8 @@ class NewGameSetupState implements IGameState {
         
       case 6: // Summary
         if (input.wasKeyJustPressed('enter')) {
-          this.startGame();
+          this.launching.active = true;
+          this.launching.start = performance.now();
         }
         break;
     }

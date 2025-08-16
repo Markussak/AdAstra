@@ -1,0 +1,17 @@
+## Asset Prompts (Design Guidance)
+
+1. Prompt pro assety vesmírných těles:
+
+"Pixel art celestial bodies, 16-bit retro style, planets with detailed surface textures showing continents, oceans, mountain ranges, desert regions, ice caps, atmospheric layers, moons with crater details, asteroids with rocky surfaces, gas giants with swirling cloud patterns, nebulae with subtle gradient dithering, stars of various sizes and brightness levels, cosmic dust clouds, binary star systems, planetary rings with individual particle details, geological features like volcanoes and canyons, realistic astronomical proportions, hand-crafted pixel work with crisp edges, no anti-aliasing, classic 1990s arcade aesthetic, use only colors from colors.txt file"
+
+2. Prompt pro assety vesmírných lodí a struktur:
+
+"Pixel art spacecraft and space structures, 16-bit retro gaming style, detailed spaceships with hull plating, engine exhausts, weapon hardpoints, communication arrays, cargo bays, space stations with rotating sections, docking bays, solar panels, space elevators, orbital platforms, megastructures like Dyson spheres and ring worlds, satellites with antenna dishes, mining equipment, defensive platforms, modular construction elements, industrial complexes, fuel depots, research facilities, military installations, civilian transports, fighter craft, capital ships, hand-crafted pixels with mechanical details, no anti-aliasing, classic arcade proportions, use only colors from colors.txt file"
+
+3. Prompt pro herní efekty:
+
+"Pixel art game effects, 16-bit animation style, energy shields with hexagonal patterns, warp drive distortions, explosion sequences with debris particles, engine trails and exhaust flames, laser beam impacts, plasma discharges, electromagnetic pulses, particle systems for thrusters, muzzle flashes, sparks and electrical arcs, damage effects with smoke and fire, teleportation swirls, force field barriers, energy weapon charging effects, hull breach atmosphere venting, ion storm effects, gravitational anomalies, jump gate activations, reactor overloads, frame-by-frame animation sequences, dithering for transparency effects, classic arcade VFX aesthetic, use only colors from colors.txt file"
+
+4. Prompt pro UI prvky (upravený):
+
+"Pixel art retro UI elements inspired by 1970s-80s technology and Alien 1979 aesthetic, 16-bit style, old CRT monitor screens with scan lines and slight curvature, chunky mechanical buttons with physical depth, analog computer interfaces, toggle switches, rotary dials, vacuum tube displays, worn metal surfaces with scratches and dents, rust spots and corrosion effects, weathered plastic panels with discoloration, flickering LED indicators, amber and green monochrome displays, chunky keyboards with individual raised keys, industrial control panels, analog gauges with needle indicators, physical sliders and knobs, worn warning labels and hazard markings, aged beige/grey computer terminals, retro fonts with blocky characters, battle-damaged equipment with exposed wiring, maintenance panels with tool marks, utilitarian design with visible screws and bolts, gritty industrial atmosphere, hand-crafted pixel work with authentic retro proportions, no modern sleek elements, classic worn-down space technology aesthetic, use only colors from colors.txt file"

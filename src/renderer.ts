@@ -1,6 +1,7 @@
 // renderer.ts - Rendering system
 
 import { IRenderer, ICamera, Vector2D } from './types';
+import { ColorPalette } from './palette';
 
 export class Renderer implements IRenderer {
   private canvas: HTMLCanvasElement;
@@ -21,6 +22,9 @@ export class Renderer implements IRenderer {
     this.ctx.imageSmoothingEnabled = false;
     this.resize();
     window.addEventListener('resize', () => this.resize());
+
+    // Try to load runtime palette (non-blocking)
+    ColorPalette.load().catch(() => {});
   }
 
   public resize(): void {
@@ -36,7 +40,7 @@ export class Renderer implements IRenderer {
   }
 
   public clear(color: string = '#1a1a2a'): void {
-    this.ctx.fillStyle = color;
+    this.ctx.fillStyle = ColorPalette.resolve(color);
     this.ctx.fillRect(0, 0, this.width, this.height);
   }
 
@@ -53,12 +57,12 @@ export class Renderer implements IRenderer {
   }
 
   public drawRect(x: number, y: number, width: number, height: number, color: string): void {
-    this.ctx.fillStyle = color;
+    this.ctx.fillStyle = ColorPalette.resolve(color);
     this.ctx.fillRect(x, y, width, height);
   }
 
   public strokeRect(x: number, y: number, width: number, height: number, color: string, lineWidth: number = 1): void {
-    this.ctx.strokeStyle = color;
+    this.ctx.strokeStyle = ColorPalette.resolve(color);
     this.ctx.lineWidth = lineWidth;
     this.ctx.strokeRect(x, y, width, height);
   }
@@ -68,23 +72,23 @@ export class Renderer implements IRenderer {
     this.ctx.arc(x, y, radius, 0, Math.PI * 2);
 
     if (filled) {
-      this.ctx.fillStyle = color;
+      this.ctx.fillStyle = ColorPalette.resolve(color);
       this.ctx.fill();
     } else {
-      this.ctx.strokeStyle = color;
+      this.ctx.strokeStyle = ColorPalette.resolve(color);
       this.ctx.stroke();
     }
   }
 
   public fillCircle(x: number, y: number, radius: number, color: string): void {
-    this.ctx.fillStyle = color;
+    this.ctx.fillStyle = ColorPalette.resolve(color);
     this.ctx.beginPath();
     this.ctx.arc(x, y, radius, 0, Math.PI * 2);
     this.ctx.fill();
   }
 
   public strokeCircle(x: number, y: number, radius: number, color: string, lineWidth: number = 1): void {
-    this.ctx.strokeStyle = color;
+    this.ctx.strokeStyle = ColorPalette.resolve(color);
     this.ctx.lineWidth = lineWidth;
     this.ctx.beginPath();
     this.ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -94,7 +98,7 @@ export class Renderer implements IRenderer {
   public strokePath(points: Vector2D[], color: string, lineWidth: number = 1): void {
     if (points.length < 2) return;
     
-    this.ctx.strokeStyle = color;
+    this.ctx.strokeStyle = ColorPalette.resolve(color);
     this.ctx.lineWidth = lineWidth;
     this.ctx.beginPath();
     this.ctx.moveTo(points[0].x, points[0].y);
@@ -107,7 +111,7 @@ export class Renderer implements IRenderer {
   }
 
   public drawLine(x1: number, y1: number, x2: number, y2: number, color: string, width: number = 1): void {
-    this.ctx.strokeStyle = color;
+    this.ctx.strokeStyle = ColorPalette.resolve(color);
     this.ctx.lineWidth = width;
     this.ctx.beginPath();
     this.ctx.moveTo(x1, y1);
@@ -116,7 +120,7 @@ export class Renderer implements IRenderer {
   }
 
   public drawText(text: string, x: number, y: number, color: string = '#ffffff', font: string = '12px "Big Apple 3PM", monospace'): void {
-    this.ctx.fillStyle = color;
+    this.ctx.fillStyle = ColorPalette.resolve(color);
     this.ctx.font = font;
     this.ctx.textAlign = 'center';
     this.ctx.fillText(text, x, y);
@@ -238,20 +242,11 @@ export class Renderer implements IRenderer {
         this.drawMechanoPortrait(centerX, centerY, size, baseColor);
         break;
       case 'ethereal':
-      case 'éteriálové':
+      case 'éteričtí':
         this.drawEtherealPortrait(centerX, centerY, size, baseColor);
         break;
-      case 'drakonid':
-      case 'drakonidi':
-        this.drawDrakonidPortrait(centerX, centerY, size, baseColor);
-        break;
-      case 'sylvan':
-      case 'sylváni':
-        this.drawSylvanPortrait(centerX, centerY, size, baseColor);
-        break;
       default:
-        this.drawDefaultPortrait(centerX, centerY, size, baseColor);
-        break;
+        this.drawHumanPortrait(centerX, centerY, size, baseColor);
     }
     
     this.ctx.restore();
