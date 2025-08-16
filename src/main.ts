@@ -1259,110 +1259,131 @@ class NewGameSetupState implements IGameState {
 
   private renderGalaxySettings(renderer: IRenderer): void {
     const width = renderer.getWidth();
-    const startY = 220;
+    const height = renderer.getHeight();
+    const startY = 280;
     
-    renderer.drawText('NASTAVENÍ GALAXIE', width/2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
+    // Section title with retro styling
+    const ctx = renderer.getContext();
+    ctx.shadowColor = '#3a6d75';
+    ctx.shadowBlur = 8;
+    renderer.drawText('GALAXY CONFIGURATION', width/2, startY, '#6aaf9d', 'bold 22px "Big Apple 3PM", monospace');
+    ctx.shadowBlur = 0;
+    
+    // Create two panels side by side
+    const leftPanelX = 50;
+    const leftPanelY = startY + 50;
+    const leftPanelW = (width - 160) / 2;
+    const leftPanelH = height - startY - 170;
+    
+    const rightPanelX = leftPanelX + leftPanelW + 60;
+    const rightPanelY = startY + 50;
+    const rightPanelW = leftPanelW;
+    const rightPanelH = leftPanelH;
+    
+    // Left panel - Galaxy Size
+    this.drawSelectionPanel(renderer, leftPanelX, leftPanelY, leftPanelW, leftPanelH, 'GALAXY SIZE');
+    
+    // Right panel - Galaxy Density  
+    this.drawSelectionPanel(renderer, rightPanelX, rightPanelY, rightPanelW, rightPanelH, 'GALAXY DENSITY');
     
     // Galaxy size selection
-    renderer.drawText('Velikost galaxie:', width/4, startY + 60, '#606060', '18px "Big Apple 3PM", monospace');
     this.galaxySizeButtons = [];
     
     Object.values(GalaxySize).forEach((size, index) => {
       const data = GALAXY_SIZE_DATA[size];
-      const y = startY + 90 + index * 50;
+      const y = leftPanelY + 60 + index * 60;
       const isSelected = size === this.galaxySettings.size;
       
       const buttonArea = {
-        x: width/4 - 150,
+        x: leftPanelX + 20,
         y: y - 20,
-        width: 300,
-        height: 40,
+        width: leftPanelW - 40,
+        height: 50,
         size: size,
         hovered: false
       };
       this.galaxySizeButtons.push(buttonArea);
       
-      let bgColor = 'rgba(64, 64, 64, 0.3)';
-      if (isSelected) bgColor = 'rgba(96, 96, 96, 0.6)';
-      else if (buttonArea.hovered) bgColor = 'rgba(80, 80, 80, 0.4)';
-      
-      renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
-      renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
-      
-      const color = isSelected ? '#dcd0c0' : '#808080';
-      renderer.drawText(data.name, width/4, y, color, isSelected ? 'bold 16px "Big Apple 3PM", monospace' : '14px "Big Apple 3PM", monospace');
+      // Draw retro-style selection button
+      this.drawGalaxyOptionButton(renderer, buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, 
+                                  isSelected, buttonArea.hovered, data.name, data.description);
     });
     
     // Galaxy density selection
-    renderer.drawText('Hustota galaxie:', 3*width/4, startY + 60, '#606060', '18px "Big Apple 3PM", monospace');
     this.galaxyDensityButtons = [];
     
     Object.values(GalaxyDensity).forEach((density, index) => {
       const data = GALAXY_DENSITY_DATA[density];
-      const y = startY + 90 + index * 50;
+      const y = rightPanelY + 60 + index * 60;
       const isSelected = density === this.galaxySettings.density;
       
       const buttonArea = {
-        x: 3*width/4 - 150,
+        x: rightPanelX + 20,
         y: y - 20,
-        width: 300,
-        height: 40,
+        width: rightPanelW - 40,
+        height: 50,
         density: density,
         hovered: false
       };
       this.galaxyDensityButtons.push(buttonArea);
       
-      let bgColor = 'rgba(64, 64, 64, 0.3)';
-      if (isSelected) bgColor = 'rgba(96, 96, 96, 0.6)';
-      else if (buttonArea.hovered) bgColor = 'rgba(80, 80, 80, 0.4)';
-      
-      renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
-      renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
-      
-      const color = isSelected ? '#dcd0c0' : '#808080';
-      renderer.drawText(data.name, 3*width/4, y, color, isSelected ? 'bold 16px "Big Apple 3PM", monospace' : '14px "Big Apple 3PM", monospace');
+      // Draw retro-style selection button
+      this.drawGalaxyOptionButton(renderer, buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, 
+                                  isSelected, buttonArea.hovered, data.name, data.description);
     });
     
-    // Additional settings sliders info
-    renderer.drawText(`Frakce: ${this.galaxySettings.factionCount} | Nepřátelskost: ${this.galaxySettings.hostilityLevel}/10`, width/2, startY + 340, '#808080', '14px "Big Apple 3PM", monospace');
+    // Additional settings info at bottom
+    const infoY = leftPanelY + leftPanelH - 40;
+    renderer.drawText(`Factions: ${this.galaxySettings.factionCount} | Hostility Level: ${this.galaxySettings.hostilityLevel}/10`, 
+                     width/2, infoY, '#A27B5C', '12px "Big Apple 3PM", monospace');
   }
 
   private renderEconomySettings(renderer: IRenderer): void {
     const width = renderer.getWidth();
-    const startY = 250;
+    const height = renderer.getHeight();
+    const startY = 280;
     
-    renderer.drawText('NASTAVENÍ EKONOMIKY', width/2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
+    // Section title with retro styling
+    const ctx = renderer.getContext();
+    ctx.shadowColor = '#d4782d';
+    ctx.shadowBlur = 8;
+    renderer.drawText('ECONOMIC PARAMETERS', width/2, startY, '#F6B17A', 'bold 22px "Big Apple 3PM", monospace');
+    ctx.shadowBlur = 0;
+    
+    // Create main panel
+    const panelX = 50;
+    const panelY = startY + 50;
+    const panelW = width - 100;
+    const panelH = height - startY - 170;
+    
+    this.drawSelectionPanel(renderer, panelX, panelY, panelW, panelH, 'ECONOMIC COMPLEXITY');
     
     this.economyButtons = [];
     
     Object.values(EconomyComplexity).forEach((complexity, index) => {
       const data = ECONOMY_COMPLEXITY_DATA[complexity];
-      const y = startY + 80 + index * 80;
+      const y = panelY + 60 + index * 80;
       const isSelected = complexity === this.economySettings.complexity;
       
       const buttonArea = {
-        x: width/2 - 400,
+        x: panelX + 30,
         y: y - 30,
-        width: 800,
-        height: 60,
+        width: panelW - 60,
+        height: 65,
         complexity: complexity,
         hovered: false
       };
       this.economyButtons.push(buttonArea);
       
-      let bgColor = 'rgba(64, 64, 64, 0.3)';
-      if (isSelected) bgColor = 'rgba(96, 96, 96, 0.6)';
-      else if (buttonArea.hovered) bgColor = 'rgba(80, 80, 80, 0.4)';
-      
-      renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
-      renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
-      
-      const color = isSelected ? '#dcd0c0' : '#606060';
-      renderer.drawText(data.name, width/2 - 200, y, color, isSelected ? 'bold 20px "Big Apple 3PM", monospace' : '18px "Big Apple 3PM", monospace');
-      renderer.drawText(data.description, width/2 + 50, y, color, '14px "Big Apple 3PM", monospace');
+      // Draw retro-style economy option button
+      this.drawEconomyOptionButton(renderer, buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, 
+                                   isSelected, buttonArea.hovered, data.name, data.description);
     });
     
-    renderer.drawText(`Volatilita: ${this.economySettings.marketVolatility}/10 | Obchod: ${this.economySettings.tradeRouteFrequency}/10 | Piráti: ${this.economySettings.pirateActivity}/10`, width/2, startY + 380, '#808080', '14px "Big Apple 3PM", monospace');
+    // Additional settings info at bottom of panel
+    const infoY = panelY + panelH - 40;
+    renderer.drawText(`Market Volatility: ${this.economySettings.marketVolatility}/10 | Trade Routes: ${this.economySettings.tradeRouteFrequency}/10 | Pirate Activity: ${this.economySettings.pirateActivity}/10`, 
+                     width/2, infoY, '#A27B5C', '12px "Big Apple 3PM", monospace');
   }
 
   private renderCharacterCreation(renderer: IRenderer): void {
@@ -2187,6 +2208,100 @@ class NewGameSetupState implements IGameState {
     this.drawLaunchButton(renderer, width, height);
   }
 
+  private drawGalaxyOptionButton(renderer: IRenderer, x: number, y: number, w: number, h: number, 
+                                 selected: boolean, hovered: boolean, name: string, description: string): void {
+    const ctx = renderer.getContext();
+    const offset = selected ? 0 : 2;
+    
+    // Button housing (dark base)
+    ctx.fillStyle = '#201127';
+    ctx.fillRect(x + offset, y + offset, w, h);
+    
+    // Main button surface
+    ctx.fillStyle = selected ? 'rgba(32, 17, 39, 0.9)' : 'rgba(16, 18, 46, 0.7)';
+    ctx.fillRect(x + offset + 2, y + offset + 2, w - 4, h - 4);
+    
+    // Button frame
+    const frameColor = selected ? '#6aaf9d' : (hovered ? '#7077A1' : '#3F4F44');
+    ctx.strokeStyle = frameColor;
+    ctx.lineWidth = selected ? 3 : (hovered ? 2 : 1);
+    ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
+    
+    // Selection glow
+    if (selected) {
+      const pulseAlpha = Math.sin(this.animations.buttonPulse * 3) * 0.3 + 0.7;
+      ctx.shadowColor = '#6aaf9d';
+      ctx.shadowBlur = 12 * pulseAlpha;
+      ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      ctx.shadowBlur = 0;
+    }
+    
+    // Text content
+    const textColor = selected ? '#6aaf9d' : (hovered ? '#E2DFD0' : '#A27B5C');
+    const nameSize = selected ? 'bold 16px' : '14px';
+    const descSize = '11px';
+    
+    if (selected || hovered) {
+      ctx.shadowColor = textColor;
+      ctx.shadowBlur = 5;
+    }
+    
+    renderer.drawText(name, x + 20, y + 18, textColor, `${nameSize} "Big Apple 3PM", monospace`);
+    renderer.drawText(description, x + 20, y + 35, textColor, `${descSize} "Big Apple 3PM", monospace`);
+    
+    if (selected || hovered) {
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  private drawEconomyOptionButton(renderer: IRenderer, x: number, y: number, w: number, h: number, 
+                                  selected: boolean, hovered: boolean, name: string, description: string): void {
+    const ctx = renderer.getContext();
+    const offset = selected ? 0 : 2;
+    
+    // Button housing (dark base)
+    ctx.fillStyle = '#221100';
+    ctx.fillRect(x + offset, y + offset, w, h);
+    
+    // Main button surface
+    ctx.fillStyle = selected ? 'rgba(51, 34, 0, 0.9)' : 'rgba(34, 17, 0, 0.7)';
+    ctx.fillRect(x + offset + 2, y + offset + 2, w - 4, h - 4);
+    
+    // Button frame
+    const frameColor = selected ? '#F6B17A' : (hovered ? '#cc8800' : '#3F4F44');
+    ctx.strokeStyle = frameColor;
+    ctx.lineWidth = selected ? 3 : (hovered ? 2 : 1);
+    ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
+    
+    // Selection glow
+    if (selected) {
+      const pulseAlpha = Math.sin(this.animations.buttonPulse * 3) * 0.3 + 0.7;
+      ctx.shadowColor = '#F6B17A';
+      ctx.shadowBlur = 12 * pulseAlpha;
+      ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+      ctx.shadowBlur = 0;
+    }
+    
+    // Text content
+    const textColor = selected ? '#F6B17A' : (hovered ? '#E2DFD0' : '#A27B5C');
+    const nameSize = selected ? 'bold 18px' : '16px';
+    const descSize = '13px';
+    
+    if (selected || hovered) {
+      ctx.shadowColor = textColor;
+      ctx.shadowBlur = 5;
+    }
+    
+    // Name on left side
+    renderer.drawText(name, x + 30, y + 22, textColor, `${nameSize} "Big Apple 3PM", monospace`);
+    // Description on right side
+    renderer.drawText(description, x + 30, y + 45, textColor, `${descSize} "Big Apple 3PM", monospace`);
+    
+    if (selected || hovered) {
+      ctx.shadowBlur = 0;
+    }
+  }
+
   private drawLaunchButton(renderer: IRenderer, width: number, height: number): void {
     const ctx = renderer.getContext();
     
@@ -2344,15 +2459,8 @@ class NewGameSetupState implements IGameState {
     // Check for hovers (mouse only, not touch)
     if (!input.isMobile) {
       const mousePos = input.getMousePosition();
+      // Mouse coordinates are already in canvas coordinates from input manager
       let mouseX = mousePos.x, mouseY = mousePos.y;
-      
-      // Convert mouse coordinates to canvas coordinates
-      const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-      if (canvas) {
-        const rect = canvas.getBoundingClientRect();
-        mouseX = mousePos.x - rect.left;
-        mouseY = mousePos.y - rect.top;
-      }
       
       this.backButton.hovered = this.isPointInRect(mouseX, mouseY, this.backButton);
       this.nextButton.hovered = this.isPointInRect(mouseX, mouseY, this.nextButton);
@@ -2432,13 +2540,9 @@ class NewGameSetupState implements IGameState {
       let clickX = 0, clickY = 0;
       
       if (mousePressed) {
-        // Convert mouse coordinates to canvas coordinates
-        const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-        if (canvas) {
-          const rect = canvas.getBoundingClientRect();
-          clickX = input.mouse.x - rect.left;
-          clickY = input.mouse.y - rect.top;
-        }
+        // Mouse coordinates are already in canvas coordinates from input manager
+        clickX = input.mouse.x;
+        clickY = input.mouse.y;
       } else if (touchPressed) {
         const touch = input.touches.values().next().value;
         if (touch) {
