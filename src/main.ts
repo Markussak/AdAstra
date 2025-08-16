@@ -1223,16 +1223,16 @@ class NewGameSetupState implements IGameState {
     renderer.drawText('PARAMETERS:', x + 20, currentY, '#ffaa00', 'bold 14px "Big Apple 3PM", monospace');
     currentY += lineHeight * 1.5;
     
-    renderer.drawText(`Resources: ${settings.resourceMultiplier}x`, x + 20, currentY, '#ff8800', '12px "Big Apple 3PM", monospace');
+    renderer.drawText(`Resources: ${settings.multipliers.resourceMultiplier}x`, x + 20, currentY, '#ff8800', '12px "Big Apple 3PM", monospace');
     currentY += lineHeight;
     
-    renderer.drawText(`Enemy Strength: ${settings.enemyDamageMultiplier}x`, x + 20, currentY, '#ff8800', '12px "Big Apple 3PM", monospace');
+    renderer.drawText(`Enemy Strength: ${settings.multipliers.damageMultiplier}x`, x + 20, currentY, '#ff8800', '12px "Big Apple 3PM", monospace');
     currentY += lineHeight;
     
-    renderer.drawText(`Player Health: ${settings.playerHealthMultiplier}x`, x + 20, currentY, '#ff8800', '12px "Big Apple 3PM", monospace');
+    renderer.drawText(`Fuel Consumption: ${settings.multipliers.fuelConsumption}x`, x + 20, currentY, '#ff8800', '12px "Big Apple 3PM", monospace');
     currentY += lineHeight;
     
-    renderer.drawText(`XP Rate: ${settings.experienceMultiplier}x`, x + 20, currentY, '#ff8800', '12px "Big Apple 3PM", monospace');
+    renderer.drawText(`XP Rate: ${settings.multipliers.experienceMultiplier}x`, x + 20, currentY, '#ff8800', '12px "Big Apple 3PM", monospace');
     currentY += lineHeight * 2;
     
     // Mission description
@@ -1974,8 +1974,8 @@ class NewGameSetupState implements IGameState {
       `Shield Capacity: ${template.baseStats.shields}`,
       `Max Velocity: ${template.baseStats.speed} m/s`,
       `Cargo Capacity: ${template.baseStats.cargo} tons`,
-      `Crew Quarters: ${template.baseStats.crew || 1}`,
-      `Power Output: ${template.baseStats.power || 100} MW`
+      `Weapon Hardpoints: ${template.weapons.length}`,
+      `Ship Class: ${template.rarity.toUpperCase()}`
     ];
     
     specs.forEach(spec => {
@@ -1990,8 +1990,8 @@ class NewGameSetupState implements IGameState {
     currentY += lineHeight * 1.2;
     
     if (template.weapons && template.weapons.length > 0) {
-      template.weapons.forEach((weapon: any) => {
-        const weaponData = WEAPON_DATA[weapon];
+      template.weapons.forEach((weapon) => {
+        const weaponData = WEAPON_DATA[weapon as keyof typeof WEAPON_DATA];
         if (weaponData) {
           renderer.drawText(`• ${weaponData.name}`, x + 20, currentY, '#808080', '10px "Big Apple 3PM", monospace');
           currentY += lineHeight * 0.8;
@@ -2130,10 +2130,10 @@ class NewGameSetupState implements IGameState {
     middleY += lineHeight;
     
     const modifiers = [
-      `Resources: ${difficultySettings.resourceMultiplier}x`,
-      `Enemy Power: ${difficultySettings.enemyDamageMultiplier}x`,
-      `Hull Strength: ${difficultySettings.playerHealthMultiplier}x`,
-      `XP Rate: ${difficultySettings.experienceMultiplier}x`
+      `Resources: ${difficultySettings.multipliers.resourceMultiplier}x`,
+      `Enemy Power: ${difficultySettings.multipliers.damageMultiplier}x`,
+      `Fuel Usage: ${difficultySettings.multipliers.fuelConsumption}x`,
+      `XP Rate: ${difficultySettings.multipliers.experienceMultiplier}x`
     ];
     
     modifiers.forEach(modifier => {
@@ -4120,11 +4120,11 @@ export class GameEngine implements IGameEngine {
   };
 
   public update(deltaTime: number): void {
-    // Update input state
-    this.inputManager.update();
-    
-    // Handle input for current state
+    // Handle input for current state BEFORE clearing input states
     this.stateManager.handleInput(this.inputManager);
+    
+    // Update input state (clears justPressed/justReleased flags)
+    this.inputManager.update();
     
     // Update current state
     this.stateManager.update(deltaTime);

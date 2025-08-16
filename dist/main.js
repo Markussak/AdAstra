@@ -180,42 +180,145 @@ class MainMenuState {
     render(renderer) {
         const width = renderer.getWidth();
         const height = renderer.getHeight();
-        renderer.clear('#0a0a1a');
-        for (let i = 0; i < 200; i++) {
+        const ctx = renderer.getContext();
+        renderer.clear('#0a0a0a');
+        const phosphorGradient = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) / 2);
+        phosphorGradient.addColorStop(0, 'rgba(24, 30, 52, 0.15)');
+        phosphorGradient.addColorStop(0.7, 'rgba(16, 24, 46, 0.08)');
+        phosphorGradient.addColorStop(1, 'rgba(6, 11, 17, 0)');
+        ctx.fillStyle = phosphorGradient;
+        ctx.fillRect(0, 0, width, height);
+        for (let i = 0; i < 150; i++) {
             const x = (i * 123.456) % width;
             const y = (i * 789.123) % height;
             const alpha = Math.sin(Date.now() * 0.001 + i) * 0.3 + 0.7;
-            renderer.getContext().globalAlpha = alpha * 0.4;
+            ctx.globalAlpha = alpha * 0.3;
             const size = Math.random() > 0.8 ? 2 : 1;
-            renderer.drawRect(x, y, size, size, '#606060');
+            renderer.drawRect(x, y, size, size, '#7077A1');
         }
-        renderer.getContext().globalAlpha = 1.0;
-        const gradient = renderer.getContext().createRadialGradient(width / 2, height / 3, 0, width / 2, height / 3, width);
-        gradient.addColorStop(0, 'rgba(64, 32, 128, 0.1)');
-        gradient.addColorStop(0.5, 'rgba(32, 16, 64, 0.05)');
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        renderer.getContext().fillStyle = gradient;
-        renderer.getContext().fillRect(0, 0, width, height);
-        renderer.getContext().shadowColor = '#404040';
-        renderer.getContext().shadowBlur = 0;
-        renderer.drawText('STAR DUST VOYAGER', width / 2, height / 4, '#606060', 'bold 64px "Big Apple 3PM", monospace');
-        renderer.drawText('GALAXY WANDERER', width / 2, height / 4 + 60, '#e0e3e6', '32px "Big Apple 3PM", monospace');
-        renderer.getContext().shadowBlur = 0;
+        ctx.globalAlpha = 1.0;
+        ctx.globalAlpha = 0.08;
+        for (let y = 0; y < height; y += 4) {
+            ctx.strokeStyle = '#3F4F44';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1.0;
+        this.drawTerminalFrame(renderer, 50, 80, width - 100, height - 160);
+        const titleGlow = Math.sin(this.animationTime * 3) * 0.3 + 0.7;
+        ctx.shadowColor = '#F6B17A';
+        ctx.shadowBlur = 15 * titleGlow;
+        renderer.drawText('STAR DUST VOYAGER', width / 2, height / 4, `rgba(255, 235, 153, ${titleGlow})`, 'bold 48px "Big Apple 3PM", monospace');
+        ctx.shadowBlur = 8;
+        renderer.drawText('GALAXY WANDERER', width / 2, height / 4 + 50, '#E2DFD0', '24px "Big Apple 3PM", monospace');
+        ctx.shadowBlur = 0;
         const startY = height / 2 + 50;
-        const spacing = 60;
+        const spacing = 70;
         this.menuOptions.forEach((option, index) => {
             const y = startY + index * spacing;
             const isSelected = index === this.selectedOption;
-            if (isSelected) {
-                renderer.drawRect(width / 2 - 200, y - 25, 400, 50, 'rgba(64, 64, 64, 0.3)');
-                renderer.drawText('▶ ' + option + ' ◀', width / 2, y, '#606060', 'bold 24px "Big Apple 3PM", monospace');
-            }
-            else {
-                renderer.drawText(option, width / 2, y, '#505050', '20px "Big Apple 3PM", monospace');
-            }
+            this.drawRetroButton(renderer, width / 2 - 180, y - 25, 360, 50, isSelected, option);
         });
-        renderer.drawText('v2.0.0', width - 100, height - 30, '#666666', '12px "Big Apple 3PM", monospace');
-        renderer.drawText('↑↓ Navigace | ENTER Výběr | ESC Zpět', width / 2, height - 50, '#505050', '14px "Big Apple 3PM", monospace');
+        this.drawTerminalDetails(renderer);
+        renderer.drawText('VER 2.0.0', width - 100, height - 40, '#6aaf9d', 'bold 10px "Big Apple 3PM", monospace');
+        renderer.drawText('SYSTEM READY', width - 120, height - 25, '#6aaf9d', '8px "Big Apple 3PM", monospace');
+        renderer.drawText('↑↓ NAVIGATE | ENTER SELECT | ESC BACK', width / 2, height - 30, '#94c5ac', '12px "Big Apple 3PM", monospace');
+        const vignetteGradient = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) / 2);
+        vignetteGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vignetteGradient.addColorStop(0.8, 'rgba(0, 0, 0, 0)');
+        vignetteGradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+        ctx.fillStyle = vignetteGradient;
+        ctx.fillRect(0, 0, width, height);
+    }
+    drawTerminalFrame(renderer, x, y, w, h) {
+        const ctx = renderer.getContext();
+        ctx.strokeStyle = '#3F4F44';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x, y, w, h);
+        ctx.strokeStyle = '#6aaf9d';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 5, y + 5, w - 10, h - 10);
+        const bracketSize = 20;
+        ctx.strokeStyle = '#94c5ac';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + bracketSize, y);
+        ctx.lineTo(x, y);
+        ctx.lineTo(x, y + bracketSize);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + w - bracketSize, y);
+        ctx.lineTo(x + w, y);
+        ctx.lineTo(x + w, y + bracketSize);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y + h - bracketSize);
+        ctx.lineTo(x, y + h);
+        ctx.lineTo(x + bracketSize, y + h);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + w - bracketSize, y + h);
+        ctx.lineTo(x + w, y + h);
+        ctx.lineTo(x + w, y + h - bracketSize);
+        ctx.stroke();
+    }
+    drawRetroButton(renderer, x, y, w, h, selected, text) {
+        const ctx = renderer.getContext();
+        const offset = selected ? 0 : 2;
+        ctx.fillStyle = '#001100';
+        ctx.fillRect(x + offset, y + offset, w, h);
+        ctx.fillStyle = selected ? '#003300' : '#002200';
+        ctx.fillRect(x + offset + 2, y + offset + 2, w - 4, h - 4);
+        if (selected) {
+            ctx.strokeStyle = '#F97300';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+            const pulseAlpha = Math.sin(this.animationTime * 8) * 0.3 + 0.7;
+            ctx.shadowColor = '#F97300';
+            ctx.shadowBlur = 12 * pulseAlpha;
+        }
+        else {
+            ctx.strokeStyle = '#524C42';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
+        }
+        const textColor = selected ? '#ffeb99' : '#A27B5C';
+        const textSize = selected ? 'bold 18px' : '16px';
+        renderer.drawText(text, x + w / 2, y + h / 2 + 3, textColor, `${textSize} "Big Apple 3PM", monospace`);
+        if (selected) {
+            renderer.drawText('►', x + 20, y + h / 2 + 3, '#F97300', 'bold 16px "Big Apple 3PM", monospace');
+            renderer.drawText('◄', x + w - 20, y + h / 2 + 3, '#F97300', 'bold 16px "Big Apple 3PM", monospace');
+        }
+        ctx.shadowBlur = 0;
+    }
+    drawTerminalDetails(renderer) {
+        const ctx = renderer.getContext();
+        const width = renderer.getWidth();
+        const height = renderer.getHeight();
+        const statusY = 100;
+        const statusX = 70;
+        for (let i = 0; i < 5; i++) {
+            const lightX = statusX + i * 25;
+            const isActive = Math.sin(this.animationTime * 2 + i) > 0.5;
+            ctx.fillStyle = isActive ? '#6aaf9d' : '#201127';
+            ctx.beginPath();
+            ctx.arc(lightX, statusY, 4, 0, Math.PI * 2);
+            ctx.fill();
+            if (isActive) {
+                ctx.shadowColor = '#6aaf9d';
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                ctx.arc(lightX, statusY, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+        renderer.drawText('SYSTEM STATUS: ONLINE', 70, statusY + 25, '#94c5ac', '10px "Big Apple 3PM", monospace');
+        renderer.drawText('GALAXY MAP: LOADED', 70, statusY + 40, '#94c5ac', '10px "Big Apple 3PM", monospace');
+        renderer.drawText('NAVIGATION: READY', 70, statusY + 55, '#94c5ac', '10px "Big Apple 3PM", monospace');
     }
     handleInput(input) {
         const touchInput = input.getTouchMenuInput();
@@ -389,70 +492,79 @@ class NewGameSetupState {
     render(renderer) {
         const width = renderer.getWidth();
         const height = renderer.getHeight();
-        const gradient = renderer.getContext().createLinearGradient(0, 0, 0, height);
-        gradient.addColorStop(0, '#0a0a20');
-        gradient.addColorStop(0.5, '#0a0a15');
-        gradient.addColorStop(1, '#050510');
-        renderer.getContext().fillStyle = gradient;
-        renderer.getContext().fillRect(0, 0, width, height);
-        for (let layer = 0; layer < 3; layer++) {
-            const starCount = [50, 75, 100][layer];
-            const speed = [0.2, 0.4, 0.6][layer];
-            const brightness = [0.8, 0.5, 0.3][layer];
-            for (let i = 0; i < starCount; i++) {
-                const baseX = (i * 87.456) % width;
-                const baseY = (i * 543.123) % height;
-                const x = (baseX + this.animations.starField * speed * 10) % width;
-                const y = baseY;
-                const alpha = Math.sin(this.animations.starField * 2 + i * 0.1) * 0.3 + 0.7;
-                const size = layer === 0 ? 2 : 1;
-                renderer.getContext().globalAlpha = alpha * brightness * 0.4;
-                renderer.drawRect(x, y, size, size, layer === 0 ? '#8080a0' : '#606080');
-            }
+        const ctx = renderer.getContext();
+        renderer.clear('#0a0a0a');
+        const phosphorGradient = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) / 2);
+        phosphorGradient.addColorStop(0, 'rgba(32, 20, 51, 0.15)');
+        phosphorGradient.addColorStop(0.7, 'rgba(16, 12, 35, 0.08)');
+        phosphorGradient.addColorStop(1, 'rgba(6, 11, 17, 0)');
+        ctx.fillStyle = phosphorGradient;
+        ctx.fillRect(0, 0, width, height);
+        ctx.globalAlpha = 0.06;
+        for (let y = 0; y < height; y += 3) {
+            ctx.strokeStyle = '#424769';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, y + Math.sin(this.animations.starField * 0.1 + y * 0.01) * 2);
+            ctx.lineTo(width, y + Math.sin(this.animations.starField * 0.1 + y * 0.01) * 2);
+            ctx.stroke();
         }
-        renderer.getContext().globalAlpha = 1.0;
-        const overlayGradient = renderer.getContext().createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) / 2);
-        overlayGradient.addColorStop(0, 'rgba(16, 16, 32, 0.4)');
-        overlayGradient.addColorStop(1, 'rgba(8, 8, 16, 0.8)');
-        renderer.getContext().fillStyle = overlayGradient;
-        renderer.getContext().fillRect(0, 0, width, height);
+        ctx.globalAlpha = 1.0;
+        this.drawSetupTerminalFrame(renderer, 30, 60, width - 60, height - 120);
         const titleGlow = Math.sin(this.animations.buttonPulse) * 0.3 + 0.7;
-        renderer.getContext().shadowColor = '#4080ff';
-        renderer.getContext().shadowBlur = 10 * titleGlow;
-        renderer.drawText('NASTAVENÍ NOVÉ HRY', width / 2, 100, `rgba(96, 128, 255, ${titleGlow})`, 'bold 36px "Big Apple 3PM", monospace');
-        renderer.getContext().shadowBlur = 0;
-        const stepY = 150;
-        const progressWidth = width * 0.8;
-        const progressX = width * 0.1;
-        const progressY = stepY + 30;
-        renderer.drawRect(progressX, progressY - 3, progressWidth, 6, 'rgba(64, 64, 64, 0.5)');
+        ctx.shadowColor = '#ffc27a';
+        ctx.shadowBlur = 12 * titleGlow;
+        renderer.drawText('MISSION SETUP TERMINAL', width / 2, 110, `rgba(255, 235, 153, ${titleGlow})`, 'bold 32px "Big Apple 3PM", monospace');
+        ctx.shadowBlur = 6;
+        renderer.drawText('GALACTIC CONFIGURATION SYSTEM', width / 2, 140, '#DCD7C9', '16px "Big Apple 3PM", monospace');
+        ctx.shadowBlur = 0;
+        const stepY = 180;
+        const progressWidth = width * 0.85;
+        const progressX = width * 0.075;
+        this.drawProgressBarHousing(renderer, progressX - 10, stepY + 15, progressWidth + 20, 25);
         const progress = this.currentStep / (this.steps.length - 1);
         const fillWidth = progressWidth * progress;
-        const progressGradient = renderer.getContext().createLinearGradient(progressX, 0, progressX + fillWidth, 0);
-        progressGradient.addColorStop(0, '#4080ff');
-        progressGradient.addColorStop(1, '#60a0ff');
-        renderer.getContext().fillStyle = progressGradient;
-        renderer.getContext().fillRect(progressX, progressY - 3, fillWidth, 6);
+        for (let i = 0; i < this.steps.length; i++) {
+            const segmentX = progressX + (progressWidth / this.steps.length) * i;
+            const segmentWidth = progressWidth / this.steps.length - 2;
+            const isActive = i <= this.currentStep;
+            this.drawProgressSegment(renderer, segmentX, stepY + 18, segmentWidth, 19, isActive, i === this.currentStep);
+        }
         this.steps.forEach((step, index) => {
             const x = (width / this.steps.length) * (index + 0.5);
             const isActive = index === this.currentStep;
             const isCompleted = index < this.currentStep;
-            let color = '#404040';
+            const lightColor = isCompleted ? '#6aaf9d' : (isActive ? '#F97300' : '#201127');
+            const lightSize = isActive ? 8 : 6;
+            ctx.fillStyle = lightColor;
+            ctx.beginPath();
+            ctx.arc(x, stepY + 50, lightSize, 0, Math.PI * 2);
+            ctx.fill();
+            if (isActive || isCompleted) {
+                ctx.shadowColor = lightColor;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(x, stepY + 50, lightSize, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+            let color = '#524C42';
             let glowIntensity = 0;
             if (isCompleted) {
-                color = '#60c060';
-                glowIntensity = 0.3;
+                color = '#94c5ac';
+                glowIntensity = 0.4;
             }
             if (isActive) {
-                color = '#80a0ff';
+                color = '#ffeb99';
                 glowIntensity = Math.sin(this.animations.buttonPulse) * 0.4 + 0.6;
             }
             if (glowIntensity > 0) {
-                renderer.getContext().shadowColor = color;
-                renderer.getContext().shadowBlur = 8 * glowIntensity;
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 10 * glowIntensity;
             }
-            renderer.drawText(`${index + 1}. ${step}`, x, stepY, color, isActive ? 'bold 18px "Big Apple 3PM", monospace' : '16px "Big Apple 3PM", monospace');
-            renderer.getContext().shadowBlur = 0;
+            renderer.drawText(`${index + 1}`, x, stepY + 52, color, isActive ? 'bold 14px "Big Apple 3PM", monospace' : '12px "Big Apple 3PM", monospace');
+            renderer.drawText(step, x, stepY + 70, color, isActive ? 'bold 12px "Big Apple 3PM", monospace' : '10px "Big Apple 3PM", monospace');
+            ctx.shadowBlur = 0;
         });
         switch (this.currentStep) {
             case 0:
@@ -480,29 +592,129 @@ class NewGameSetupState {
         this.renderNavigationButtons(renderer, width, height);
         this.renderTooltip(renderer);
     }
+    drawSetupTerminalFrame(renderer, x, y, w, h) {
+        const ctx = renderer.getContext();
+        ctx.strokeStyle = '#443300';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(x, y, w, h);
+        ctx.strokeStyle = '#cc8800';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x + 8, y + 8, w - 16, h - 16);
+        const rivetSize = 6;
+        const rivetPositions = [
+            [x + 15, y + 15], [x + w - 15, y + 15],
+            [x + 15, y + h - 15], [x + w - 15, y + h - 15]
+        ];
+        rivetPositions.forEach(([rx, ry]) => {
+            ctx.fillStyle = '#666600';
+            ctx.beginPath();
+            ctx.arc(rx, ry, rivetSize, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#aa8800';
+            ctx.beginPath();
+            ctx.arc(rx - 1, ry - 1, rivetSize - 2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        for (let i = 0; i < 8; i++) {
+            const slotX = x + 80 + i * 40;
+            ctx.strokeStyle = '#664400';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(slotX, y + 20);
+            ctx.lineTo(slotX + 25, y + 20);
+            ctx.stroke();
+        }
+    }
+    drawProgressBarHousing(renderer, x, y, w, h) {
+        const ctx = renderer.getContext();
+        ctx.fillStyle = '#221100';
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = '#664400';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, w, h);
+        ctx.strokeStyle = '#443300';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+    }
+    drawProgressSegment(renderer, x, y, w, h, isActive, isCurrent) {
+        const ctx = renderer.getContext();
+        if (isActive) {
+            const color = isCurrent ? '#F97300' : '#6aaf9d';
+            const pulseIntensity = isCurrent ? Math.sin(this.animations.buttonPulse * 2) * 0.3 + 0.7 : 1.0;
+            ctx.fillStyle = `rgba(${isCurrent ? '249, 115, 0' : '106, 175, 157'}, ${0.6 * pulseIntensity})`;
+            ctx.fillRect(x, y, w, h);
+            if (isCurrent) {
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 6;
+                ctx.fillRect(x, y, w, h);
+                ctx.shadowBlur = 0;
+            }
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, w, h);
+        }
+        else {
+            ctx.fillStyle = '#201127';
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#424769';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, w, h);
+        }
+    }
     renderNavigationButtons(renderer, width, height) {
-        this.backButton.x = 50;
-        this.backButton.y = height - 80;
-        this.nextButton.x = width - 170;
-        this.nextButton.y = height - 80;
+        const ctx = renderer.getContext();
+        this.backButton.x = 60;
+        this.backButton.y = height - 90;
+        this.backButton.width = 140;
+        this.backButton.height = 45;
+        this.nextButton.x = width - 200;
+        this.nextButton.y = height - 90;
+        this.nextButton.width = 140;
+        this.nextButton.height = 45;
         if (this.currentStep > 0) {
-            const backColor = this.backButton.pressed ? 'rgba(96, 96, 96, 0.8)' :
-                this.backButton.hovered ? 'rgba(96, 96, 96, 0.4)' : 'rgba(64, 64, 64, 0.7)';
-            renderer.drawRect(this.backButton.x, this.backButton.y, this.backButton.width, this.backButton.height, backColor);
-            renderer.drawRect(this.backButton.x, this.backButton.y, this.backButton.width, this.backButton.height, '#505050');
-            renderer.drawText('← ZPĚT', this.backButton.x + this.backButton.width / 2, this.backButton.y + this.backButton.height / 2 + 5, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+            this.drawRetroNavButton(renderer, this.backButton.x, this.backButton.y, this.backButton.width, this.backButton.height, this.backButton.pressed, this.backButton.hovered, '← BACK');
         }
         const isLastStep = this.currentStep === this.steps.length - 1;
         const canProceed = this.canProceedFromCurrentStep();
-        const nextText = isLastStep ? 'SPUSTIT' : 'POKRAČOVAT →';
+        const nextText = isLastStep ? 'START MISSION' : 'CONTINUE →';
         if (canProceed) {
-            const nextColor = this.nextButton.pressed ? 'rgba(96, 96, 96, 0.8)' :
-                this.nextButton.hovered ? 'rgba(96, 96, 96, 0.4)' : 'rgba(64, 64, 64, 0.7)';
-            renderer.drawRect(this.nextButton.x, this.nextButton.y, this.nextButton.width, this.nextButton.height, nextColor);
-            renderer.drawRect(this.nextButton.x, this.nextButton.y, this.nextButton.width, this.nextButton.height, '#505050');
-            renderer.drawText(nextText, this.nextButton.x + this.nextButton.width / 2, this.nextButton.y + this.nextButton.height / 2 + 5, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+            this.drawRetroNavButton(renderer, this.nextButton.x, this.nextButton.y, this.nextButton.width, this.nextButton.height, this.nextButton.pressed, this.nextButton.hovered, nextText);
         }
-        renderer.drawText('Klávesnice: ←→ ESC ENTER | Touch: Klepněte na tlačítka', width / 2, height - 30, '#505050', '12px "Big Apple 3PM", monospace');
+        ctx.shadowColor = '#355d68';
+        ctx.shadowBlur = 3;
+        renderer.drawText('USE ARROW KEYS OR CLICK TO NAVIGATE', width / 2, height - 35, '#6aaf9d', 'bold 12px "Big Apple 3PM", monospace');
+        ctx.shadowBlur = 0;
+    }
+    drawRetroNavButton(renderer, x, y, w, h, pressed, hovered, text) {
+        const ctx = renderer.getContext();
+        const offset = pressed ? 2 : 0;
+        ctx.fillStyle = '#221100';
+        ctx.fillRect(x + offset, y + offset, w, h);
+        ctx.fillStyle = pressed ? '#332200' : (hovered ? '#443300' : '#332200');
+        ctx.fillRect(x + offset + 2, y + offset + 2, w - 4, h - 4);
+        ctx.strokeStyle = hovered ? '#F6B17A' : '#3F4F44';
+        ctx.lineWidth = pressed ? 1 : 2;
+        ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
+        if (!pressed) {
+            ctx.strokeStyle = '#A27B5C';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 4, y + 4, w - 8, h - 8);
+        }
+        const textColor = hovered ? '#ffeb99' : '#E2DFD0';
+        if (hovered) {
+            ctx.shadowColor = '#F6B17A';
+            ctx.shadowBlur = 6;
+        }
+        renderer.drawText(text, x + w / 2, y + h / 2 + 3, textColor, pressed ? '13px "Big Apple 3PM", monospace' : 'bold 14px "Big Apple 3PM", monospace');
+        if (hovered) {
+            ctx.shadowBlur = 0;
+        }
+        const cornerSize = 6;
+        ctx.fillStyle = '#404040';
+        ctx.fillRect(x + offset, y + offset, cornerSize, cornerSize);
+        ctx.fillRect(x + offset + w - cornerSize, y + offset, cornerSize, cornerSize);
+        ctx.fillRect(x + offset, y + offset + h - cornerSize, cornerSize, cornerSize);
+        ctx.fillRect(x + offset + w - cornerSize, y + offset + h - cornerSize, cornerSize, cornerSize);
     }
     canProceedFromCurrentStep() {
         switch (this.currentStep) {
@@ -516,35 +728,168 @@ class NewGameSetupState {
     }
     renderDifficultySelection(renderer) {
         const width = renderer.getWidth();
-        const startY = 250;
-        renderer.drawText('VYBERTE OBTÍŽNOST', width / 2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
+        const height = renderer.getHeight();
+        const ctx = renderer.getContext();
+        const startY = 280;
+        ctx.shadowColor = '#ec9a6d';
+        ctx.shadowBlur = 8;
+        renderer.drawText('DIFFICULTY CONFIGURATION', width / 2, startY, '#ffeb99', 'bold 22px "Big Apple 3PM", monospace');
+        ctx.shadowBlur = 0;
+        renderer.drawText('SELECT MISSION PARAMETERS', width / 2, startY + 25, '#DCD7C9', '14px "Big Apple 3PM", monospace');
         this.difficultyButtons = [];
+        const panelX = width / 2 - 450;
+        const panelY = startY + 50;
+        const panelW = 900;
+        const panelH = 400;
+        this.drawSelectionPanel(renderer, panelX, panelY, panelW, panelH, 'DIFFICULTY MATRIX');
         Object.values(DifficultyLevel).forEach((difficulty, index) => {
             const settings = DIFFICULTY_SETTINGS[difficulty];
-            const y = startY + 80 + index * 80;
+            const y = startY + 100 + index * 85;
             const isSelected = difficulty === this.selectedDifficulty;
             const buttonArea = {
-                x: width / 2 - 400,
-                y: y - 30,
-                width: 800,
-                height: 60,
+                x: panelX + 20,
+                y: y - 35,
+                width: panelW - 40,
+                height: 70,
                 difficulty: difficulty,
                 hovered: false
             };
             this.difficultyButtons.push(buttonArea);
-            let bgColor = 'rgba(64, 64, 64, 0.3)';
-            if (isSelected) {
-                bgColor = 'rgba(96, 96, 96, 0.6)';
-            }
-            else if (buttonArea.hovered) {
-                bgColor = 'rgba(80, 80, 80, 0.4)';
-            }
-            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
-            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
-            const color = isSelected ? '#dcd0c0' : '#606060';
-            renderer.drawText(settings.name, width / 2 - 200, y, color, isSelected ? 'bold 20px "Big Apple 3PM", monospace' : '18px "Big Apple 3PM", monospace');
-            renderer.drawText(settings.description, width / 2 + 50, y, color, '14px "Big Apple 3PM", monospace');
+            this.drawDifficultyOption(renderer, buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, isSelected, buttonArea.hovered, settings, index);
         });
+        if (this.selectedDifficulty) {
+            this.drawDifficultyDetailsPanel(renderer, width - 320, startY + 50, 300, 350);
+        }
+    }
+    drawSelectionPanel(renderer, x, y, w, h, title) {
+        const ctx = renderer.getContext();
+        ctx.fillStyle = 'rgba(32, 20, 51, 0.8)';
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = '#3F4F44';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, w, h);
+        ctx.strokeStyle = '#7077A1';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 5, y + 5, w - 10, h - 10);
+        ctx.fillStyle = '#201127';
+        ctx.fillRect(x + 1, y + 1, w - 2, 25);
+        ctx.strokeStyle = '#A27B5C';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 1, y + 1, w - 2, 25);
+        renderer.drawText(title, x + w / 2, y + 18, '#DCD7C9', 'bold 12px "Big Apple 3PM", monospace');
+        const bracketSize = 15;
+        ctx.strokeStyle = '#F6B17A';
+        ctx.lineWidth = 2;
+        [
+            [x, y], [x + w, y], [x, y + h], [x + w, y + h]
+        ].forEach(([cornerX, cornerY], i) => {
+            const isLeft = i % 2 === 0;
+            const isTop = i < 2;
+            ctx.beginPath();
+            if (isLeft && isTop) {
+                ctx.moveTo(cornerX + bracketSize, cornerY);
+                ctx.lineTo(cornerX, cornerY);
+                ctx.lineTo(cornerX, cornerY + bracketSize);
+            }
+            else if (!isLeft && isTop) {
+                ctx.moveTo(cornerX - bracketSize, cornerY);
+                ctx.lineTo(cornerX, cornerY);
+                ctx.lineTo(cornerX, cornerY + bracketSize);
+            }
+            else if (isLeft && !isTop) {
+                ctx.moveTo(cornerX, cornerY - bracketSize);
+                ctx.lineTo(cornerX, cornerY);
+                ctx.lineTo(cornerX + bracketSize, cornerY);
+            }
+            else {
+                ctx.moveTo(cornerX, cornerY - bracketSize);
+                ctx.lineTo(cornerX, cornerY);
+                ctx.lineTo(cornerX - bracketSize, cornerY);
+            }
+            ctx.stroke();
+        });
+    }
+    drawDifficultyOption(renderer, x, y, w, h, selected, hovered, settings, index) {
+        const ctx = renderer.getContext();
+        const offset = selected ? 0 : 2;
+        const difficultyColors = ['#6aaf9d', '#F6B17A', '#F97300', '#d9626b', '#c24b6e'];
+        const baseColor = difficultyColors[index] || '#F97300';
+        ctx.fillStyle = '#201127';
+        ctx.fillRect(x + offset, y + offset, w, h);
+        ctx.fillStyle = selected ? 'rgba(32, 17, 39, 0.9)' : 'rgba(16, 18, 46, 0.7)';
+        ctx.fillRect(x + offset + 2, y + offset + 2, w - 4, h - 4);
+        ctx.strokeStyle = selected ? baseColor : (hovered ? '#7077A1' : '#3F4F44');
+        ctx.lineWidth = selected ? 3 : (hovered ? 2 : 1);
+        ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
+        if (selected) {
+            const pulseAlpha = Math.sin(this.animations.buttonPulse * 3) * 0.3 + 0.7;
+            ctx.shadowColor = baseColor;
+            ctx.shadowBlur = 12 * pulseAlpha;
+            ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+            ctx.shadowBlur = 0;
+        }
+        const barWidth = 120;
+        const barHeight = 8;
+        const barX = x + 20;
+        const barY = y + h - 18;
+        ctx.fillStyle = '#201127';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+        const fillWidth = barWidth * ((index + 1) / 5);
+        ctx.fillStyle = baseColor;
+        ctx.fillRect(barX, barY, fillWidth, barHeight);
+        ctx.strokeStyle = '#524C42';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, barY, barWidth, barHeight);
+        const textColor = selected ? baseColor : (hovered ? '#E2DFD0' : '#A27B5C');
+        const nameSize = selected ? 'bold 18px' : '16px';
+        const descSize = selected ? '13px' : '12px';
+        if (selected || hovered) {
+            ctx.shadowColor = textColor;
+            ctx.shadowBlur = 5;
+        }
+        renderer.drawText(settings.name, x + 20, y + 22, textColor, `${nameSize} "Big Apple 3PM", monospace`);
+        renderer.drawText(settings.description, x + 20, y + 45, textColor, `${descSize} "Big Apple 3PM", monospace`);
+        renderer.drawText(`LEVEL ${index + 1}`, x + w - 80, y + 25, textColor, 'bold 12px "Big Apple 3PM", monospace');
+        ctx.shadowBlur = 0;
+        if (selected) {
+            renderer.drawText('►', x + w - 30, y + h / 2 + 3, baseColor, 'bold 20px "Big Apple 3PM", monospace');
+        }
+    }
+    drawDifficultyDetailsPanel(renderer, x, y, w, h) {
+        const ctx = renderer.getContext();
+        const settings = DIFFICULTY_SETTINGS[this.selectedDifficulty];
+        this.drawSelectionPanel(renderer, x, y, w, h, 'MISSION BRIEFING');
+        const textY = y + 50;
+        const lineHeight = 20;
+        let currentY = textY;
+        renderer.drawText('PARAMETERS:', x + 20, currentY, '#ffaa00', 'bold 14px "Big Apple 3PM", monospace');
+        currentY += lineHeight * 1.5;
+        renderer.drawText(`Resources: ${settings.multipliers.resourceMultiplier}x`, x + 20, currentY, '#ff8800', '12px "Big Apple 3PM", monospace');
+        currentY += lineHeight;
+        renderer.drawText(`Enemy Strength: ${settings.multipliers.damageMultiplier}x`, x + 20, currentY, '#ff8800', '12px "Big Apple 3PM", monospace');
+        currentY += lineHeight;
+        renderer.drawText(`Fuel Consumption: ${settings.multipliers.fuelConsumption}x`, x + 20, currentY, '#ff8800', '12px "Big Apple 3PM", monospace');
+        currentY += lineHeight;
+        renderer.drawText(`XP Rate: ${settings.multipliers.experienceMultiplier}x`, x + 20, currentY, '#ff8800', '12px "Big Apple 3PM", monospace');
+        currentY += lineHeight * 2;
+        renderer.drawText('MISSION BRIEF:', x + 20, currentY, '#ffaa00', 'bold 14px "Big Apple 3PM", monospace');
+        currentY += lineHeight * 1.5;
+        const words = settings.description.split(' ');
+        let line = '';
+        for (const word of words) {
+            const testLine = line + (line ? ' ' : '') + word;
+            if (testLine.length > 25) {
+                renderer.drawText(line, x + 20, currentY, '#aa8800', '11px "Big Apple 3PM", monospace');
+                currentY += lineHeight;
+                line = word;
+            }
+            else {
+                line = testLine;
+            }
+        }
+        if (line) {
+            renderer.drawText(line, x + 20, currentY, '#aa8800', '11px "Big Apple 3PM", monospace');
+        }
     }
     renderGalaxySettings(renderer) {
         const width = renderer.getWidth();
@@ -635,134 +980,208 @@ class NewGameSetupState {
     }
     renderCharacterCreation(renderer) {
         const width = renderer.getWidth();
-        const startY = 200;
-        renderer.drawText('VYTVOŘENÍ POSTAVY', width / 2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
-        renderer.drawText('Jméno:', width / 4 - 50, startY + 50, '#606060', '16px "Big Apple 3PM", monospace');
-        this.nameInputButton.x = width / 4 - 150;
-        this.nameInputButton.y = startY + 70;
-        this.nameInputButton.width = 200;
-        let nameBoxColor = 'rgba(64, 64, 64, 0.7)';
-        if (this.isEditingName)
-            nameBoxColor = 'rgba(96, 96, 96, 0.8)';
-        else if (this.nameInputButton.hovered)
-            nameBoxColor = 'rgba(80, 80, 80, 0.7)';
-        renderer.drawRect(this.nameInputButton.x, this.nameInputButton.y, this.nameInputButton.width, this.nameInputButton.height, nameBoxColor);
-        renderer.drawRect(this.nameInputButton.x, this.nameInputButton.y, this.nameInputButton.width, this.nameInputButton.height, '#505050');
-        const displayName = this.character.name || 'Jméno...';
-        const nameColor = this.character.name ? '#dcd0c0' : '#808080';
-        renderer.drawText(displayName, width / 4 - 50, startY + 95, nameColor, '14px "Big Apple 3PM", monospace');
-        if (this.isEditingName && Math.floor(Date.now() / 500) % 2 === 0) {
-            const cursorX = width / 4 - 50 + (this.character.name.length * 8);
-            renderer.drawText('|', cursorX, startY + 95, '#dcd0c0', '14px "Big Apple 3PM", monospace');
-        }
-        this.randomNameButton.x = width / 4 + 70;
-        this.randomNameButton.y = startY + 70;
-        let randomButtonColor = this.randomNameButton.hovered ? 'rgba(80, 120, 80, 0.7)' : 'rgba(64, 96, 64, 0.7)';
-        renderer.drawRect(this.randomNameButton.x, this.randomNameButton.y, this.randomNameButton.width, this.randomNameButton.height, randomButtonColor);
-        renderer.drawRect(this.randomNameButton.x, this.randomNameButton.y, this.randomNameButton.width, this.randomNameButton.height, '#505050');
-        renderer.drawText('🎲', this.randomNameButton.x + 40, startY + 95, '#dcd0c0', '16px "Big Apple 3PM", monospace');
-        this.skipNameButton.x = width / 4 + 160;
-        this.skipNameButton.y = startY + 70;
-        let skipButtonColor = this.skipNameButton.hovered ? 'rgba(120, 80, 80, 0.7)' : 'rgba(96, 64, 64, 0.7)';
-        renderer.drawRect(this.skipNameButton.x, this.skipNameButton.y, this.skipNameButton.width, this.skipNameButton.height, skipButtonColor);
-        renderer.drawRect(this.skipNameButton.x, this.skipNameButton.y, this.skipNameButton.width, this.skipNameButton.height, '#505050');
-        renderer.drawText('Přeskočit', this.skipNameButton.x + 50, startY + 95, '#dcd0c0', '12px "Big Apple 3PM", monospace');
-        renderer.drawText('Věk:', width / 4 - 50, startY + 130, '#606060', '16px "Big Apple 3PM", monospace');
-        this.ageInputButton.x = width / 4 - 50;
-        this.ageInputButton.y = startY + 150;
-        let ageBoxColor = this.ageInputButton.hovered ? 'rgba(80, 80, 80, 0.7)' : 'rgba(64, 64, 64, 0.7)';
-        renderer.drawRect(this.ageInputButton.x, this.ageInputButton.y, this.ageInputButton.width, this.ageInputButton.height, ageBoxColor);
-        renderer.drawRect(this.ageInputButton.x, this.ageInputButton.y, this.ageInputButton.width, this.ageInputButton.height, '#505050');
-        renderer.drawText(this.character.age.toString(), width / 4, startY + 175, '#dcd0c0', '14px "Big Apple 3PM", monospace');
-        renderer.drawText('Pohlaví:', 3 * width / 4 - 100, startY + 50, '#606060', '16px "Big Apple 3PM", monospace');
+        const height = renderer.getHeight();
+        const ctx = renderer.getContext();
+        const startY = 280;
+        ctx.shadowColor = '#a73169';
+        ctx.shadowBlur = 8;
+        renderer.drawText('PERSONNEL FILE CREATION', width / 2, startY, '#ffc27a', 'bold 22px "Big Apple 3PM", monospace');
+        ctx.shadowBlur = 0;
+        renderer.drawText('COMMANDER PROFILE CONFIGURATION', width / 2, startY + 25, '#E2DFD0', '14px "Big Apple 3PM", monospace');
+        const leftPanelX = 60;
+        const leftPanelY = startY + 50;
+        const leftPanelW = width / 2 - 80;
+        const leftPanelH = height - startY - 150;
+        const rightPanelX = width / 2 + 20;
+        const rightPanelY = startY + 50;
+        const rightPanelW = width / 2 - 80;
+        const rightPanelH = height - startY - 150;
+        this.drawSelectionPanel(renderer, leftPanelX, leftPanelY, leftPanelW, leftPanelH, 'PERSONAL DATA');
+        this.drawSelectionPanel(renderer, rightPanelX, rightPanelY, rightPanelW, rightPanelH, 'SPECIES & BACKGROUND');
+        let leftY = leftPanelY + 50;
+        renderer.drawText('DESIGNATION:', leftPanelX + 20, leftY, '#DCD7C9', 'bold 14px "Big Apple 3PM", monospace');
+        leftY += 30;
+        this.drawInputTerminal(renderer, leftPanelX + 20, leftY, leftPanelW - 40, 35, this.character.name || 'ENTER_CALLSIGN', this.isEditingName, this.nameInputButton);
+        leftY += 50;
+        this.drawSmallRetroButton(renderer, leftPanelX + 20, leftY, 80, 25, this.randomNameButton.hovered, false, 'RANDOM');
+        this.randomNameButton.x = leftPanelX + 20;
+        this.randomNameButton.y = leftY;
+        this.randomNameButton.width = 80;
+        this.randomNameButton.height = 25;
+        this.drawSmallRetroButton(renderer, leftPanelX + 110, leftY, 80, 25, this.skipNameButton.hovered, false, 'SKIP');
+        this.skipNameButton.x = leftPanelX + 110;
+        this.skipNameButton.y = leftY;
+        this.skipNameButton.width = 80;
+        this.skipNameButton.height = 25;
+        leftY += 50;
+        renderer.drawText('AGE:', leftPanelX + 20, leftY, '#DCD7C9', 'bold 14px "Big Apple 3PM", monospace');
+        leftY += 30;
+        this.drawInputTerminal(renderer, leftPanelX + 20, leftY, 100, 35, this.character.age.toString(), false, this.ageInputButton);
+        leftY += 60;
+        renderer.drawText('GENDER:', leftPanelX + 20, leftY, '#DCD7C9', 'bold 14px "Big Apple 3PM", monospace');
+        leftY += 30;
         this.genderButtons = [];
+        const genderNames = ['MALE', 'FEMALE', 'NON-BINARY', 'OTHER'];
         Object.values(CharacterGender).forEach((gender, index) => {
-            const x = 3 * width / 4 - 80 + (index % 2) * 160;
-            const y = startY + 80 + Math.floor(index / 2) * 40;
             const isSelected = gender === this.character.gender;
+            const row = Math.floor(index / 2);
+            const col = index % 2;
+            const buttonX = leftPanelX + 20 + col * 140;
+            const buttonY = leftY + row * 35;
             const buttonArea = {
-                x: x - 70,
-                y: y - 15,
-                width: 140,
+                x: buttonX,
+                y: buttonY,
+                width: 130,
                 height: 30,
                 gender: gender,
                 hovered: false
             };
             this.genderButtons.push(buttonArea);
-            let bgColor = 'rgba(64, 64, 64, 0.3)';
-            if (isSelected)
-                bgColor = 'rgba(96, 96, 96, 0.6)';
-            else if (buttonArea.hovered)
-                bgColor = 'rgba(80, 80, 80, 0.4)';
-            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
-            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
-            const genderName = gender === CharacterGender.MALE ? 'Muž' :
-                gender === CharacterGender.FEMALE ? 'Žena' :
-                    gender === CharacterGender.NON_BINARY ? 'Nebinární' : 'Jiné';
-            const color = isSelected ? '#dcd0c0' : '#808080';
-            renderer.drawText(genderName, x, y, color, isSelected ? 'bold 12px "Big Apple 3PM", monospace' : '12px "Big Apple 3PM", monospace');
+            this.drawSmallRetroButton(renderer, buttonX, buttonY, 130, 30, buttonArea.hovered, isSelected, genderNames[index]);
         });
-        renderer.drawText('Rasa:', width / 2, startY + 180, '#606060', '16px "Big Apple 3PM", monospace');
+        let rightY = rightPanelY + 50;
+        renderer.drawText('SPECIES:', rightPanelX + 20, rightY, '#DCD7C9', 'bold 14px "Big Apple 3PM", monospace');
+        rightY += 40;
         this.raceButtons = [];
         const raceKeys = Object.keys(RACE_DATA);
-        const racesPerRow = 5;
+        const racesPerRow = 2;
         raceKeys.forEach((race, index) => {
             const data = RACE_DATA[race];
             const row = Math.floor(index / racesPerRow);
             const col = index % racesPerRow;
-            const x = width / 2 - (racesPerRow * 140) / 2 + col * 140 + 70;
-            const y = startY + 220 + row * 60;
+            const buttonX = rightPanelX + 20 + col * 160;
+            const buttonY = rightY + row * 70;
             const isSelected = race === this.character.race;
             const buttonArea = {
-                x: x - 65,
-                y: y - 25,
-                width: 130,
-                height: 50,
+                x: buttonX,
+                y: buttonY,
+                width: 150,
+                height: 60,
                 race: race,
                 hovered: false
             };
             this.raceButtons.push(buttonArea);
-            let bgColor = 'rgba(64, 64, 64, 0.3)';
-            if (isSelected)
-                bgColor = 'rgba(96, 96, 96, 0.6)';
-            else if (buttonArea.hovered)
-                bgColor = 'rgba(80, 80, 80, 0.4)';
-            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
-            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
-            renderer.drawRacePortrait(data.name, x - 18, y - 25, 36, data.portraitColor);
-            const color = isSelected ? '#dcd0c0' : '#808080';
-            renderer.drawText(data.name, x, y + 15, color, isSelected ? 'bold 10px "Big Apple 3PM", monospace' : '10px "Big Apple 3PM", monospace');
+            this.drawSpeciesOption(renderer, buttonX, buttonY, 150, 60, isSelected, buttonArea.hovered, data);
         });
-        renderer.drawText('Pozadí:', width / 2, startY + 360, '#606060', '16px "Big Apple 3PM", monospace');
+        rightY += Math.ceil(raceKeys.length / racesPerRow) * 70 + 30;
+        renderer.drawText('BACKGROUND:', rightPanelX + 20, rightY, '#DCD7C9', 'bold 14px "Big Apple 3PM", monospace');
+        rightY += 40;
         this.backgroundButtons = [];
         const backgroundKeys = Object.keys(BACKGROUND_DATA);
-        const backgroundsPerRow = 5;
+        const backgroundsPerRow = 2;
         backgroundKeys.forEach((background, index) => {
             const data = BACKGROUND_DATA[background];
             const row = Math.floor(index / backgroundsPerRow);
             const col = index % backgroundsPerRow;
-            const x = width / 2 - (backgroundsPerRow * 140) / 2 + col * 140 + 70;
-            const y = startY + 390 + row * 50;
+            const buttonX = rightPanelX + 20 + col * 160;
+            const buttonY = rightY + row * 50;
             const isSelected = background === this.character.background;
             const buttonArea = {
-                x: x - 65,
-                y: y - 20,
-                width: 130,
+                x: buttonX,
+                y: buttonY,
+                width: 150,
                 height: 40,
                 background: background,
                 hovered: false
             };
             this.backgroundButtons.push(buttonArea);
-            let bgColor = 'rgba(64, 64, 64, 0.3)';
-            if (isSelected)
-                bgColor = 'rgba(96, 96, 96, 0.6)';
-            else if (buttonArea.hovered)
-                bgColor = 'rgba(80, 80, 80, 0.4)';
-            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
-            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
-            const color = isSelected ? '#dcd0c0' : '#808080';
-            renderer.drawText(data.name, x, y, color, isSelected ? 'bold 10px "Big Apple 3PM", monospace' : '10px "Big Apple 3PM", monospace');
+            this.drawBackgroundOption(renderer, buttonX, buttonY, 150, 40, isSelected, buttonArea.hovered, data);
         });
+    }
+    drawInputTerminal(renderer, x, y, w, h, text, editing, buttonArea) {
+        const ctx = renderer.getContext();
+        buttonArea.x = x;
+        buttonArea.y = y;
+        buttonArea.width = w;
+        buttonArea.height = h;
+        ctx.fillStyle = '#201127';
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = editing ? '#F97300' : (buttonArea.hovered ? '#7077A1' : '#3F4F44');
+        ctx.lineWidth = editing ? 2 : 1;
+        ctx.strokeRect(x, y, w, h);
+        ctx.strokeStyle = '#424769';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+        const textColor = text.includes('ENTER_') ? '#A27B5C' : '#E2DFD0';
+        renderer.drawText(text, x + 10, y + h / 2 + 4, textColor, '12px "Big Apple 3PM", monospace');
+        if (editing && Math.floor(Date.now() / 500) % 2 === 0) {
+            const cursorX = x + 10 + (text.length * 7);
+            renderer.drawText('█', cursorX, y + h / 2 + 4, '#ffc27a', '12px "Big Apple 3PM", monospace');
+        }
+        if (editing) {
+            ctx.globalAlpha = 0.2;
+            const scanY = y + (Date.now() % 1000) / 1000 * h;
+            ctx.strokeStyle = '#F97300';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, scanY);
+            ctx.lineTo(x + w, scanY);
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+        }
+    }
+    drawSmallRetroButton(renderer, x, y, w, h, hovered, selected, text) {
+        const ctx = renderer.getContext();
+        const offset = selected ? 0 : 1;
+        ctx.fillStyle = '#201127';
+        ctx.fillRect(x + offset, y + offset, w, h);
+        ctx.fillStyle = selected ? '#424769' : (hovered ? '#355d68' : '#1b1e34');
+        ctx.fillRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
+        const frameColor = selected ? '#F97300' : (hovered ? '#7077A1' : '#3F4F44');
+        ctx.strokeStyle = frameColor;
+        ctx.lineWidth = selected ? 2 : 1;
+        ctx.strokeRect(x + offset, y + offset, w, h);
+        const textColor = selected ? '#ffc27a' : (hovered ? '#E2DFD0' : '#A27B5C');
+        renderer.drawText(text, x + w / 2, y + h / 2 + 3, textColor, selected ? 'bold 10px "Big Apple 3PM", monospace' : '10px "Big Apple 3PM", monospace');
+    }
+    drawSpeciesOption(renderer, x, y, w, h, selected, hovered, data) {
+        const ctx = renderer.getContext();
+        const offset = selected ? 0 : 2;
+        ctx.fillStyle = '#201127';
+        ctx.fillRect(x + offset, y + offset, w, h);
+        ctx.fillStyle = selected ? 'rgba(66, 71, 105, 0.9)' : 'rgba(27, 30, 52, 0.7)';
+        ctx.fillRect(x + offset + 2, y + offset + 2, w - 4, h - 4);
+        ctx.strokeStyle = selected ? '#6aaf9d' : (hovered ? '#7077A1' : '#3F4F44');
+        ctx.lineWidth = selected ? 3 : (hovered ? 2 : 1);
+        ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
+        const portraitX = x + 10;
+        const portraitY = y + 8;
+        const portraitSize = 30;
+        ctx.fillStyle = data.portraitColor || '#A27B5C';
+        ctx.fillRect(portraitX, portraitY, portraitSize, portraitSize);
+        ctx.strokeStyle = '#524C42';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(portraitX, portraitY, portraitSize, portraitSize);
+        const textColor = selected ? '#ffc27a' : (hovered ? '#E2DFD0' : '#A27B5C');
+        renderer.drawText(data.name, x + 50, y + 20, textColor, selected ? 'bold 12px "Big Apple 3PM", monospace' : '11px "Big Apple 3PM", monospace');
+        renderer.drawText(`${data.bonuses?.length || 0} TRAITS`, x + 50, y + 35, textColor, '8px "Big Apple 3PM", monospace');
+        if (selected) {
+            ctx.shadowColor = '#6aaf9d';
+            ctx.shadowBlur = 6;
+            renderer.drawText('✓', x + w - 20, y + h / 2 + 3, '#6aaf9d', 'bold 16px "Big Apple 3PM", monospace');
+            ctx.shadowBlur = 0;
+        }
+    }
+    drawBackgroundOption(renderer, x, y, w, h, selected, hovered, data) {
+        const ctx = renderer.getContext();
+        const offset = selected ? 0 : 2;
+        ctx.fillStyle = '#201127';
+        ctx.fillRect(x + offset, y + offset, w, h);
+        ctx.fillStyle = selected ? 'rgba(66, 71, 105, 0.9)' : 'rgba(27, 30, 52, 0.7)';
+        ctx.fillRect(x + offset + 2, y + offset + 2, w - 4, h - 4);
+        ctx.strokeStyle = selected ? '#c24b6e' : (hovered ? '#7077A1' : '#3F4F44');
+        ctx.lineWidth = selected ? 3 : (hovered ? 2 : 1);
+        ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
+        const textColor = selected ? '#ffeb99' : (hovered ? '#E2DFD0' : '#A27B5C');
+        renderer.drawText(data.name, x + 10, y + h / 2 - 5, textColor, selected ? 'bold 12px "Big Apple 3PM", monospace' : '11px "Big Apple 3PM", monospace');
+        const skillCount = data.skillBonuses ? Object.keys(data.skillBonuses).length : 0;
+        renderer.drawText(`+${skillCount} SKILLS`, x + 10, y + h / 2 + 10, textColor, '8px "Big Apple 3PM", monospace');
+        if (selected) {
+            ctx.shadowColor = '#c24b6e';
+            ctx.shadowBlur = 6;
+            renderer.drawText('►', x + w - 20, y + h / 2 + 3, '#c24b6e', 'bold 14px "Big Apple 3PM", monospace');
+            ctx.shadowBlur = 0;
+        }
     }
     renderSkillSelection(renderer) {
         const width = renderer.getWidth();
@@ -808,79 +1227,374 @@ class NewGameSetupState {
     }
     renderShipSelection(renderer) {
         const width = renderer.getWidth();
-        const startY = 250;
-        renderer.drawText('VYBERTE TYP LODĚ', width / 2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
+        const height = renderer.getHeight();
+        const ctx = renderer.getContext();
+        const startY = 280;
+        ctx.shadowColor = '#8d402f';
+        ctx.shadowBlur = 8;
+        renderer.drawText('FLEET CONFIGURATION', width / 2, startY, '#e3b47a', 'bold 22px "Big Apple 3PM", monospace');
+        ctx.shadowBlur = 0;
+        renderer.drawText('SELECT STARSHIP CLASS', width / 2, startY + 25, '#DCD7C9', '14px "Big Apple 3PM", monospace');
         const ships = Object.values(ShipType);
-        const shipsPerRow = 3;
-        const shipWidth = 250;
-        const shipHeight = 120;
+        const shipsPerRow = 2;
+        const shipWidth = 380;
+        const shipHeight = 160;
+        const panelX = 40;
+        const panelY = startY + 50;
+        const panelW = width - 80;
+        const panelH = height - startY - 150;
+        this.drawSelectionPanel(renderer, panelX, panelY, panelW, panelH, 'STARSHIP REGISTRY');
         this.shipButtons = [];
         ships.forEach((shipType, index) => {
             const template = SHIP_TEMPLATES[shipType];
             const row = Math.floor(index / shipsPerRow);
             const col = index % shipsPerRow;
-            const x = width / 2 - (shipsPerRow * shipWidth) / 2 + col * shipWidth + shipWidth / 2;
-            const y = startY + 60 + row * (shipHeight + 20);
+            const x = panelX + 50 + col * (shipWidth + 30);
+            const y = panelY + 60 + row * (shipHeight + 30);
             const isSelected = shipType === this.selectedShip;
             const buttonArea = {
-                x: x - shipWidth / 2,
-                y: y - shipHeight / 2,
+                x: x,
+                y: y,
                 width: shipWidth,
                 height: shipHeight,
                 shipType: shipType,
                 hovered: false
             };
             this.shipButtons.push(buttonArea);
-            let bgColor = 'rgba(64, 64, 64, 0.7)';
-            if (isSelected) {
-                bgColor = 'rgba(96, 96, 96, 0.8)';
-            }
-            else if (buttonArea.hovered) {
-                bgColor = 'rgba(80, 80, 80, 0.7)';
-            }
-            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, bgColor);
-            renderer.drawRect(buttonArea.x + 5, buttonArea.y + 5, buttonArea.width - 10, buttonArea.height - 10, 'rgba(32, 32, 32, 0.7)');
-            renderer.drawRect(buttonArea.x, buttonArea.y, buttonArea.width, buttonArea.height, '#505050');
-            const color = isSelected ? '#dcd0c0' : '#808080';
-            renderer.drawText(template.name, x, y - 35, color, isSelected ? 'bold 16px "Big Apple 3PM", monospace' : '14px "Big Apple 3PM", monospace');
-            renderer.drawText(`Hull: ${template.baseStats.hull}`, x - 80, y - 10, color, '10px "Big Apple 3PM", monospace');
-            renderer.drawText(`Speed: ${template.baseStats.speed}`, x + 80, y - 10, color, '10px "Big Apple 3PM", monospace');
-            renderer.drawText(`Shields: ${template.baseStats.shields}`, x - 80, y + 10, color, '10px "Big Apple 3PM", monospace');
-            renderer.drawText(`Cargo: ${template.baseStats.cargo}`, x + 80, y + 10, color, '10px "Big Apple 3PM", monospace');
+            this.drawShipCard(renderer, x, y, shipWidth, shipHeight, isSelected, buttonArea.hovered, template, index);
         });
+        if (this.selectedShip) {
+            this.drawShipDetailsPanel(renderer, width - 350, panelY + 60, 320, panelH - 120);
+        }
+    }
+    drawShipCard(renderer, x, y, w, h, selected, hovered, template, index) {
+        const ctx = renderer.getContext();
+        const offset = selected ? 0 : 3;
+        const shipColors = ['#be794f', '#F6B17A', '#6aaf9d', '#7077A1', '#d9626b'];
+        const shipColor = shipColors[index] || '#be794f';
+        ctx.fillStyle = '#201127';
+        ctx.fillRect(x + offset, y + offset, w, h);
+        ctx.fillStyle = selected ? 'rgba(66, 71, 105, 0.9)' : 'rgba(27, 30, 52, 0.7)';
+        ctx.fillRect(x + offset + 3, y + offset + 3, w - 6, h - 6);
+        ctx.strokeStyle = selected ? shipColor : (hovered ? '#808080' : '#404040');
+        ctx.lineWidth = selected ? 4 : (hovered ? 3 : 2);
+        ctx.strokeRect(x + offset + 1, y + offset + 1, w - 2, h - 2);
+        ctx.strokeStyle = selected ? '#707070' : '#303030';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + offset + 8, y + offset + 8, w - 16, h - 16);
+        const silhouetteX = x + 20;
+        const silhouetteY = y + 20;
+        const silhouetteW = 120;
+        const silhouetteH = 80;
+        this.drawShipSilhouette(renderer, silhouetteX, silhouetteY, silhouetteW, silhouetteH, template, shipColor, selected);
+        const infoX = x + 160;
+        const infoY = y + 25;
+        const textColor = selected ? shipColor : (hovered ? '#a0a0a0' : '#707070');
+        const titleSize = selected ? 'bold 16px' : '14px';
+        if (selected || hovered) {
+            ctx.shadowColor = textColor;
+            ctx.shadowBlur = selected ? 6 : 4;
+        }
+        renderer.drawText(template.name, infoX, infoY, textColor, `${titleSize} "Big Apple 3PM", monospace`);
+        ctx.shadowBlur = 0;
+        renderer.drawText(`CLASS: ${template.type || 'MULTI-ROLE'}`, infoX, infoY + 25, textColor, '11px "Big Apple 3PM", monospace');
+        const statY = infoY + 50;
+        const statHeight = 12;
+        const statSpacing = 20;
+        const stats = [
+            { name: 'HULL', value: template.baseStats.hull, max: 1000, color: '#909090' },
+            { name: 'SHIELDS', value: template.baseStats.shields, max: 1000, color: '#808080' },
+            { name: 'SPEED', value: template.baseStats.speed, max: 100, color: '#a0a0a0' },
+            { name: 'CARGO', value: template.baseStats.cargo, max: 500, color: '#707070' }
+        ];
+        stats.forEach((stat, i) => {
+            const barY = statY + i * statSpacing;
+            const barW = 140;
+            const barFill = Math.min(barW * (stat.value / stat.max), barW);
+            renderer.drawText(`${stat.name}:`, infoX, barY, textColor, '9px "Big Apple 3PM", monospace');
+            ctx.fillStyle = '#221100';
+            ctx.fillRect(infoX + 50, barY - 6, barW, statHeight);
+            ctx.fillStyle = stat.color;
+            ctx.fillRect(infoX + 50, barY - 6, barFill, statHeight);
+            ctx.strokeStyle = '#404040';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(infoX + 50, barY - 6, barW, statHeight);
+            renderer.drawText(stat.value.toString(), infoX + 200, barY, textColor, '9px "Big Apple 3PM", monospace');
+        });
+        if (selected) {
+            const pulseAlpha = Math.sin(this.animations.buttonPulse * 4) * 0.3 + 0.7;
+            ctx.shadowColor = shipColor;
+            ctx.shadowBlur = 15 * pulseAlpha;
+            renderer.drawText('◆ SELECTED ◆', x + w / 2, y + h - 15, shipColor, 'bold 12px "Big Apple 3PM", monospace');
+            ctx.shadowBlur = 0;
+        }
+    }
+    drawShipSilhouette(renderer, x, y, w, h, template, color, selected) {
+        const ctx = renderer.getContext();
+        ctx.fillStyle = '#001100';
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = '#303030';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, w, h);
+        const centerX = x + w / 2;
+        const centerY = y + h / 2;
+        ctx.fillStyle = selected ? color : '#707070';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - 25);
+        ctx.lineTo(centerX + 20, centerY + 15);
+        ctx.lineTo(centerX + 10, centerY + 25);
+        ctx.lineTo(centerX - 10, centerY + 25);
+        ctx.lineTo(centerX - 20, centerY + 15);
+        ctx.closePath();
+        if (selected) {
+            ctx.fill();
+        }
+        ctx.stroke();
+        if (selected) {
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(centerX - 8, centerY + 20, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(centerX + 8, centerY + 20, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+        renderer.drawText(template.name.split(' ')[0], centerX, y + h - 8, color, '8px "Big Apple 3PM", monospace');
+    }
+    drawShipDetailsPanel(renderer, x, y, w, h) {
+        const ctx = renderer.getContext();
+        const template = SHIP_TEMPLATES[this.selectedShip];
+        this.drawSelectionPanel(renderer, x, y, w, h, 'SHIP SPECIFICATIONS');
+        const textY = y + 50;
+        const lineHeight = 18;
+        let currentY = textY;
+        renderer.drawText(template.name, x + 20, currentY, '#b0b0b0', 'bold 16px "Big Apple 3PM", monospace');
+        currentY += lineHeight * 1.5;
+        renderer.drawText(`CLASS: ${template.type || 'MULTI-ROLE'}`, x + 20, currentY, '#909090', '12px "Big Apple 3PM", monospace');
+        currentY += lineHeight * 1.5;
+        renderer.drawText('SPECIFICATIONS:', x + 20, currentY, '#b0b0b0', 'bold 14px "Big Apple 3PM", monospace');
+        currentY += lineHeight * 1.2;
+        const specs = [
+            `Hull Integrity: ${template.baseStats.hull}`,
+            `Shield Capacity: ${template.baseStats.shields}`,
+            `Max Velocity: ${template.baseStats.speed} m/s`,
+            `Cargo Capacity: ${template.baseStats.cargo} tons`,
+            `Weapon Hardpoints: ${template.weapons.length}`,
+            `Ship Class: ${template.rarity.toUpperCase()}`
+        ];
+        specs.forEach(spec => {
+            renderer.drawText(spec, x + 20, currentY, '#808080', '11px "Big Apple 3PM", monospace');
+            currentY += lineHeight;
+        });
+        currentY += lineHeight * 0.5;
+        renderer.drawText('WEAPONS:', x + 20, currentY, '#b0b0b0', 'bold 14px "Big Apple 3PM", monospace');
+        currentY += lineHeight * 1.2;
+        if (template.weapons && template.weapons.length > 0) {
+            template.weapons.forEach((weapon) => {
+                const weaponData = WEAPON_DATA[weapon];
+                if (weaponData) {
+                    renderer.drawText(`• ${weaponData.name}`, x + 20, currentY, '#808080', '10px "Big Apple 3PM", monospace');
+                    currentY += lineHeight * 0.8;
+                }
+            });
+        }
+        else {
+            renderer.drawText('• Basic Laser Array', x + 20, currentY, '#808080', '10px "Big Apple 3PM", monospace');
+            currentY += lineHeight * 0.8;
+        }
+        currentY += lineHeight;
+        renderer.drawText('MISSION PROFILE:', x + 20, currentY, '#b0b0b0', 'bold 14px "Big Apple 3PM", monospace');
+        currentY += lineHeight * 1.2;
+        const words = template.description.split(' ');
+        let line = '';
+        for (const word of words) {
+            const testLine = line + (line ? ' ' : '') + word;
+            if (testLine.length > 28) {
+                renderer.drawText(line, x + 20, currentY, '#808080', '10px "Big Apple 3PM", monospace');
+                currentY += lineHeight * 0.9;
+                line = word;
+            }
+            else {
+                line = testLine;
+            }
+        }
+        if (line) {
+            renderer.drawText(line, x + 20, currentY, '#808080', '10px "Big Apple 3PM", monospace');
+        }
     }
     renderSummary(renderer) {
         const width = renderer.getWidth();
-        const startY = 200;
-        renderer.drawText('SOUHRN NASTAVENÍ', width / 2, startY, '#606060', 'bold 24px "Big Apple 3PM", monospace');
+        const height = renderer.getHeight();
+        const ctx = renderer.getContext();
+        const startY = 280;
+        ctx.shadowColor = '#5e1a20';
+        ctx.shadowBlur = 8;
+        renderer.drawText('MISSION DEPLOYMENT SUMMARY', width / 2, startY, '#ec9a6d', 'bold 22px "Big Apple 3PM", monospace');
+        ctx.shadowBlur = 0;
+        renderer.drawText('FINAL CONFIGURATION REVIEW', width / 2, startY + 25, '#E2DFD0', '14px "Big Apple 3PM", monospace');
         const difficultySettings = DIFFICULTY_SETTINGS[this.selectedDifficulty];
         const shipTemplate = SHIP_TEMPLATES[this.selectedShip];
         const raceData = RACE_DATA[this.character.race];
         const backgroundData = BACKGROUND_DATA[this.character.background];
-        renderer.drawText('=== POSTAVA ===', width / 2, startY + 50, '#808080', '16px "Big Apple 3PM", monospace');
-        renderer.drawText(`Jméno: ${this.character.name || 'Neznámý'}`, width / 2, startY + 80, '#dcd0c0', '14px "Big Apple 3PM", monospace');
-        renderer.drawText(`Věk: ${this.character.age} | Pohlaví: ${this.character.gender === CharacterGender.MALE ? 'Muž' : this.character.gender === CharacterGender.FEMALE ? 'Žena' : 'Jiné'}`, width / 2, startY + 105, '#dcd0c0', '14px "Big Apple 3PM", monospace');
-        renderer.drawText(`Rasa: ${raceData.name} | Pozadí: ${backgroundData.name}`, width / 2, startY + 130, '#dcd0c0', '14px "Big Apple 3PM", monospace');
-        renderer.drawText('=== NASTAVENÍ HRY ===', width / 2, startY + 170, '#808080', '16px "Big Apple 3PM", monospace');
-        renderer.drawText(`Obtížnost: ${difficultySettings.name}`, width / 2, startY + 200, '#dcd0c0', '14px "Big Apple 3PM", monospace');
-        renderer.drawText(`Galaxie: ${GALAXY_SIZE_DATA[this.galaxySettings.size].name} (${GALAXY_DENSITY_DATA[this.galaxySettings.density].name})`, width / 2, startY + 225, '#dcd0c0', '14px "Big Apple 3PM", monospace');
-        renderer.drawText(`Ekonomika: ${ECONOMY_COMPLEXITY_DATA[this.economySettings.complexity].name}`, width / 2, startY + 250, '#dcd0c0', '14px "Big Apple 3PM", monospace');
-        renderer.drawText(`Loď: ${shipTemplate.name}`, width / 2, startY + 275, '#dcd0c0', '14px "Big Apple 3PM", monospace');
-        renderer.drawText('=== POČÁTEČNÍ ZDROJE ===', width / 2, startY + 315, '#808080', '16px "Big Apple 3PM", monospace');
-        renderer.drawText(`Palivo: ${difficultySettings.startingResources.fuel}% | Energie: ${difficultySettings.startingResources.energy}% | Kredity: ${difficultySettings.startingResources.credits + backgroundData.startingCredits}`, width / 2, startY + 345, '#dcd0c0', '14px "Big Apple 3PM", monospace');
+        const leftPanelX = 50;
+        const leftPanelY = startY + 60;
+        const leftPanelW = (width - 160) / 3;
+        const leftPanelH = height - startY - 170;
+        const middlePanelX = leftPanelX + leftPanelW + 30;
+        const middlePanelY = startY + 60;
+        const middlePanelW = leftPanelW;
+        const middlePanelH = leftPanelH;
+        const rightPanelX = middlePanelX + middlePanelW + 30;
+        const rightPanelY = startY + 60;
+        const rightPanelW = leftPanelW;
+        const rightPanelH = leftPanelH;
+        this.drawSelectionPanel(renderer, leftPanelX, leftPanelY, leftPanelW, leftPanelH, 'COMMANDER PROFILE');
+        let leftY = leftPanelY + 50;
+        const lineHeight = 18;
+        renderer.drawText('DESIGNATION:', leftPanelX + 15, leftY, '#DCD7C9', 'bold 12px "Big Apple 3PM", monospace');
+        leftY += lineHeight;
+        renderer.drawText(this.character.name || 'CLASSIFIED', leftPanelX + 15, leftY, '#A27B5C', '11px "Big Apple 3PM", monospace');
+        leftY += lineHeight * 1.5;
+        renderer.drawText('SPECIES:', leftPanelX + 15, leftY, '#DCD7C9', 'bold 12px "Big Apple 3PM", monospace');
+        leftY += lineHeight;
+        renderer.drawText(raceData.name, leftPanelX + 15, leftY, '#A27B5C', '11px "Big Apple 3PM", monospace');
+        leftY += lineHeight * 1.5;
+        renderer.drawText('BACKGROUND:', leftPanelX + 15, leftY, '#DCD7C9', 'bold 12px "Big Apple 3PM", monospace');
+        leftY += lineHeight;
+        renderer.drawText(backgroundData.name, leftPanelX + 15, leftY, '#A27B5C', '11px "Big Apple 3PM", monospace');
+        leftY += lineHeight * 1.5;
+        renderer.drawText('AGE/GENDER:', leftPanelX + 15, leftY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+        leftY += lineHeight;
+        const genderText = this.character.gender === CharacterGender.MALE ? 'MALE' :
+            this.character.gender === CharacterGender.FEMALE ? 'FEMALE' :
+                this.character.gender === CharacterGender.NON_BINARY ? 'NON-BINARY' : 'OTHER';
+        renderer.drawText(`${this.character.age} / ${genderText}`, leftPanelX + 15, leftY, '#808080', '11px "Big Apple 3PM", monospace');
+        leftY += lineHeight * 2;
+        renderer.drawText('SKILLS:', leftPanelX + 15, leftY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+        leftY += lineHeight;
         const topSkills = Array.from(this.character.skills.entries())
             .sort((a, b) => b[1] - a[1])
-            .slice(0, 3)
-            .map(([skill, level]) => `${SKILL_DATA[skill].name}: ${level}`)
-            .join(' | ');
-        renderer.drawText(`Nejlepší dovednosti: ${topSkills}`, width / 2, startY + 375, '#808080', '12px "Big Apple 3PM", monospace');
+            .slice(0, 4);
+        topSkills.forEach(([skill, level]) => {
+            renderer.drawText(`${SKILL_DATA[skill].name}: ${level}`, leftPanelX + 15, leftY, '#808080', '10px "Big Apple 3PM", monospace');
+            leftY += lineHeight * 0.9;
+        });
+        this.drawSelectionPanel(renderer, middlePanelX, middlePanelY, middlePanelW, middlePanelH, 'MISSION PARAMETERS');
+        let middleY = middlePanelY + 50;
+        renderer.drawText('DIFFICULTY:', middlePanelX + 15, middleY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+        middleY += lineHeight;
+        renderer.drawText(difficultySettings.name, middlePanelX + 15, middleY, '#808080', '11px "Big Apple 3PM", monospace');
+        middleY += lineHeight * 1.5;
+        renderer.drawText('GALAXY:', middlePanelX + 15, middleY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+        middleY += lineHeight;
+        renderer.drawText(GALAXY_SIZE_DATA[this.galaxySettings.size].name, middlePanelX + 15, middleY, '#808080', '11px "Big Apple 3PM", monospace');
+        middleY += lineHeight;
+        renderer.drawText(GALAXY_DENSITY_DATA[this.galaxySettings.density].name, middlePanelX + 15, middleY, '#808080', '10px "Big Apple 3PM", monospace');
+        middleY += lineHeight * 1.5;
+        renderer.drawText('ECONOMY:', middlePanelX + 15, middleY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+        middleY += lineHeight;
+        renderer.drawText(ECONOMY_COMPLEXITY_DATA[this.economySettings.complexity].name, middlePanelX + 15, middleY, '#808080', '11px "Big Apple 3PM", monospace');
+        middleY += lineHeight * 2;
+        renderer.drawText('MODIFIERS:', middlePanelX + 15, middleY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+        middleY += lineHeight;
+        const modifiers = [
+            `Resources: ${difficultySettings.multipliers.resourceMultiplier}x`,
+            `Enemy Power: ${difficultySettings.multipliers.damageMultiplier}x`,
+            `Fuel Usage: ${difficultySettings.multipliers.fuelConsumption}x`,
+            `XP Rate: ${difficultySettings.multipliers.experienceMultiplier}x`
+        ];
+        modifiers.forEach(modifier => {
+            renderer.drawText(modifier, middlePanelX + 15, middleY, '#808080', '10px "Big Apple 3PM", monospace');
+            middleY += lineHeight * 0.9;
+        });
+        this.drawSelectionPanel(renderer, rightPanelX, rightPanelY, rightPanelW, rightPanelH, 'FLEET CONFIGURATION');
+        let rightY = rightPanelY + 50;
+        renderer.drawText('STARSHIP:', rightPanelX + 15, rightY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+        rightY += lineHeight;
+        renderer.drawText(shipTemplate.name, rightPanelX + 15, rightY, '#808080', '11px "Big Apple 3PM", monospace');
+        rightY += lineHeight * 1.5;
+        renderer.drawText('SPECIFICATIONS:', rightPanelX + 15, rightY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+        rightY += lineHeight;
+        const shipSpecs = [
+            `Hull: ${shipTemplate.baseStats.hull}`,
+            `Shields: ${shipTemplate.baseStats.shields}`,
+            `Speed: ${shipTemplate.baseStats.speed}`,
+            `Cargo: ${shipTemplate.baseStats.cargo}`
+        ];
+        shipSpecs.forEach(spec => {
+            renderer.drawText(spec, rightPanelX + 15, rightY, '#808080', '10px "Big Apple 3PM", monospace');
+            rightY += lineHeight * 0.9;
+        });
+        rightY += lineHeight;
+        renderer.drawText('RESOURCES:', rightPanelX + 15, rightY, '#b0b0b0', 'bold 12px "Big Apple 3PM", monospace');
+        rightY += lineHeight;
+        const totalCredits = difficultySettings.startingResources.credits + backgroundData.startingCredits;
+        const resources = [
+            `Fuel: ${difficultySettings.startingResources.fuel}%`,
+            `Energy: ${difficultySettings.startingResources.energy}%`,
+            `Credits: ${totalCredits}`
+        ];
+        resources.forEach(resource => {
+            renderer.drawText(resource, rightPanelX + 15, rightY, '#808080', '10px "Big Apple 3PM", monospace');
+            rightY += lineHeight * 0.9;
+        });
+        this.drawLaunchButton(renderer, width, height);
+    }
+    drawLaunchButton(renderer, width, height) {
+        const ctx = renderer.getContext();
+        this.startGameButton.width = 300;
+        this.startGameButton.height = 60;
         this.startGameButton.x = width / 2 - this.startGameButton.width / 2;
-        this.startGameButton.y = startY + 420;
-        const buttonColor = this.startGameButton.pressed ? 'rgba(96, 96, 96, 0.8)' :
-            this.startGameButton.hovered ? 'rgba(96, 96, 96, 0.4)' : 'rgba(64, 64, 64, 0.7)';
-        renderer.drawRect(this.startGameButton.x, this.startGameButton.y, this.startGameButton.width, this.startGameButton.height, buttonColor);
-        renderer.drawRect(this.startGameButton.x, this.startGameButton.y, this.startGameButton.width, this.startGameButton.height, '#505050');
-        renderer.drawText('SPUSTIT HRU', width / 2, startY + 450, '#dcd0c0', 'bold 20px "Big Apple 3PM", monospace');
+        this.startGameButton.y = height - 120;
+        const pressed = this.startGameButton.pressed;
+        const hovered = this.startGameButton.hovered;
+        const offset = pressed ? 3 : 0;
+        ctx.fillStyle = '#221100';
+        ctx.fillRect(this.startGameButton.x + offset, this.startGameButton.y + offset, this.startGameButton.width, this.startGameButton.height);
+        ctx.fillStyle = pressed ? '#443300' : (hovered ? '#554400' : '#332200');
+        ctx.fillRect(this.startGameButton.x + offset + 3, this.startGameButton.y + offset + 3, this.startGameButton.width - 6, this.startGameButton.height - 6);
+        const frameColor = '#F97300';
+        ctx.strokeStyle = frameColor;
+        ctx.lineWidth = pressed ? 2 : 4;
+        ctx.strokeRect(this.startGameButton.x + offset + 1, this.startGameButton.y + offset + 1, this.startGameButton.width - 2, this.startGameButton.height - 2);
+        ctx.strokeStyle = '#be794f';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(this.startGameButton.x + offset + 8, this.startGameButton.y + offset + 8, this.startGameButton.width - 16, this.startGameButton.height - 16);
+        if (hovered || pressed) {
+            const pulseAlpha = Math.sin(this.animations.buttonPulse * 6) * 0.3 + 0.7;
+            ctx.shadowColor = '#F97300';
+            ctx.shadowBlur = 15 * pulseAlpha;
+            ctx.strokeStyle = '#F97300';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(this.startGameButton.x + 2, this.startGameButton.y + 2, this.startGameButton.width - 4, this.startGameButton.height - 4);
+            ctx.shadowBlur = 0;
+        }
+        const textColor = hovered ? '#ffeb99' : '#e3b47a';
+        if (hovered) {
+            ctx.shadowColor = '#a0a0a0';
+            ctx.shadowBlur = 8;
+        }
+        renderer.drawText('▶ LAUNCH MISSION ◀', this.startGameButton.x + this.startGameButton.width / 2, this.startGameButton.y + this.startGameButton.height / 2 - 8, textColor, pressed ? 'bold 18px "Big Apple 3PM", monospace' : 'bold 20px "Big Apple 3PM", monospace');
+        renderer.drawText('INITIATE DEPLOYMENT SEQUENCE', this.startGameButton.x + this.startGameButton.width / 2, this.startGameButton.y + this.startGameButton.height / 2 + 12, textColor, '10px "Big Apple 3PM", monospace');
+        if (hovered) {
+            ctx.shadowBlur = 0;
+        }
+        const cornerSize = 12;
+        ctx.fillStyle = '#a0a0a0';
+        const corners = [
+            [this.startGameButton.x + offset, this.startGameButton.y + offset],
+            [this.startGameButton.x + offset + this.startGameButton.width - cornerSize, this.startGameButton.y + offset],
+            [this.startGameButton.x + offset, this.startGameButton.y + offset + this.startGameButton.height - cornerSize],
+            [this.startGameButton.x + offset + this.startGameButton.width - cornerSize, this.startGameButton.y + offset + this.startGameButton.height - cornerSize]
+        ];
+        corners.forEach(([x, y]) => {
+            ctx.fillRect(x, y, cornerSize, cornerSize);
+        });
     }
     isPointInRect(x, y, rect) {
         return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
@@ -2276,6 +2990,7 @@ export class GameEngine {
         console.log('Game loop stopped');
     }
     update(deltaTime) {
+        this.stateManager.handleInput(this.inputManager);
         this.inputManager.update();
         this.stateManager.update(deltaTime);
         if (this.stateManager.currentState === GameState.PLAYING) {
