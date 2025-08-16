@@ -15,6 +15,7 @@ import {
   EffectType
 } from './types';
 import { PhysicsEngine, gameConfig } from './utils';
+import { SpriteRenderer } from './sprites';
 
 export class PlayerShip implements IPlayerShip {
   public position: Vector2D;
@@ -24,6 +25,7 @@ export class PlayerShip implements IPlayerShip {
   public radius: number = 15;
   public active: boolean = true;
   public mass: number = 100; // Ship mass for inertia calculations
+  public spriteKey: string | null = 'ship_explorer';
 
   public systems: Map<ShipSystemType, ShipSystem> = new Map();
   public components: ShipComponent[] = [];
@@ -421,7 +423,11 @@ export class PlayerShip implements IPlayerShip {
     renderer.translate(screenPos.x, screenPos.y);
     renderer.rotate(this.angle);
 
-    this.renderHull(renderer);
+    if (this.spriteKey) {
+      SpriteRenderer.drawSprite(renderer, this.spriteKey, 2);
+    } else {
+      this.renderHull(renderer);
+    }
 
     if (this.thrust > 0.1) {
       this.renderEngineEffects(renderer);

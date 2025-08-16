@@ -2082,6 +2082,13 @@ class PlayingState {
             game.player.maxShields = shipTemplate.baseStats.shields;
             game.player.shields = shipTemplate.baseStats.shields;
             game.player.maxCargoWeight = shipTemplate.baseStats.cargo;
+            const shipTypeToSprite = {
+                explorer: 'ship_explorer',
+                fighter: 'ship_fighter',
+                cargo: 'ship_cargo'
+            };
+            const spriteKey = shipTypeToSprite[String(gameSetup.shipType)] || 'ship_explorer';
+            game.player.spriteKey = spriteKey;
             console.log(`Game started as ${gameSetup.character.name} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
         }
         else {

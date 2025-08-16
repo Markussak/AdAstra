@@ -1,27 +1,30 @@
-# Space Explorer Retro 16-bit Palette
-# You can edit this list; all colors in-game will be mapped to the nearest from this set.
-# Use hex format #rrggbb per line.
+# Curated 16-bit Retro Palette (edit as needed)
 
-# Core UI and text
-# (Muted industrial grays and text)
-#000000
+# Chassis / UI grays
 #0a0a0a
+#141418
 #1a1a1a
-#2a2a2a
-#3a3a3a
+#222228
+#2a2a2e
+#3a3a3f
 #404040
+#4a4a50
 #505050
-#606060
-#888888
+#5a5a60
+#7a7a82
 #b8b8b8
 #e8e8e8
 
 # CRT amber/green/red (muted)
 #d4a574
+#b88964
+#906c50
 #74a574
+#5e8b60
 #a57474
+#8c5f5f
 
-# Buttons/accents
+# Accents / buttons
 #A27B5C
 #F6B17A
 #F97300
@@ -34,7 +37,8 @@
 #6aaf9d
 #355d68
 
-# Stars/space subtle lights
+# Stars / whites
+#FFFFFF
 #E6E6FA
 #F0F8FF
 #FFF8DC
@@ -42,10 +46,8 @@
 #FFFAF0
 #FAF0E6
 #E0E6FF
-#a8a8a8
-#c8c8c8
 
-# Nebulae purples/reds (subtle)
+# Nebulae purples/reds
 #2D1B3D
 #4A2C4A
 #3D1A3D
@@ -60,19 +62,22 @@
 #2A1A2A
 #251525
 
-# Ship and chassis
-#5a6978
-#434c55
+# Ship metals
 #2b323a
-#e0e3e6
+#434c55
+#5a6978
 #6d4c4c
+#e0e3e6
 
-# Effects
+# Effects / VFX
 #e8732c
 #ffc357
-#52de44
+#ff4444
+#ffff00
+#00ffff
+#000088
 
-# Planet bodies
+# Planet palette
 #4169E1
 #CD853F
 #8B4513
@@ -95,18 +100,3 @@
 #708090
 #778899
 #B8860B
-
-# Stars realistic
-#FFD700
-#FF6B47
-#FF4444
-#87CEEB
-#FFFFFF
-#FFA500
-#FFE4B5
-
-# Highlights
-#00ffff
-#ffff00
-#ff0000
-#000088

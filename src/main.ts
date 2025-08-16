@@ -2912,6 +2912,15 @@ class PlayingState implements IGameState {
       game.player.shields = shipTemplate.baseStats.shields;
       game.player.maxCargoWeight = shipTemplate.baseStats.cargo;
       
+      // Select sprite by ship type
+      const shipTypeToSprite: Record<string, string> = {
+        explorer: 'ship_explorer',
+        fighter: 'ship_fighter',
+        cargo: 'ship_cargo'
+      };
+      const spriteKey = shipTypeToSprite[String(gameSetup.shipType)] || 'ship_explorer';
+      (game.player as any).spriteKey = spriteKey;
+      
       console.log(`Game started as ${gameSetup.character.name} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
     } else {
       console.warn('Missing gameSetup or player - using defaults');
