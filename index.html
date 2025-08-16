@@ -122,17 +122,31 @@
     
     <!-- Development mode script loading -->
     <script type="module">
-        // Check if we're running in development (Vite) or production
+        // Load game with proper fallback mechanism
         try {
-            // Try to detect if Vite is available
-            if (import.meta.env?.DEV) {
-                import('./src/main.ts');
-            } else {
-                throw new Error('Not in Vite dev mode');
+            // First try loading from src (development mode)
+            await import('./src/main.ts');
+            console.log('✅ Loaded from src/main.ts (development mode)');
+        } catch (devError) {
+            console.log('🔧 Development mode failed, trying production mode...', devError.message);
+            try {
+                // Fallback to built JavaScript (production mode)
+                await import('./dist/main.js');
+                console.log('✅ Loaded from dist/main.js (production mode)');
+            } catch (prodError) {
+                console.error('❌ Failed to load game:', { devError, prodError });
+                // Show error message to user
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) {
+                    overlay.innerHTML = `
+                        <div style="color: #ff6b6b; text-align: center;">
+                            <h2>NAČÍTÁNÍ SELHALO</h2>
+                            <p>Nepodařilo se načíst herní soubory.</p>
+                            <p>Zkuste obnovit stránku (F5).</p>
+                        </div>
+                    `;
+                }
             }
-        } catch (e) {
-            // Production mode or static server - load built JavaScript
-            import('./dist/main.js');
         }
     </script>
 </body>

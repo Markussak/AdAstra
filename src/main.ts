@@ -99,6 +99,8 @@ class StateManager implements IStateManager {
     const state = this.states.get(this.currentState);
     if (state) {
       state.update(deltaTime);
+    } else {
+      console.error(`No state found for ${this.currentState}`);
     }
   }
 
@@ -136,12 +138,14 @@ class LoadingState implements IGameState {
   }
 
   public enter(): void {
-    console.log('Loading state entered');
+    console.log('🔄 Loading state entered');
     this.progress = 0;
     this.currentTextIndex = 0;
     this.lastUpdate = Date.now();
     this.startTime = Date.now();
     this.hasTransitioned = false;
+    
+    console.log('🔄 Loading state initialized, starting progress simulation');
     
     // Initialize HTML loading display
     this.updateHTMLLoadingDisplay();
@@ -150,6 +154,11 @@ class LoadingState implements IGameState {
   public update(deltaTime: number): void {
     const now = Date.now();
     const elapsed = now - this.startTime;
+    
+    // Debug logging
+    if (elapsed % 1000 < 50) { // Log roughly every second
+      console.log(`Loading progress: ${Math.round(this.progress)}%, elapsed: ${elapsed}ms`);
+    }
     
     // Simulate realistic loading with minimum time
     if (elapsed > 300 && now - this.lastUpdate > 150) {
@@ -165,8 +174,10 @@ class LoadingState implements IGameState {
       
       this.lastUpdate = now;
       
-      if (this.progress >= 100 && elapsed > 2000 && !this.hasTransitioned) {
+      // Reduced minimum time from 2000ms to 1500ms for better UX
+      if (this.progress >= 100 && elapsed > 1500 && !this.hasTransitioned) {
         this.hasTransitioned = true;
+        console.log('Loading conditions met, transitioning to main menu...');
         setTimeout(() => {
           console.log('Loading complete, switching to main menu');
           this.hideHTMLLoadingOverlay();
@@ -4559,19 +4570,26 @@ export function initializeGame(): void {
     // Create canvas if it doesn't exist
     let canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
     if (!canvas) {
+      console.log('Creating new canvas element');
       canvas = document.createElement('canvas');
       canvas.id = 'gameCanvas';
+      canvas.width = 1920;
+      canvas.height = 1080;
       canvas.style.display = 'block';
       canvas.style.background = '#1a1a2a';
       canvas.style.imageRendering = 'pixelated';
       canvas.style.imageRendering = '-moz-crisp-edges';
       canvas.style.imageRendering = 'crisp-edges';
       document.body.appendChild(canvas);
+    } else {
+      console.log('Using existing canvas element');
     }
 
+    console.log('🎮 Creating game engine...');
     const game = new GameEngine('gameCanvas');
     (window as any).game = game;
     
+    console.log('🚀 Starting game loop...');
     // Start the game loop to enable state updates and rendering
     game.startGameLoop();
 
@@ -4582,6 +4600,7 @@ export function initializeGame(): void {
 
   } catch (error) {
     console.error('❌ Error initializing game:', error);
+    console.error('Stack trace:', error.stack);
   }
 }
 

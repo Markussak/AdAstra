@@ -50,6 +50,9 @@ class StateManager {
         if (state) {
             state.update(deltaTime);
         }
+        else {
+            console.error(`No state found for ${this.currentState}`);
+        }
     }
     render(renderer) {
         const state = this.states.get(this.currentState);
@@ -74,19 +77,25 @@ class LoadingState {
         this.currentTextIndex = 0;
         this.lastUpdate = 0;
         this.startTime = 0;
+        this.hasTransitioned = false;
         this.stateManager = stateManager;
     }
     enter() {
-        console.log('Loading state entered');
+        console.log('🔄 Loading state entered');
         this.progress = 0;
         this.currentTextIndex = 0;
         this.lastUpdate = Date.now();
         this.startTime = Date.now();
+        this.hasTransitioned = false;
+        console.log('🔄 Loading state initialized, starting progress simulation');
         this.updateHTMLLoadingDisplay();
     }
     update(deltaTime) {
         const now = Date.now();
         const elapsed = now - this.startTime;
+        if (elapsed % 1000 < 50) {
+            console.log(`Loading progress: ${Math.round(this.progress)}%, elapsed: ${elapsed}ms`);
+        }
         if (elapsed > 300 && now - this.lastUpdate > 150) {
             this.progress += Math.random() * 15 + 5;
             if (this.progress > 100)
@@ -96,7 +105,9 @@ class LoadingState {
             }
             this.updateHTMLLoadingDisplay();
             this.lastUpdate = now;
-            if (this.progress >= 100 && elapsed > 2000) {
+            if (this.progress >= 100 && elapsed > 1500 && !this.hasTransitioned) {
+                this.hasTransitioned = true;
+                console.log('Loading conditions met, transitioning to main menu...');
                 setTimeout(() => {
                     console.log('Loading complete, switching to main menu');
                     this.hideHTMLLoadingOverlay();
@@ -3278,8 +3289,11 @@ export function initializeGame() {
         console.log('🚀 Initializing Star Dust Voyager: Galaxy Wanderer...');
         let canvas = document.getElementById('gameCanvas');
         if (!canvas) {
+            console.log('Creating new canvas element');
             canvas = document.createElement('canvas');
             canvas.id = 'gameCanvas';
+            canvas.width = 1920;
+            canvas.height = 1080;
             canvas.style.display = 'block';
             canvas.style.background = '#1a1a2a';
             canvas.style.imageRendering = 'pixelated';
@@ -3287,8 +3301,13 @@ export function initializeGame() {
             canvas.style.imageRendering = 'crisp-edges';
             document.body.appendChild(canvas);
         }
+        else {
+            console.log('Using existing canvas element');
+        }
+        console.log('🎮 Creating game engine...');
         const game = new GameEngine('gameCanvas');
         window.game = game;
+        console.log('🚀 Starting game loop...');
         game.startGameLoop();
         console.log('✅ Game initialized successfully');
         console.log('🎮 Controls: WASD/Arrow keys for movement, SPACE for fire, ESC for menu');
@@ -3297,6 +3316,7 @@ export function initializeGame() {
     }
     catch (error) {
         console.error('❌ Error initializing game:', error);
+        console.error('Stack trace:', error.stack);
     }
 }
 if (typeof window !== 'undefined') {
