@@ -693,6 +693,25 @@ class NewGameSetupState implements IGameState {
     this.launching = { active: false, start: 0, duration: 800 };
   }
 
+  public exit(): void {
+    console.log('🚪 Exiting NewGameSetupState');
+    
+    // Clear any ongoing launching sequence
+    this.launching.active = false;
+    
+    // Reset UI states to prevent visual artifacts
+    this.isEditingName = false;
+    this.tooltip.visible = false;
+    
+    // Reset button states
+    this.backButton.pressed = false;
+    this.nextButton.pressed = false;
+    this.startGameButton.pressed = false;
+    this.startGameButton.hovered = false;
+    
+    console.log('✅ NewGameSetupState cleanup complete');
+  }
+
   public update(deltaTime: number): void {
     // Update animations
     this.animations.stepTransition += deltaTime * 3.0;

@@ -492,6 +492,17 @@ class NewGameSetupState {
         });
         this.launching = { active: false, start: 0, duration: 800 };
     }
+    exit() {
+        console.log('🚪 Exiting NewGameSetupState');
+        this.launching.active = false;
+        this.isEditingName = false;
+        this.tooltip.visible = false;
+        this.backButton.pressed = false;
+        this.nextButton.pressed = false;
+        this.startGameButton.pressed = false;
+        this.startGameButton.hovered = false;
+        console.log('✅ NewGameSetupState cleanup complete');
+    }
     update(deltaTime) {
         this.animations.stepTransition += deltaTime * 3.0;
         this.animations.buttonPulse += deltaTime * 4.0;
@@ -2146,6 +2157,23 @@ class PlayingState {
     enter() {
         console.log('🎮 Entering playing state');
         try {
+            const canvas = document.getElementById('gameCanvas');
+            if (canvas) {
+                console.log('🖥️ Configuring canvas for game view...');
+                canvas.style.display = 'block';
+                canvas.style.visibility = 'visible';
+                canvas.style.opacity = '1';
+                const rect = canvas.getBoundingClientRect();
+                console.log(`Canvas dimensions: ${rect.width}x${rect.height}`);
+            }
+            else {
+                console.error('❌ Canvas not found!');
+            }
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                console.log('🔄 Hiding loading overlay...');
+                loadingOverlay.style.display = 'none';
+            }
             const game = window.game;
             const gameSetup = window.gameSetup;
             if (gameSetup && game && game.player) {
@@ -2180,7 +2208,22 @@ class PlayingState {
             if (game && game.sceneManager) {
                 console.log('🌌 Initializing scene manager...');
                 setTimeout(() => {
-                    game.sceneManager.getCurrentScene();
+                    try {
+                        const scene = game.sceneManager.getCurrentScene();
+                        console.log('✅ Scene created:', scene);
+                        if (game.camera && game.player) {
+                            game.camera.x = game.player.position.x - game.renderer.getWidth() / 2;
+                            game.camera.y = game.player.position.y - game.renderer.getHeight() / 2;
+                            game.camera.targetX = game.player.position.x;
+                            game.camera.targetY = game.player.position.y;
+                            console.log('📷 Camera positioned at player location');
+                        }
+                        console.log('🎨 Forcing initial render...');
+                        game.render();
+                    }
+                    catch (sceneError) {
+                        console.error('❌ Error initializing scene:', sceneError);
+                    }
                 }, 100);
             }
         }
@@ -3173,7 +3216,7 @@ export class GameEngine {
         this.inputManager.setCanvas(this.canvas);
         this.camera = new Camera();
         this.statusBar = new StatusBar(this.renderer);
-        this.player = new PlayerShip(200, 200);
+        this.player = new PlayerShip(1800, 300);
         this.questSystem = new QuestSystem();
         this.effectSystem = new EffectSystem();
         console.log('Game engine initialized');
@@ -3232,22 +3275,30 @@ export class GameEngine {
         this.player.update(deltaTime, inputState);
     }
     render() {
-        this.renderer.clear('#000000');
-        if (this.stateManager.currentState === GameState.PLAYING) {
-            const scene = this.sceneManager.getCurrentScene();
-            if (scene) {
-                scene.render(this.renderer, this.camera);
+        try {
+            this.renderer.clear('#000000');
+            if (this.stateManager.currentState === GameState.PLAYING) {
+                const scene = this.sceneManager.getCurrentScene();
+                if (scene) {
+                    scene.render(this.renderer, this.camera);
+                }
+                else {
+                    console.warn('⚠️ No scene available for rendering');
+                }
+                if (this.isPlayerVisible()) {
+                    this.player.render(this.renderer, this.camera);
+                }
+                this.effectSystem.render(this.renderer, this.camera);
+                this.renderHUD();
+                this.statusBar.render(this.player);
+                this.inputManager.renderTouchControls(this.renderer);
             }
-            if (this.isPlayerVisible()) {
-                this.player.render(this.renderer, this.camera);
+            else {
+                this.stateManager.render(this.renderer);
             }
-            this.effectSystem.render(this.renderer, this.camera);
-            this.renderHUD();
-            this.statusBar.render(this.player);
-            this.inputManager.renderTouchControls(this.renderer);
         }
-        else {
-            this.stateManager.render(this.renderer);
+        catch (error) {
+            console.error('❌ Error in render:', error);
         }
     }
     isPlayerVisible() {
