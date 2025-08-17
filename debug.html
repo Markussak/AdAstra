@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Dust Voyager: Galaxy Wanderer - Debug Mode</title>
+    <link rel="preload" href="./assets/fonts/Big Apple 3PM.ttf" as="font" type="font/ttf" crossorigin>
+    <style>
+        @font-face {
+            font-family: 'Big Apple 3PM';
+            src: url('./assets/fonts/Big Apple 3PM.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            font-family: 'Big Apple 3PM', 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        #gameCanvas {
+            border: 2px solid #404040;
+            box-shadow: 0 0 10px rgba(64, 64, 64, 0.3);
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease-out;
+        }
+        
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-title {
+            color: #606060;
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: none;
+        }
+        
+        .loading-subtitle {
+            color: #505050;
+            font-size: 1.5em;
+            margin-bottom: 40px;
+        }
+        
+        .loading-bar {
+            width: 400px;
+            height: 20px;
+            border: 2px solid #404040;
+            background: #2a2a2a;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .loading-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #505050, #404040);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .loading-text {
+            color: #606060;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+        
+        .loading-percent {
+            color: #505050;
+            font-size: 0.8em;
+        }
+        
+        .debug-console {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 400px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 10px;
+            border: 1px solid #00ff00;
+            overflow-y: auto;
+            z-index: 2000;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-title pulse">STAR DUST VOYAGER</div>
+        <div class="loading-subtitle">GALAXY WANDERER - DEBUG MODE</div>
+        <div class="loading-bar">
+            <div id="loadingFill" class="loading-fill"></div>
+        </div>
+        <div id="loadingText" class="loading-text">INICIALIZACE KVANTOVÉ MATRICE...</div>
+        <div id="loadingPercent" class="loading-percent">0%</div>
+    </div>
+    
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas" width="1920" height="1080"></canvas>
+    
+    <!-- Debug Console -->
+    <div id="debugConsole" class="debug-console">
+        <div id="debugOutput">Debug Console Initialized...\n</div>
+    </div>
+    
+    <!-- Enhanced debug script -->
+    <script type="module">
+        let debugOutput = document.getElementById('debugOutput');
+        
+        function debugLog(message) {
+            const timestamp = new Date().toTimeString().split(' ')[0];
+            debugOutput.textContent += `[${timestamp}] ${message}\n`;
+            debugOutput.scrollTop = debugOutput.scrollHeight;
+            console.log(message);
+        }
+        
+        // Override console.log for debugging
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            debugLog(args.join(' '));
+        };
+        
+        const originalError = console.error;
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            debugLog('ERROR: ' + args.join(' '));
+        };
+        
+        debugLog('Starting game load sequence...');
+        
+        // Load game with enhanced error handling and debugging
+        try {
+            debugLog('Attempting to load from src/main.ts (development mode)...');
+            await import('./src/main.ts');
+            debugLog('✅ Successfully loaded from src/main.ts (development mode)');
+        } catch (devError) {
+            debugLog('🔧 Development mode failed: ' + devError.message);
+            debugLog('Trying production mode...');
+            try {
+                await import('./dist/main.js');
+                debugLog('✅ Successfully loaded from dist/main.js (production mode)');
+            } catch (prodError) {
+                debugLog('❌ Production mode failed: ' + prodError.message);
+                debugLog('❌ Complete failure - both dev and prod modes failed');
+                
+                // Show detailed error message
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) {
+                    overlay.innerHTML = `
+                        <div style="color: #ff6b6b; text-align: center; max-width: 80%;">
+                            <h2>NAČÍTÁNÍ SELHALO</h2>
+                            <p>Nepodařilo se načíst herní soubory.</p>
+                            <p><strong>Dev Error:</strong> ${devError.message}</p>
+                            <p><strong>Prod Error:</strong> ${prodError.message}</p>
+                            <p>Zkuste obnovit stránku (F5).</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        // Check if game object is created
+        setTimeout(() => {
+            if (window.game) {
+                debugLog('✅ Game object found on window');
+                debugLog('Game state: ' + window.game.stateManager.getCurrentState());
+                
+                // Monitor state changes
+                const originalSetState = window.game.stateManager.setState;
+                window.game.stateManager.setState = function(newState) {
+                    debugLog('🔄 State changing to: ' + newState);
+                    return originalSetState.call(this, newState);
+                };
+            } else {
+                debugLog('❌ Game object not found on window');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
