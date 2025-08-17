@@ -2986,6 +2986,28 @@ class PlayingState implements IGameState {
     console.log('🎮 Entering playing state');
     
     try {
+      // Ensure the canvas is visible and properly configured
+      const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+      if (canvas) {
+        console.log('🖥️ Configuring canvas for game view...');
+        canvas.style.display = 'block';
+        canvas.style.visibility = 'visible';
+        canvas.style.opacity = '1';
+        
+        // Ensure canvas is properly sized
+        const rect = canvas.getBoundingClientRect();
+        console.log(`Canvas dimensions: ${rect.width}x${rect.height}`);
+      } else {
+        console.error('❌ Canvas not found!');
+      }
+      
+      // Hide any remaining loading overlays
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      if (loadingOverlay) {
+        console.log('🔄 Hiding loading overlay...');
+        loadingOverlay.style.display = 'none';
+      }
+      
       // Initialize game with setup if available
       const game = (window as any).game;
       const gameSetup = (window as any).gameSetup as GameSetup;
@@ -3028,11 +3050,30 @@ class PlayingState implements IGameState {
       
       console.log('🎮 PlayingState initialization complete');
       
-      // Force scene creation to ensure everything is ready
+      // Force scene creation and camera initialization
       if (game && game.sceneManager) {
         console.log('🌌 Initializing scene manager...');
         setTimeout(() => {
-          game.sceneManager.getCurrentScene();
+          try {
+            const scene = game.sceneManager.getCurrentScene();
+            console.log('✅ Scene created:', scene);
+            
+            // Set camera initial position
+            if (game.camera && game.player) {
+              game.camera.x = game.player.position.x - game.renderer.getWidth() / 2;
+              game.camera.y = game.player.position.y - game.renderer.getHeight() / 2;
+              game.camera.targetX = game.player.position.x;
+              game.camera.targetY = game.player.position.y;
+              console.log('📷 Camera positioned at player location');
+            }
+            
+            // Force a render to make sure everything appears
+            console.log('🎨 Forcing initial render...');
+            game.render();
+            
+          } catch (sceneError) {
+            console.error('❌ Error initializing scene:', sceneError);
+          }
         }, 100);
       }
       
@@ -4478,33 +4519,39 @@ export class GameEngine implements IGameEngine {
   }
 
   public render(): void {
-    // Clear previous frame efficiently
-    this.renderer.clear('#000000');
-    
-    if (this.stateManager.currentState === GameState.PLAYING) {
-      // Render current scene with frustum culling
-      const scene = this.sceneManager.getCurrentScene();
-      if (scene) {
-        scene.render(this.renderer, this.camera);
+    try {
+      // Clear previous frame efficiently
+      this.renderer.clear('#000000');
+      
+      if (this.stateManager.currentState === GameState.PLAYING) {
+        // Render current scene with frustum culling
+        const scene = this.sceneManager.getCurrentScene();
+        if (scene) {
+          scene.render(this.renderer, this.camera);
+        } else {
+          console.warn('⚠️ No scene available for rendering');
+        }
+        
+        // Render player only if visible
+        if (this.isPlayerVisible()) {
+          this.player.render(this.renderer, this.camera);
+        }
+        
+        // Render visual effects
+        this.effectSystem.render(this.renderer, this.camera);
+        
+        // Render UI elements
+        this.renderHUD();
+        this.statusBar.render(this.player);
+        
+        // Render touch controls for mobile
+        this.inputManager.renderTouchControls(this.renderer);
+      } else {
+        // Render other game states
+        this.stateManager.render(this.renderer);
       }
-      
-      // Render player only if visible
-      if (this.isPlayerVisible()) {
-        this.player.render(this.renderer, this.camera);
-      }
-      
-      // Render visual effects
-      this.effectSystem.render(this.renderer, this.camera);
-      
-      // Render UI elements
-      this.renderHUD();
-      this.statusBar.render(this.player);
-      
-      // Render touch controls for mobile
-      this.inputManager.renderTouchControls(this.renderer);
-    } else {
-      // Render other game states
-      this.stateManager.render(this.renderer);
+    } catch (error) {
+      console.error('❌ Error in render:', error);
     }
   }
 

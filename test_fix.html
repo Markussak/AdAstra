@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Star Dust Voyager: Galaxy Wanderer</title>
+    <title>Star Dust Voyager: Galaxy Wanderer - TEST FIX</title>
     <link rel="preload" href="./assets/fonts/Big Apple 3PM.ttf" as="font" type="font/ttf" crossorigin>
     <style>
         @font-face {
@@ -107,30 +107,82 @@
         .pulse {
             animation: pulse 2s infinite;
         }
+        
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: #00ff41;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 2000;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border: 1px solid #00ff41;
+        }
     </style>
 </head>
 <body>
+    <!-- Debug Info -->
+    <div class="debug-info">
+        <div>DEBUG MODE: Scene Loading Fix Test</div>
+        <div id="debugState">State: Loading...</div>
+        <div id="debugCanvas">Canvas: Not Found</div>
+        <div id="debugScene">Scene: Not Created</div>
+        <div id="debugPlayer">Player: Not Found</div>
+    </div>
+    
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-title pulse">STAR DUST VOYAGER</div>
-        <div class="loading-subtitle">GALAXY WANDERER</div>
+        <div class="loading-subtitle">GALAXY WANDERER - SCENE FIX TEST</div>
         <div class="loading-bar">
             <div id="loadingFill" class="loading-fill"></div>
         </div>
-        <div id="loadingText" class="loading-text">INICIALIZACE KVANTOVÉ MATRICE...</div>
+        <div id="loadingText" class="loading-text">TESTING SCENE LOADING FIX...</div>
         <div id="loadingPercent" class="loading-percent">0%</div>
     </div>
     
     <!-- Game Canvas -->
     <canvas id="gameCanvas" width="1920" height="1080"></canvas>
     
-    <!-- Development mode script loading -->
+    <!-- Development mode script loading with enhanced debugging -->
     <script type="module">
+        // Enhanced debugging
+        function updateDebugInfo() {
+            const game = window.game;
+            const canvas = document.getElementById('gameCanvas');
+            
+            document.getElementById('debugState').textContent = `State: ${game?.stateManager?.currentState || 'Unknown'}`;
+            document.getElementById('debugCanvas').textContent = `Canvas: ${canvas ? 'Found' : 'Not Found'} ${canvas?.style?.display || ''}`;
+            document.getElementById('debugScene').textContent = `Scene: ${game?.sceneManager?.currentScene || 'Not Created'}`;
+            document.getElementById('debugPlayer').textContent = `Player: ${game?.player ? 'Found' : 'Not Found'}`;
+        }
+        
+        // Update debug info every second
+        setInterval(updateDebugInfo, 1000);
+        
         // Load game with proper fallback mechanism
         try {
             // First try loading from src (development mode)
             await import('./src/main.ts');
             console.log('✅ Loaded from src/main.ts (development mode)');
+            
+            // Monitor game state changes
+            setTimeout(() => {
+                const game = window.game;
+                if (game && game.stateManager) {
+                    console.log('🔍 Monitoring game state changes...');
+                    
+                    // Override setState to log state changes
+                    const originalSetState = game.stateManager.setState;
+                    game.stateManager.setState = function(newState) {
+                        console.log(`🔄 State changing to: ${newState}`);
+                        return originalSetState.call(this, newState);
+                    };
+                }
+            }, 1000);
+            
         } catch (devError) {
             console.log('🔧 Development mode failed, trying production mode...', devError.message);
             try {
