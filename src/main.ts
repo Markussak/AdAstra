@@ -2650,9 +2650,8 @@ class NewGameSetupState implements IGameState {
           console.log(`Next button clicked on step ${this.currentStep}`);
           this.nextButton.pressed = true;
           if (this.currentStep === this.steps.length - 1) {
-            console.log('🚀 Next button on final step - starting launch sequence');
-            this.launching.active = true;
-            this.launching.start = performance.now();
+            console.log('🚀 Next button on final step - starting game immediately');
+            this.startGame();
           } else {
             this.currentStep++;
           }
@@ -2795,17 +2794,12 @@ class NewGameSetupState implements IGameState {
             break;
             
           case 6: // Summary
-            console.log(`Summary step: click at ${clickX}, ${clickY}`);
-            console.log(`Start button area: x=${this.startGameButton.x}, y=${this.startGameButton.y}, w=${this.startGameButton.width}, h=${this.startGameButton.height}`);
             if (this.isPointInRect(clickX, clickY, this.startGameButton)) {
-              console.log('Start button clicked! Starting launch sequence...');
+              console.log('Start button clicked! Starting game immediately...');
               this.startGameButton.pressed = true;
-              // Start short launch overlay instead of immediate state switch
-              this.launching.active = true;
-              this.launching.start = performance.now();
+              // Start game immediately - no launch sequence
+              this.startGame();
               handled = true;
-            } else {
-              console.log('Click missed start button');
             }
             break;
         }
@@ -2933,9 +2927,8 @@ class NewGameSetupState implements IGameState {
         
       case 6: // Summary
         if (input.wasKeyJustPressed('enter')) {
-          console.log('🎯 ENTER key pressed in summary - starting launch sequence');
-          this.launching.active = true;
-          this.launching.start = performance.now();
+          console.log('🎯 ENTER key pressed in summary - starting game immediately');
+          this.startGame();
         }
         break;
     }
@@ -2963,17 +2956,11 @@ class NewGameSetupState implements IGameState {
       // Store setup globally for game initialization
       (window as any).gameSetup = this.gameSetup;
 
-      console.log('🎮 Switching to PLAYING state...');
+      console.log('🎮 Switching directly to PLAYING state...');
       
-      // Use setTimeout to ensure the transition happens asynchronously
-      setTimeout(() => {
-        try {
-          game.stateManager.setState(GameState.PLAYING);
-          console.log('✅ Successfully switched to PLAYING state');
-        } catch (error) {
-          console.error('❌ Error switching to PLAYING state:', error);
-        }
-      }, 50); // Small delay to ensure UI updates
+      // Switch immediately to playing state - no delays, no loading screens
+      game.stateManager.setState(GameState.PLAYING);
+      console.log('✅ Successfully switched to PLAYING state');
       
     } catch (error) {
       console.error('❌ Error in startGame:', error);
