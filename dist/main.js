@@ -2116,47 +2116,77 @@ class NewGameSetupState {
             console.error('Game instance not found!');
             return;
         }
-        this.gameSetup = {
-            character: this.character,
-            difficulty: this.selectedDifficulty,
-            shipType: this.selectedShip,
-            galaxySettings: this.galaxySettings,
-            economySettings: this.economySettings,
-            startingResources: DIFFICULTY_SETTINGS[this.selectedDifficulty].startingResources
-        };
-        window.gameSetup = this.gameSetup;
-        console.log('🎮 Switching to PLAYING state...');
-        game.stateManager.setState(GameState.PLAYING);
+        try {
+            this.gameSetup = {
+                character: this.character,
+                difficulty: this.selectedDifficulty,
+                shipType: this.selectedShip,
+                galaxySettings: this.galaxySettings,
+                economySettings: this.economySettings,
+                startingResources: DIFFICULTY_SETTINGS[this.selectedDifficulty].startingResources
+            };
+            window.gameSetup = this.gameSetup;
+            console.log('🎮 Switching to PLAYING state...');
+            setTimeout(() => {
+                try {
+                    game.stateManager.setState(GameState.PLAYING);
+                    console.log('✅ Successfully switched to PLAYING state');
+                }
+                catch (error) {
+                    console.error('❌ Error switching to PLAYING state:', error);
+                }
+            }, 50);
+        }
+        catch (error) {
+            console.error('❌ Error in startGame:', error);
+        }
     }
 }
 class PlayingState {
     enter() {
         console.log('🎮 Entering playing state');
-        const game = window.game;
-        const gameSetup = window.gameSetup;
-        if (gameSetup && game.player) {
-            const difficultySettings = DIFFICULTY_SETTINGS[gameSetup.difficulty];
-            const shipTemplate = SHIP_TEMPLATES[gameSetup.shipType];
-            game.player.fuel = gameSetup.startingResources.fuel;
-            game.player.energy = gameSetup.startingResources.energy;
-            game.player.maxHull = shipTemplate.baseStats.hull;
-            game.player.hull = shipTemplate.baseStats.hull;
-            game.player.maxShields = shipTemplate.baseStats.shields;
-            game.player.shields = shipTemplate.baseStats.shields;
-            game.player.maxCargoWeight = shipTemplate.baseStats.cargo;
-            const shipTypeToSprite = {
-                explorer: 'ship_explorer',
-                fighter: 'ship_fighter',
-                cargo: 'ship_cargo'
-            };
-            const spriteKey = shipTypeToSprite[String(gameSetup.shipType)] || 'ship_explorer';
-            game.player.spriteKey = spriteKey;
-            console.log(`🚀 Game started as ${gameSetup.character.name} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
+        try {
+            const game = window.game;
+            const gameSetup = window.gameSetup;
+            if (gameSetup && game && game.player) {
+                console.log('🔧 Applying game setup...');
+                const difficultySettings = DIFFICULTY_SETTINGS[gameSetup.difficulty];
+                const shipTemplate = SHIP_TEMPLATES[gameSetup.shipType];
+                if (difficultySettings && shipTemplate) {
+                    game.player.fuel = gameSetup.startingResources.fuel;
+                    game.player.energy = gameSetup.startingResources.energy;
+                    game.player.maxHull = shipTemplate.baseStats.hull;
+                    game.player.hull = shipTemplate.baseStats.hull;
+                    game.player.maxShields = shipTemplate.baseStats.shields;
+                    game.player.shields = shipTemplate.baseStats.shields;
+                    game.player.maxCargoWeight = shipTemplate.baseStats.cargo;
+                    const shipTypeToSprite = {
+                        explorer: 'ship_explorer',
+                        fighter: 'ship_fighter',
+                        cargo: 'ship_cargo'
+                    };
+                    const spriteKey = shipTypeToSprite[String(gameSetup.shipType)] || 'ship_explorer';
+                    game.player.spriteKey = spriteKey;
+                    console.log(`🚀 Game started as ${gameSetup.character.name} with ${gameSetup.shipType} on ${gameSetup.difficulty} difficulty`);
+                }
+                else {
+                    console.warn('⚠️ Missing difficulty or ship template data');
+                }
+            }
+            else {
+                console.warn('⚠️ Missing gameSetup or player - using defaults');
+            }
+            console.log('🎮 PlayingState initialization complete');
+            if (game && game.sceneManager) {
+                console.log('🌌 Initializing scene manager...');
+                setTimeout(() => {
+                    game.sceneManager.getCurrentScene();
+                }, 100);
+            }
         }
-        else {
-            console.warn('⚠️ Missing gameSetup or player - using defaults');
+        catch (error) {
+            console.error('❌ Error in PlayingState enter:', error);
         }
-        console.log('🎮 PlayingState initialization complete');
     }
     update(deltaTime) {
     }
