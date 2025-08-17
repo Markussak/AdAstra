@@ -4395,7 +4395,7 @@ export class GameEngine implements IGameEngine {
     this.camera = new Camera();
     this.statusBar = new StatusBar(this.renderer);
 
-    this.player = new PlayerShip(200, 200);
+    this.player = new PlayerShip(1800, 300); // Position near first planet orbit
     this.questSystem = new QuestSystem();
     this.effectSystem = new EffectSystem();
 
