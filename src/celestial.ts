@@ -696,4 +696,6 @@ export class CelestialBody implements ICelestialBody {
   private renderGeneric(renderer: IRenderer): void {
     renderer.drawCircle(0, 0, this.radius, this.color, true);
   }
+
+
 }

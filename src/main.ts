@@ -4600,7 +4600,7 @@ export function initializeGame(): void {
 
   } catch (error) {
     console.error('❌ Error initializing game:', error);
-    console.error('Stack trace:', error.stack);
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace available');
   }
 }
 
